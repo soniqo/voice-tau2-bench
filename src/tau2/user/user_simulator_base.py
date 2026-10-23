@@ -53,6 +53,13 @@ TRANSFER = "###TRANSFER###"
 OUT_OF_SCOPE = "###OUT-OF-SCOPE###"
 
 
+def is_user_stop(message: UserMessage) -> bool:
+    """Recognize caller stop markers without depending on a model backend."""
+    if message.is_tool_call() or message.content is None:
+        return False
+    return any(marker in message.content for marker in (STOP, TRANSFER, OUT_OF_SCOPE))
+
+
 class UserState(BaseModel):
     """The state of the user simulator."""
 

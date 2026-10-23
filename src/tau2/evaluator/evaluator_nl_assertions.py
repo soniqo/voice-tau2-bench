@@ -5,7 +5,7 @@ from tau2.data_model.message import Message, SystemMessage, Tick, UserMessage
 from tau2.data_model.simulation import NLAssertionCheck, RewardInfo
 from tau2.data_model.tasks import RewardType, Task
 from tau2.evaluator.evaluator_base import EvaluatorBase
-from tau2.utils.llm_utils import generate
+from tau2.inference import generate
 from tau2.utils.transcript.views import speech_messages
 
 

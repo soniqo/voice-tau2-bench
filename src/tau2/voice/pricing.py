@@ -171,19 +171,8 @@ def lookup_rates(provider: str, model: str) -> Optional[Rates]:
 
 
 def _litellm_cost(record: UsageRecord) -> Optional[float]:
-    """Fallback pricing for cascaded LLM legs via litellm's registry."""
-    try:
-        from litellm import cost_per_token
-
-        prompt_cost, completion_cost = cost_per_token(
-            model=record.model,
-            prompt_tokens=record.input_tokens or 0,
-            completion_tokens=record.output_tokens or 0,
-        )
-        return prompt_cost + completion_cost
-    except Exception as e:
-        logger.warning(f"litellm pricing fallback failed for {record.model}: {e}")
-        return None
+    """Historical records without a frozen rate remain explicitly unpriced."""
+    return None
 
 
 def _modality_input_cost(

@@ -30,11 +30,6 @@ from tau2.voice_config import (
     SNR_SPEECH_REFERENCE_RMS,
 )
 
-try:
-    from elevenlabs import VoiceSettings as ElevenLabsVoiceSettings
-except ImportError:
-    ElevenLabsVoiceSettings = None
-
 # ============================================================================
 # Transcription Models
 # ============================================================================
@@ -67,12 +62,13 @@ class TranscriptionResult(BaseModel):
 # ElevenLabs TTS Models
 # ============================================================================
 
-if ElevenLabsVoiceSettings is not None:
-    DEFAULT_ELEVENLABS_VOICE_SETTINGS = ElevenLabsVoiceSettings(
-        stability=0.5, similarity_boost=0.75, style=0.0, use_speaker_boost=False
-    )
-else:
-    DEFAULT_ELEVENLABS_VOICE_SETTINGS = None
+# Plain data keeps configuration importable without the provider SDK.
+DEFAULT_ELEVENLABS_VOICE_SETTINGS = {
+    "stability": 0.5,
+    "similarity_boost": 0.75,
+    "style": 0.0,
+    "use_speaker_boost": False,
+}
 
 DEFAULT_ELEVENLABS_OUTPUT_FORMAT = "pcm_16000"
 DEFAULT_ELEVEN_LAB_AUDIO_FORMAT = AudioFormat(
@@ -166,7 +162,29 @@ class LanguageVoiceDesign(BaseModel):
     )
 
 
-ProviderConfig = ElevenLabsTTSConfig
+class RuntimeTTSConfig(BaseModel):
+    """Provider-neutral synthesis request for an explicitly injected runtime."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["runtime"] = "runtime"
+    model_id: str = Field(min_length=1)
+    voice_id: str = Field(min_length=1)
+    language_code: str = "en"
+    seed: int = DEFAULT_SEED
+    model_args: dict[str, Any] = Field(default_factory=dict)
+
+
+class RuntimeTranscriptionConfig(BaseModel):
+    """Native audio is passed intact; the runtime owns model-specific resampling."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["runtime"] = "runtime"
+    model: str = Field(min_length=1)
+    language: str = "en"
+    model_args: dict[str, Any] = Field(default_factory=dict)
+
+
+ProviderConfig = ElevenLabsTTSConfig | RuntimeTTSConfig
 
 
 # ============================================================================
@@ -253,6 +271,28 @@ class SynthesisConfig(BaseModel):
     speech_effects_config: SpeechEffectsConfig = Field(
         default_factory=SpeechEffectsConfig
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_runtime_config(cls, value):
+        if isinstance(value, dict) and value.get("provider") == "runtime":
+            config = value.get("provider_config")
+            if not isinstance(config, RuntimeTTSConfig):
+                value = {
+                    **value,
+                    "provider_config": RuntimeTTSConfig.model_validate(config),
+                }
+        return value
+
+    @model_validator(mode="after")
+    def provider_matches_config(self):
+        if (self.provider == "runtime") != isinstance(
+            self.provider_config, RuntimeTTSConfig
+        ):
+            raise ValueError(
+                "runtime synthesis requires RuntimeTTSConfig and provider='runtime'"
+            )
+        return self
 
 
 class SynthesisResult(BaseModel):
@@ -432,8 +472,8 @@ class VoiceSettings(BaseModel):
     """Voice settings for enabling synthesis and transcription."""
 
     synthesis_config: Optional[SynthesisConfig] = Field(default=SynthesisConfig())
-    transcription_config: Optional[TranscriptionConfig] = Field(
-        default=TranscriptionConfig()
+    transcription_config: Optional[TranscriptionConfig | RuntimeTranscriptionConfig] = (
+        Field(default=TranscriptionConfig())
     )
     output_dir: Optional[Path] = Field(default=None)
     speech_environment: Optional[SpeechEnvironment] = Field(

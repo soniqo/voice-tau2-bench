@@ -15,7 +15,8 @@ from tau2.data_model.semantic_communication import (
 from tau2.data_model.simulation import CommunicateCheck, RewardInfo
 from tau2.data_model.tasks import RewardType, Task
 from tau2.evaluator.evaluator_base import EvaluatorBase
-from tau2.utils.llm_utils import extract_json_from_llm_response, generate
+from tau2.inference import generate
+from tau2.utils.response import extract_json_from_llm_response
 from tau2.utils.transcript.views import agent_messages
 
 # Calibrated semantic prompts; revision is recorded by SemanticCommunicateSettings.

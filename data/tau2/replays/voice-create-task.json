@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "upstream_commit": "05736c27219b769d0be507574dd3135010916644",
+  "domain": "mock",
+  "task_id": "create_task_1",
+  "tick_duration_seconds": 0.05,
+  "max_steps": 8,
+  "agent": {
+    "1": {"output": {"tool_calls": [{"id": "create-task", "name": "create_task", "arguments": {"user_id": "user_1", "title": "Important Meeting"}}]}},
+    "2": {"tool_results": ["create-task"], "output": {"content": "I created Important Meeting.", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}}
+  },
+  "user": {
+    "0": {"output": {"content": "Please create Important Meeting for user_1.", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}},
+    "3": {"output": {"content": "Thanks. ###STOP###"}}
+  }
+}

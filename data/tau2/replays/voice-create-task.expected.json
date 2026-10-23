@@ -1,0 +1,224 @@
+{
+  "termination_reason": "user_stop",
+  "reward": {
+    "reward": 1.0,
+    "db_check": {
+      "db_match": true,
+      "db_reward": 1.0
+    },
+    "env_assertions": [],
+    "action_checks": [
+      {
+        "action": {
+          "action_id": "create_1",
+          "requestor": "assistant",
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "info": "Create a new task for the meeting",
+          "compare_args": null
+        },
+        "action_match": true,
+        "action_reward": 1.0,
+        "tool_type": "write"
+      }
+    ],
+    "nl_assertions": null,
+    "communicate_checks": null,
+    "reward_basis": [
+      "DB",
+      "COMMUNICATE"
+    ],
+    "reward_breakdown": {
+      "DB": 1.0,
+      "COMMUNICATE": 1.0
+    },
+    "info": {
+      "env": null,
+      "nl": null,
+      "communicate": {
+        "note": "No communicate_info to evaluate"
+      },
+      "action": null
+    }
+  },
+  "ticks": [
+    {
+      "tick_id": 0,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "Hi! How can I help you today?",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": "Please create Important Meeting for user_1.",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 1,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [
+        {
+          "id": "create-task",
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "requestor": "assistant"
+        }
+      ],
+      "user_tool_calls": [],
+      "agent_tool_results": [
+        {
+          "id": "create-task",
+          "role": "tool",
+          "content": "{\"task_id\": \"task_2\", \"title\": \"Important Meeting\", \"description\": null, \"status\": \"pending\"}",
+          "requestor": "assistant",
+          "error": false,
+          "execution_status": "executed"
+        }
+      ],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 2,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "I created Important Meeting.",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 3,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "user_chunk": {
+        "content": "Thanks. ###STOP###",
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    }
+  ],
+  "deliveries": [
+    {
+      "role": "user",
+      "tick": 0,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 1,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 1,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 2,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 2,
+      "tool_results": [
+        "create-task"
+      ]
+    },
+    {
+      "role": "user",
+      "tick": 3,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 3,
+      "tool_results": []
+    }
+  ]
+}

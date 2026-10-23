@@ -1,3 +1,7 @@
+# Upstream history
+
+This file preserves the upstream history. Current local execution is documented in README.md and docs/local-voice-extraction.md.
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

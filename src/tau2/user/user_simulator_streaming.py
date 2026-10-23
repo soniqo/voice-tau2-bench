@@ -45,8 +45,9 @@ from tau2.data_model.persona import InterruptTendency, PersonaConfig
 from tau2.data_model.transcript import LinearizationStrategy
 from tau2.data_model.voice import VoiceSettings
 from tau2.environment.tool import Tool
+from tau2.inference import generate, get_inference_backends
 from tau2.user.guidelines import simulation_guidelines
-from tau2.user.user_simulator import build_user_system_prompt
+from tau2.user.prompts import build_user_system_prompt
 from tau2.user.user_simulator_base import (
     OUT_OF_SCOPE,
     STOP,
@@ -55,7 +56,6 @@ from tau2.user.user_simulator_base import (
     UserState,
     ValidUserInputMessage,
 )
-from tau2.utils.llm_utils import generate
 from tau2.utils.transcript.linearization import merge_homogeneous_chunks
 from tau2.utils.utils import get_now
 from tau2.voice.synthesis.audio_effects.effects import StreamingTelephonyConverter
@@ -140,6 +140,9 @@ class UserAudioStreamingState(
 def user_interruption_policy(
     state: UserStreamingState,
     integration_ticks: int = 1,
+    *,
+    decision_model: str = VOICE_USER_SIMULATOR_DECISION_MODEL,
+    decision_model_args: Optional[dict] = None,
 ) -> ListenerReactionDecision:
     """
     Decide whether the user should interrupt the agent while they're speaking.
@@ -185,10 +188,14 @@ def user_interruption_policy(
 
     try:
         response = generate(
-            model=VOICE_USER_SIMULATOR_DECISION_MODEL,
+            model=decision_model,
             messages=decision_messages,
             call_name="interruption_decision",
-            **VOICE_USER_SIMULATOR_DECISION_MODEL_ARGS,
+            **(
+                VOICE_USER_SIMULATOR_DECISION_MODEL_ARGS
+                if decision_model_args is None
+                else decision_model_args
+            ),
         )
 
         decision_text = response.content.strip().upper()
@@ -203,6 +210,8 @@ def user_interruption_policy(
             usage=response.usage,
         )
     except Exception as e:
+        if get_inference_backends() is not None:
+            raise
         logger.error(f"Error in interruption decision: {e}")
         # Default to not interrupting on error
         return ListenerReactionDecision(decision=False)
@@ -212,6 +221,9 @@ def user_backchannel_policy(
     state: UserStreamingState,
     backchannel: BackchannelSettings,
     integration_ticks: int = 1,
+    *,
+    decision_model: str = VOICE_USER_SIMULATOR_DECISION_MODEL,
+    decision_model_args: Optional[dict] = None,
 ) -> ListenerReactionDecision:
     """
     Decide whether the user should backchannel while the agent is speaking.
@@ -255,10 +267,14 @@ def user_backchannel_policy(
 
     try:
         response = generate(
-            model=VOICE_USER_SIMULATOR_DECISION_MODEL,
+            model=decision_model,
             messages=decision_messages,
             call_name="backchannel_decision",
-            **VOICE_USER_SIMULATOR_DECISION_MODEL_ARGS,
+            **(
+                VOICE_USER_SIMULATOR_DECISION_MODEL_ARGS
+                if decision_model_args is None
+                else decision_model_args
+            ),
         )
 
         decision_text = response.content.strip().upper()
@@ -273,6 +289,8 @@ def user_backchannel_policy(
             usage=response.usage,
         )
     except Exception as e:
+        if get_inference_backends() is not None:
+            raise
         logger.error(f"Error in backchannel decision: {e}")
         # Default to not backchanneling on error
         return ListenerReactionDecision(decision=False)
@@ -348,6 +366,8 @@ class VoiceStreamingUserSimulator(
         role_reminder_override: Optional[str] = None,
         spell_event_detector: Optional[Callable[[str], list[SpellOutDetection]]] = None,
         backchannel: Optional[BackchannelSettings] = None,
+        decision_model: str = VOICE_USER_SIMULATOR_DECISION_MODEL,
+        decision_model_args: Optional[dict] = None,
     ):
         """
         Initialize the streaming user simulator.
@@ -378,6 +398,9 @@ class VoiceStreamingUserSimulator(
             persona_config: Runtime persona configuration for user behavior (e.g., verbosity level, interrupt tendency)
             backchannel: Density level and continuers of the call language; None
                 uses the canonical English pack's.
+            decision_model: Model for interruption and backchannel decisions.
+            decision_model_args: Explicit helper-model arguments; pass an empty
+                dictionary when no provider-specific arguments apply.
             audio_taps_dir: If set, record audio at each pipeline stage to WAV files in this directory.
         """
         # Initialize mixin and base class
@@ -391,6 +414,12 @@ class VoiceStreamingUserSimulator(
         )
         self.persona_config = persona_config or PersonaConfig()
         self.backchannel = backchannel or default_backchannel_settings()
+        self.decision_model = decision_model
+        self.decision_model_args = (
+            dict(VOICE_USER_SIMULATOR_DECISION_MODEL_ARGS)
+            if decision_model_args is None
+            else dict(decision_model_args)
+        )
         self.global_guidelines_override = global_guidelines_override
         self.role_reminder_override = role_reminder_override
         self.spell_event_detector = spell_event_detector
@@ -413,6 +442,8 @@ class VoiceStreamingUserSimulator(
         self._listener: Future | None = None
         self._generation_input_count = 0
         self._generation_from_tool = False
+        self._generation_started_during_speech = False
+        self.stale_generation_count = 0
         self._last_generation_tick = 0
         self._user_executor = (
             ThreadPoolExecutor(max_workers=2, thread_name_prefix="voice-user")
@@ -747,6 +778,9 @@ class VoiceStreamingUserSimulator(
         snapshot = self._generation_snapshot(state)
         self._generation_input_count = len(state.input_turn_taking_buffer)
         self._generation_from_tool = tool_result is not None
+        self._generation_started_during_speech = (
+            state.input_ongoing_speech_duration() > 0
+        )
         self._generation_action = "generate_message"
         self._last_generation_tick = state.tick_count
         if self._listener is not None:
@@ -783,7 +817,12 @@ class VoiceStreamingUserSimulator(
             def should_interrupt_callback(
                 s: UserStreamingState,
             ) -> ListenerReactionDecision:
-                return user_interruption_policy(s, integration_ticks=integration_ticks)
+                return user_interruption_policy(
+                    s,
+                    integration_ticks=integration_ticks,
+                    decision_model=self.decision_model,
+                    decision_model_args=self.decision_model_args,
+                )
 
         # Backchannel callback is tied to the use_llm_backchannel config
         if self.use_llm_backchannel:
@@ -792,7 +831,11 @@ class VoiceStreamingUserSimulator(
                 s: UserStreamingState,
             ) -> ListenerReactionDecision:
                 return user_backchannel_policy(
-                    s, self.backchannel, integration_ticks=integration_ticks
+                    s,
+                    self.backchannel,
+                    integration_ticks=integration_ticks,
+                    decision_model=self.decision_model,
+                    decision_model_args=self.decision_model_args,
                 )
 
         action, info = basic_turn_taking_policy(
@@ -1074,6 +1117,19 @@ class VoiceStreamingUserSimulator(
                     return self._emit_waiting_chunk(state)
                 full_message, generated_state = self._generation.result()
                 self._generation = None
+                fresh_input = state.input_turn_taking_buffer[
+                    self._generation_input_count :
+                ]
+                if (
+                    not self._generation_from_tool
+                    and not self._generation_started_during_speech
+                    and any(self.speech_detection(chunk) for chunk in fresh_input)
+                ):
+                    self.stale_generation_count += 1
+                    logger.info(
+                        "Discarding caller response superseded by new agent speech"
+                    )
+                    return self._emit_waiting_chunk(state)
                 state.user_utterance_count = generated_state.user_utterance_count
                 for name in ("_llm_generation_seconds", "_tts_synthesis_seconds"):
                     setattr(state, name, getattr(generated_state, name, None))

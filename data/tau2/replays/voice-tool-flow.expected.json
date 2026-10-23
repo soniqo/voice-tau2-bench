@@ -1,0 +1,407 @@
+{
+  "termination_reason": "user_stop",
+  "reward": {
+    "reward": 0.0,
+    "db_check": {
+      "db_match": false,
+      "db_reward": 0.0
+    },
+    "env_assertions": [
+      {
+        "env_assertion": {
+          "env_type": "user",
+          "func_name": "assert_notification_status",
+          "arguments": {
+            "notification_id": "notif_1",
+            "expected_status": "read"
+          },
+          "assert_value": true,
+          "message": null
+        },
+        "met": true,
+        "reward": 1.0
+      }
+    ],
+    "action_checks": [
+      {
+        "action": {
+          "action_id": "update_1",
+          "requestor": "assistant",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_1",
+            "status": "completed"
+          },
+          "info": "Update the task status to completed",
+          "compare_args": null
+        },
+        "action_match": true,
+        "action_reward": 1.0,
+        "tool_type": "write"
+      }
+    ],
+    "nl_assertions": null,
+    "communicate_checks": null,
+    "reward_basis": [
+      "DB",
+      "ACTION",
+      "ENV_ASSERTION"
+    ],
+    "reward_breakdown": {
+      "DB": 0.0,
+      "ENV_ASSERTION": 1.0,
+      "ACTION": 1.0
+    },
+    "info": {
+      "env": null,
+      "nl": null,
+      "communicate": null,
+      "action": null
+    }
+  },
+  "ticks": [
+    {
+      "tick_id": 0,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "Hi! How can I help you today?",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": "Hello.",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 1,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "I can help ",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": false,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [
+        {
+          "id": "user-check",
+          "name": "check_notifications",
+          "arguments": {},
+          "requestor": "user"
+        }
+      ],
+      "agent_tool_results": [],
+      "user_tool_results": [
+        {
+          "id": "user-check",
+          "role": "tool",
+          "content": "[{\"notification_id\": \"notif_1\", \"message\": \"Task 'Test task' has been assigned to you.\", \"status\": \"unread\", \"task_id\": \"task_1\"}]",
+          "requestor": "user",
+          "error": false,
+          "execution_status": "executed"
+        }
+      ]
+    },
+    {
+      "tick_id": 2,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "with that.",
+        "contains_speech": true,
+        "chunk_id": 1,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": "Please mark task_1 completed.",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 3,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [
+        {
+          "id": "agent-update",
+          "name": "update_task_status",
+          "arguments": {
+            "task_id": "task_1",
+            "status": "completed"
+          },
+          "requestor": "assistant"
+        }
+      ],
+      "user_tool_calls": [],
+      "agent_tool_results": [
+        {
+          "id": "agent-update",
+          "role": "tool",
+          "content": "{\"task_id\": \"task_1\", \"title\": \"Test task\", \"description\": \"A test task\", \"status\": \"completed\"}",
+          "requestor": "assistant",
+          "error": false,
+          "execution_status": "executed"
+        }
+      ],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 4,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "The task is completed.",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    },
+    {
+      "tick_id": 5,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": "Anything else?",
+        "contains_speech": true,
+        "chunk_id": 0,
+        "is_final_chunk": true,
+        "audio_format": {
+          "encoding": "ulaw",
+          "sample_rate": 8000,
+          "channels": 1,
+          "sample_width": 1,
+          "bits_per_sample": 8,
+          "bytes_per_sample": 1
+        },
+        "audio_sha256": "78ba34e704626c467ee44e92ae90fbb26ddb615dd80f993ba4acddd09de494f9"
+      },
+      "user_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [
+        {
+          "id": "user-dismiss",
+          "name": "dismiss_notification",
+          "arguments": {
+            "notification_id": "notif_1"
+          },
+          "requestor": "user"
+        }
+      ],
+      "agent_tool_results": [],
+      "user_tool_results": [
+        {
+          "id": "user-dismiss",
+          "role": "tool",
+          "content": "Notification notif_1 dismissed",
+          "requestor": "user",
+          "error": false,
+          "execution_status": "executed"
+        }
+      ]
+    },
+    {
+      "tick_id": 6,
+      "tick_duration_seconds": 0.05,
+      "agent_chunk": {
+        "content": null,
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "user_chunk": {
+        "content": "Thanks. ###STOP###",
+        "contains_speech": false,
+        "chunk_id": null,
+        "is_final_chunk": true,
+        "audio_format": null,
+        "audio_sha256": null
+      },
+      "agent_tool_calls": [],
+      "user_tool_calls": [],
+      "agent_tool_results": [],
+      "user_tool_results": []
+    }
+  ],
+  "deliveries": [
+    {
+      "role": "user",
+      "tick": 0,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 1,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 1,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 2,
+      "tool_results": [
+        "user-check"
+      ]
+    },
+    {
+      "role": "assistant",
+      "tick": 2,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 3,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 3,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 4,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 4,
+      "tool_results": [
+        "agent-update"
+      ]
+    },
+    {
+      "role": "user",
+      "tick": 5,
+      "tool_results": []
+    },
+    {
+      "role": "assistant",
+      "tick": 5,
+      "tool_results": []
+    },
+    {
+      "role": "user",
+      "tick": 6,
+      "tool_results": [
+        "user-dismiss"
+      ]
+    },
+    {
+      "role": "assistant",
+      "tick": 6,
+      "tool_results": []
+    }
+  ]
+}

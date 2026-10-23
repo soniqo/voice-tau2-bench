@@ -1,115 +1,73 @@
-"""
-Tau2: Conversational Agent Benchmark Framework
-
-Main exports for easy access to key components.
-"""
+"""τ-bench public API, loaded on demand to keep optional runtimes isolated."""
 
 import warnings
+from importlib import import_module
 
-# Runner package: clean API for simulation execution
-# - Layer 1: run_simulation (execute pre-built orchestrator)
-# - Layer 2: build_* functions (construct instances from config/names)
-# - Layer 3: run_domain, run_tasks, run_single_task (batch execution)
-import tau2.runner as runner
-from tau2.agent.base.llm_config import LLMConfigMixin
-from tau2.agent.base_agent import FullDuplexAgent, HalfDuplexAgent
-from tau2.agent.llm_agent import LLMAgent, LLMSoloAgent
-from tau2.data_model.simulation import (
-    BaseRunConfig,
-    RunConfig,
-    SimulationRun,
-    TextRunConfig,
-    VoiceRunConfig,
-)
-from tau2.data_model.tasks import Task
-from tau2.environment.environment import Environment
-from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
-from tau2.orchestrator.modes import CommunicationMode
-from tau2.orchestrator.orchestrator import Orchestrator
+# Preserve the public singleton even after Python imports the registry submodule.
+# Registry entries themselves remain lazy and do not load domains or providers.
+from tau2.registry import Registry as Registry
+from tau2.registry import registry as registry
 
-# FullDuplexOrchestrator is imported lazily to avoid circular imports
-# Use: from tau2.orchestrator.full_duplex_orchestrator import FullDuplexOrchestrator
-from tau2.registry import Registry, registry
-from tau2.run import run_domain
-from tau2.user.user_simulator import UserSimulator
-from tau2.user.user_simulator_base import FullDuplexUser, HalfDuplexUser
-from tau2.utils.display import ConsoleDisplay, MarkdownDisplay
+# Importing a domain or data model must not initialize a model provider.
+_EXPORTS = {
+    "FullDuplexOrchestrator": (
+        "tau2.orchestrator.full_duplex_orchestrator",
+        "FullDuplexOrchestrator",
+    ),
+    "SpeechSwiftAgent": ("tau2.agent.speech_swift_agent", "SpeechSwiftAgent"),
+    "LLMConfigMixin": ("tau2.agent.base.llm_config", "LLMConfigMixin"),
+    "HalfDuplexAgent": ("tau2.agent.base_agent", "HalfDuplexAgent"),
+    "FullDuplexAgent": ("tau2.agent.base_agent", "FullDuplexAgent"),
+    "Task": ("tau2.data_model.tasks", "Task"),
+    "Environment": ("tau2.environment.environment", "Environment"),
+    "EvaluationType": ("tau2.evaluator.evaluator", "EvaluationType"),
+    "evaluate_simulation": ("tau2.evaluator.evaluator", "evaluate_simulation"),
+    "CommunicationMode": ("tau2.orchestrator.modes", "CommunicationMode"),
+    "Registry": ("tau2.registry", "Registry"),
+    "registry": ("tau2.registry", "registry"),
+    "UserSimulator": ("tau2.user.user_simulator", "UserSimulator"),
+    "HalfDuplexUser": ("tau2.user.user_simulator_base", "HalfDuplexUser"),
+    "FullDuplexUser": ("tau2.user.user_simulator_base", "FullDuplexUser"),
+    "VoiceStreamingUserSimulator": (
+        "tau2.user.user_simulator_streaming",
+        "VoiceStreamingUserSimulator",
+    ),
+    "BaseRunConfig": ("tau2.data_model.simulation", "BaseRunConfig"),
+    "RunConfig": ("tau2.data_model.simulation", "RunConfig"),
+    "SimulationRun": ("tau2.data_model.simulation", "SimulationRun"),
+    "TextRunConfig": ("tau2.data_model.simulation", "TextRunConfig"),
+    "VoiceRunConfig": ("tau2.data_model.simulation", "VoiceRunConfig"),
+}
 
-# =============================================================================
-# DEPRECATION ALIASES
-# =============================================================================
+_ALIASES = {
+    "BaseAgent": "HalfDuplexAgent",
+    "LocalAgent": "HalfDuplexAgent",
+    "BaseStreamingAgent": "FullDuplexAgent",
+    "BaseUser": "HalfDuplexUser",
+    "BaseStreamingUser": "FullDuplexUser",
+}
 
 
 def __getattr__(name: str):
-    """Module-level __getattr__ for deprecation warnings and lazy voice imports."""
-    deprecated_aliases = {
-        "BaseAgent": ("HalfDuplexAgent", HalfDuplexAgent),
-        "LocalAgent": ("HalfDuplexAgent", HalfDuplexAgent),
-        "BaseStreamingAgent": ("FullDuplexAgent", FullDuplexAgent),
-        "BaseUser": ("HalfDuplexUser", HalfDuplexUser),
-        "BaseStreamingUser": ("FullDuplexUser", FullDuplexUser),
-    }
-
-    if name in deprecated_aliases:
-        new_name, new_class = deprecated_aliases[name]
+    if name in _ALIASES:
+        replacement = _ALIASES[name]
         warnings.warn(
-            f"{name} is deprecated, use {new_name} instead",
+            f"{name} is deprecated, use {replacement} instead",
             DeprecationWarning,
             stacklevel=2,
         )
-        return new_class
-
-    if name == "VoiceStreamingUserSimulator":
-        from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
-
-        return VoiceStreamingUserSimulator
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-# Direct aliases for static analysis tools
-BaseAgent = HalfDuplexAgent
-LocalAgent = HalfDuplexAgent
-BaseStreamingAgent = FullDuplexAgent
-BaseUser = HalfDuplexUser
-BaseStreamingUser = FullDuplexUser
+        return __getattr__(replacement)
+    if name not in _EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = _EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attribute) if attribute else module
+    globals()[name] = value
+    return value
 
 
-__all__ = [
-    # Core
-    "Orchestrator",
-    # "FullDuplexOrchestrator",  # Import from tau2.orchestrator.full_duplex_orchestrator
-    "LLMAgent",
-    "LLMSoloAgent",
-    "LLMConfigMixin",
-    "UserSimulator",
-    "HalfDuplexAgent",
-    "FullDuplexAgent",
-    "HalfDuplexUser",
-    "FullDuplexUser",
-    "Environment",
-    "Registry",
-    "registry",
-    "SimulationRun",
-    "Task",
-    "evaluate_simulation",
-    "EvaluationType",
-    "BaseRunConfig",
-    "TextRunConfig",
-    "VoiceRunConfig",
-    "RunConfig",
-    "run_domain",
-    "runner",
-    # Streaming
-    "CommunicationMode",
-    "VoiceStreamingUserSimulator",
-    # Utils
-    "ConsoleDisplay",
-    "MarkdownDisplay",
-    # Deprecated aliases (kept for backward compatibility)
-    "BaseAgent",
-    "LocalAgent",
-    "BaseStreamingAgent",
-    "BaseUser",
-    "BaseStreamingUser",
-]
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+
+
+__all__ = list(_EXPORTS) + list(_ALIASES)

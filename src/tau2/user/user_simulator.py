@@ -14,46 +14,17 @@ from tau2.data_model.message import (
 )
 from tau2.data_model.persona import PersonaConfig
 from tau2.environment.tool import Tool
-from tau2.user.guidelines import finalize_system_prompt, simulation_guidelines
+from tau2.inference import generate
+from tau2.user.guidelines import simulation_guidelines
+from tau2.user.prompts import SYSTEM_PROMPT as SYSTEM_PROMPT
+from tau2.user.prompts import build_user_system_prompt
 from tau2.user.user_simulator_base import (
-    OUT_OF_SCOPE,
-    STOP,
-    TRANSFER,
     HalfDuplexUser,
     UserState,
     ValidUserInputMessage,
+    is_user_stop,
     is_valid_user_history_message,
 )
-from tau2.utils.llm_utils import generate
-
-SYSTEM_PROMPT = """
-{global_user_sim_guidelines_with_persona}
-
-<scenario>
-{instructions}
-</scenario>
-""".strip()
-
-
-def build_user_system_prompt(
-    instructions: Optional[str],
-    *,
-    persona_config: PersonaConfig,
-    mode: Literal["text", "voice"],
-    guidelines: str,
-) -> str:
-    """Assemble caller instructions identically for runtime and offline review."""
-    persona_guidelines = persona_config.to_guidelines_text(mode=mode) or ""
-    if persona_guidelines:
-        persona_guidelines = f"\n\n{persona_guidelines}\n"
-    prompt = SYSTEM_PROMPT.format(
-        global_user_sim_guidelines_with_persona=guidelines.replace(
-            "<PERSONA_GUIDELINES>", persona_guidelines
-        ),
-        instructions=instructions,
-    )
-    return finalize_system_prompt(persona_config, prompt)
-
 
 UserStateType = TypeVar("UserStateType", bound="UserState")
 
@@ -143,16 +114,7 @@ class UserSimulator(
         """
         Check if the message is a stop message.
         """
-        if message.is_tool_call():
-            return False
-        # Audio-only messages (chunks) don't have text content
-        if message.content is None:
-            return False
-        return (
-            STOP in message.content
-            or TRANSFER in message.content
-            or OUT_OF_SCOPE in message.content
-        )
+        return is_user_stop(message)
 
     def generate_next_message(
         self, message: ValidUserInputMessage, state: UserStateType

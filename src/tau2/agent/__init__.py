@@ -1,81 +1,51 @@
+"""Participant exports loaded on demand."""
+
 import warnings
+from importlib import import_module
 
-from tau2.agent.base.llm_config import LLMConfigMixin
-from tau2.agent.base.participant import FullDuplexParticipant, HalfDuplexParticipant
-from tau2.agent.base.streaming import StreamingMixin, StreamingState
-from tau2.agent.base_agent import (
-    FullDuplexAgent,
-    FullDuplexVoiceAgent,
-    HalfDuplexAgent,
-    HalfDuplexVoiceAgent,
-    ValidAgentInputMessage,
-)
-from tau2.agent.llm_agent import LLMAgent, LLMAgentState, LLMGTAgent, LLMSoloAgent
+_EXPORTS = {
+    "LLMConfigMixin": ("tau2.agent.base.llm_config", "LLMConfigMixin"),
+    "FullDuplexParticipant": ("tau2.agent.base.participant", "FullDuplexParticipant"),
+    "HalfDuplexParticipant": ("tau2.agent.base.participant", "HalfDuplexParticipant"),
+    "StreamingMixin": ("tau2.agent.base.streaming", "StreamingMixin"),
+    "StreamingState": ("tau2.agent.base.streaming", "StreamingState"),
+    "FullDuplexAgent": ("tau2.agent.base_agent", "FullDuplexAgent"),
+    "FullDuplexVoiceAgent": ("tau2.agent.base_agent", "FullDuplexVoiceAgent"),
+    "HalfDuplexAgent": ("tau2.agent.base_agent", "HalfDuplexAgent"),
+    "HalfDuplexVoiceAgent": ("tau2.agent.base_agent", "HalfDuplexVoiceAgent"),
+    "ValidAgentInputMessage": ("tau2.agent.base_agent", "ValidAgentInputMessage"),
+}
 
-# =============================================================================
-# DEPRECATION ALIASES
-# =============================================================================
-# These aliases maintain backward compatibility with code using old names.
-# They will emit DeprecationWarning when used.
+_ALIASES = {
+    "BaseConversationParticipant": "HalfDuplexParticipant",
+    "BaseStreamingParticipant": "FullDuplexParticipant",
+    "BaseAgent": "HalfDuplexAgent",
+    "LocalAgent": "HalfDuplexAgent",
+    "BaseStreamingAgent": "FullDuplexAgent",
+    "BaseVoiceAgent": "HalfDuplexVoiceAgent",
+}
 
 
 def __getattr__(name: str):
-    """Module-level __getattr__ for deprecation warnings."""
-    deprecated_aliases = {
-        "BaseConversationParticipant": ("HalfDuplexParticipant", HalfDuplexParticipant),
-        "BaseStreamingParticipant": ("FullDuplexParticipant", FullDuplexParticipant),
-        "BaseAgent": ("HalfDuplexAgent", HalfDuplexAgent),
-        "LocalAgent": ("HalfDuplexAgent", HalfDuplexAgent),
-        "BaseStreamingAgent": ("FullDuplexAgent", FullDuplexAgent),
-        "BaseVoiceAgent": ("HalfDuplexVoiceAgent", HalfDuplexVoiceAgent),
-    }
-
-    if name in deprecated_aliases:
-        new_name, new_class = deprecated_aliases[name]
+    if name in _ALIASES:
+        replacement = _ALIASES[name]
         warnings.warn(
-            f"{name} is deprecated, use {new_name} instead",
+            f"{name} is deprecated, use {replacement} instead",
             DeprecationWarning,
             stacklevel=2,
         )
-        return new_class
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-# Direct aliases for static analysis tools (these don't trigger warnings on import)
-BaseConversationParticipant = HalfDuplexParticipant
-BaseStreamingParticipant = FullDuplexParticipant
-BaseAgent = HalfDuplexAgent
-LocalAgent = HalfDuplexAgent
-BaseStreamingAgent = FullDuplexAgent
-BaseVoiceAgent = HalfDuplexVoiceAgent
+        return __getattr__(replacement)
+    if name not in _EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = _EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attribute) if attribute else module
+    globals()[name] = value
+    return value
 
 
-__all__ = [
-    # Generic base classes
-    "HalfDuplexParticipant",
-    "FullDuplexParticipant",
-    # LLM configuration mixin
-    "LLMConfigMixin",
-    # Generic streaming mixins
-    "StreamingMixin",
-    "StreamingState",
-    # Agent-specific base classes
-    "HalfDuplexAgent",
-    "FullDuplexAgent",
-    "HalfDuplexVoiceAgent",
-    "FullDuplexVoiceAgent",
-    "ValidAgentInputMessage",
-    # LLM Agents
-    "LLMAgent",
-    "LLMAgentState",
-    "LLMGTAgent",
-    "LLMSoloAgent",
-    # Deprecated aliases (kept for backward compatibility)
-    "BaseConversationParticipant",
-    "BaseStreamingParticipant",
-    "BaseAgent",
-    "LocalAgent",
-    "BaseStreamingAgent",
-    "BaseVoiceAgent",
-]
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+
+
+__all__ = list(_EXPORTS) + list(_ALIASES)

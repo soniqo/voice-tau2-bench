@@ -1,0 +1,598 @@
+{
+  "benchmark": {
+    "dependency_lock_sha256": "edf3d02224b678ba3d1e9c59218db72e927ad8317e1c0bd47b78507dbb9f092f",
+    "frame_tasks": 278,
+    "frozen_inputs": 64,
+    "git_head": "05736c27219b769d0be507574dd3135010916644",
+    "source_commit_url": "https://github.com/soniqo/voice-tau2-bench/commit/6bb29a226064350d2a6c12acfa6837c08ebb795c",
+    "source_equivalent_commit": "6bb29a226064350d2a6c12acfa6837c08ebb795c",
+    "uncommitted_changes_included_in_hash": true,
+    "upstream": {
+      "commit": "05736c27219b769d0be507574dd3135010916644",
+      "repository": "https://github.com/sierra-research/tau2-bench"
+    },
+    "working_source_sha256": "c52f27d648a2c80f6183ff3c181dabeb416a195e2d62d92171a2f4f24e422b71"
+  },
+  "captured_utc": "2026-10-23T07:16:10.798849+00:00",
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "macos": "26.6.2",
+    "unified_memory_gib": 48.0
+  },
+  "limits": [
+    "Three deterministic tasks are a development slice, not a full-frame accuracy estimate.",
+    "The local caller, voices, helper models and semantic judge differ from the upstream setup.",
+    "Task success measures the complete voice-agent pipeline.",
+    "Spoken text alignment is estimated while synthesis is in progress.",
+    "Native memory and latency observations describe this shared, serialized inference service, not isolated model benchmarks.",
+    "Raw audio and full trajectories are retained locally; this report publishes their content hashes."
+  ],
+  "method": {
+    "all_selected_trials_completed": true,
+    "complexity": "control",
+    "conversation_deadline_seconds": 600,
+    "domains": [
+      "airline",
+      "retail",
+      "telecom"
+    ],
+    "seed": 42,
+    "selection": "first task per domain in frozen order",
+    "task_reward": "preserve each frozen task reward basis; timeouts receive zero; inference exceptions remain unscored",
+    "tasks": 3,
+    "trials_per_task": 1
+  },
+  "models": {
+    "agent": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "cancel",
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "agent_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [
+        "cancel",
+        "streaming"
+      ],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "asr": {
+      "engine": "speech-swift/whisper",
+      "features": [],
+      "model_id": "whisper-large-v3",
+      "precision": "fp16"
+    },
+    "caller": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "caller_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "judge": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "json_output"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "listener": {
+      "engine": "speech-swift/gemma4",
+      "features": [],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "vad": {
+      "engine": "speech-swift/silero",
+      "features": [
+        "streaming"
+      ],
+      "model_id": "silero-vad",
+      "precision": null
+    }
+  },
+  "performance": {
+    "agent_streaming_first_audio_median_seconds": 2.813148125016596,
+    "agent_streaming_first_audio_observations": 27,
+    "first_audio_scope": "all agent speech streams that produced audio, including interrupted streams; includes shared inference-queue wait",
+    "inference_operations": {
+      "chat": {
+        "requests": 91,
+        "wall_seconds_median": 4.557900374988094,
+        "wall_seconds_total": 571.0392210441642
+      },
+      "speech": {
+        "requests": 55,
+        "wall_seconds_median": 10.539606166945305,
+        "wall_seconds_total": 748.3510263288044
+      },
+      "stream_speech": {
+        "requests": 27,
+        "wall_seconds_median": 17.214104041981045,
+        "wall_seconds_total": 487.0951577540254
+      },
+      "transcribe": {
+        "requests": 41,
+        "wall_seconds_median": 1.1661355000105686,
+        "wall_seconds_total": 51.72928829584271
+      },
+      "vad": {
+        "requests": 26496,
+        "wall_seconds_median": 0.0013201870024204254,
+        "wall_seconds_total": 38.52585405408172
+      }
+    },
+    "physical_footprint_sampling_interval_seconds": 1,
+    "sampled_native_process_peak_physical_footprint_bytes": 12259549320
+  },
+  "profile": "soniqo-local-v1",
+  "repository": "https://github.com/soniqo/voice-tau2-bench",
+  "reproduce_command": "uv run --frozen tau-voice batch --domain all --num-tasks 1 --trials 1 --seed 42 --max-seconds 600 --complexity control --base-url http://127.0.0.1:8787 --output data/simulations/local-baseline",
+  "run_started_utc": "2026-10-23T06:49:56.575385+00:00",
+  "runtime": {
+    "binary_sha256": "6453c4b59d14c05048ff877ef8803d02072f344670d334427ab045dd0fbe7bb3",
+    "model_assets": {
+      "gemma": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "3888ffa00a226c6fb8f20603fed45d466afde548565dfe6c936acd043f460ae1",
+            "size": 4929
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+            "size": 208
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "e105100225815b521c6405c57ea23974530b868ddfea1e3ea9ec7ce1cf9fae38",
+            "size": 4198925877
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "8155d42e19a25623e76fc0460ce24ddfd34a7c85b496456684249c68e5f93fc5",
+            "size": 2773
+          }
+        ],
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "files": [
+          {
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+            "size": 2480617
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389",
+            "size": 282843
+          }
+        ],
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "459e764d58cdc13f3db6878adfdf8a29b5fd467ad1f4ef2161137cc115339c81",
+            "size": 888
+          },
+          {
+            "path": "silero_vad.mlmodelc/analytics/coremldata.bin",
+            "sha256": "b777c3751d72b7430eac7f8544769a3d918faf77c15db184fec30e44c56007a3",
+            "size": 243
+          },
+          {
+            "path": "silero_vad.mlmodelc/coremldata.bin",
+            "sha256": "f6fcd92c3132c9c718e5f54e0e770a8c8075beaa50a5b212a6287273b4ddae67",
+            "size": 399
+          },
+          {
+            "path": "silero_vad.mlmodelc/metadata.json",
+            "sha256": "1b953eb3818e7092deedd96e976c05354f77beb2ddc2976fe416af17e47f62d2",
+            "size": 3005
+          },
+          {
+            "path": "silero_vad.mlmodelc/model.mil",
+            "sha256": "b0a1384c4a664697989d9eb9cfb166b4b85f151206aeefd1bfa391ef9e5ad08f",
+            "size": 18203
+          },
+          {
+            "path": "silero_vad.mlmodelc/weights/weight.bin",
+            "sha256": "83210545de90c65195e8d6db1b349b7e5c31f989f48d0a908a8dc0e2f586e5f9",
+            "size": 619136
+          }
+        ],
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "a03ae7c0d11253b6a4ff66972d9d62e6a38c8aba91574cfdfbcce47b544d48fa",
+            "size": 5289
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "cb01f32246be7575d26a58a534b2fa130e2eaff045cc7d43503b550f0f9d5913",
+            "size": 4955255888
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sha256": "068594063e37662c02b21acf42ebb334ef6a74fb810e68a2368f88f08351de76",
+            "size": 1632
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "f8984687e4a92a3503d521396d454b7d68e9fdaab2a0288eb3536c7c1aa4bc20",
+            "size": 3676772
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "e78a3ebb48a0b9437efd1823b6b726c823da89e49dd8bcc90c02419d9baa772b",
+            "size": 5059
+          }
+        ],
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "files": [
+          {
+            "path": "AudioEncoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "195e35e9fbaa218cd59eca69988a2165245e5bfccc4a5d9776847e8955d1625a",
+            "size": 243
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/coremldata.bin",
+            "sha256": "273d6cd004f95763e9d03e5d36622f11038819a81b9eafed64b1d95444e04f62",
+            "size": 348
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/metadata.json",
+            "sha256": "db0d80a1046e03e211928cd2918d5e5924947f4ecbcee5232b125f0f59757fbc",
+            "size": 1826
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mil",
+            "sha256": "3e7737df445ef8fc13238970e3e518c0c6455bcadb6371df2ede1f22dcb8a8e0",
+            "size": 581035
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mlmodel",
+            "sha256": "bf0987c0d8c3fe180877b12ba5b4ac1d890e011f2103926e53186089feced575",
+            "size": 408667
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/weights/weight.bin",
+            "sha256": "eb07bab32dcd62ce653b5b288bd6c27bdc5a538be309f242e33ed05e1cb53457",
+            "size": 1273974400
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+            "sha256": "091a361134891f94e613562771beea0d93a9aefbc6984ba86c60f856e07a508f",
+            "size": 243
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/coremldata.bin",
+            "sha256": "f3c5778c86d6fbc6a9817a56dbcac05a946a4d95c77f6db8355572f3be9e9a68",
+            "size": 329
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/metadata.json",
+            "sha256": "1a94f4dfaec25549cbb386fe59b68c67a7a5af4a1c672a5998e5a84b9111135b",
+            "size": 1850
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/model.mil",
+            "sha256": "17977ed2332430c6cc4c1da2516f2cd4deb662d65ae38d72725ab157f32d4949",
+            "size": 10187
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/weights/weight.bin",
+            "sha256": "97a66b915cd3fc97dcba6806d92381e1a56024b8f68c1a1cd370d4c92505fe87",
+            "size": 373376
+          },
+          {
+            "path": "TextDecoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "7c151c6259c279aa7922d60e82c7851bbad1df10018b1cebc566aa6c2aee5e0f",
+            "size": 243
+          },
+          {
+            "path": "TextDecoder.mlmodelc/coremldata.bin",
+            "sha256": "f41a7939b47f7cf127aa69dfd8c552a141dc773b936bf8621aeffcd201fb9e30",
+            "size": 637
+          },
+          {
+            "path": "TextDecoder.mlmodelc/metadata.json",
+            "sha256": "de900a968f7640e9775c28268e348a0bc6559a4a92defae07d91e7effa838246",
+            "size": 4770
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mil",
+            "sha256": "f8273cbf61aac4a43118a9090fc4d580678ea04abda473b4cb9dda2647d25c27",
+            "size": 1010477
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mlmodel",
+            "sha256": "680d8dfb7c7d8f1f852071ac7bdc96e55c696d0b822e70861045efb426b0a27b",
+            "size": 745579
+          },
+          {
+            "path": "TextDecoder.mlmodelc/weights/weight.bin",
+            "sha256": "680f398925225a313c62da0221aa0a58c9f1bffac5c36f20c449a70a7c9b1e55",
+            "size": 1813201716
+          },
+          {
+            "path": "config.json",
+            "sha256": "798b69c08cf93b2b03d94bea6eb3eb25fd4712259712d8a62ed2483fdf818a9e",
+            "size": 1163
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d24f9cca0f448609a71ae044b736023706382f45e9700e0dffb2559d10cf1fea",
+            "size": 2810
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389"
+          }
+        ],
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "name": "speech-swift",
+    "source_commit_url": "https://github.com/soniqo/speech-swift/commit/ff7372453604a0bda01f5bb973ea1521af0e29eb",
+    "source_equivalent_commit": "ff7372453604a0bda01f5bb973ea1521af0e29eb",
+    "source_revision": "53510fb99661942b952184c1a744dcedc0a8fdb3+source-sha256:42e5fdf9f37001a7521b661446503dd58c597aaa26baed0ddd97a664f0ab909e",
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "schema_version": 1,
+  "scores": {
+    "domains": {
+      "airline": {
+        "pass_1": 0.0,
+        "successes": 0,
+        "tasks": 1,
+        "timeouts": 0
+      },
+      "retail": {
+        "pass_1": 0.0,
+        "successes": 0,
+        "tasks": 1,
+        "timeouts": 1
+      },
+      "telecom": {
+        "pass_1": 0.0,
+        "successes": 0,
+        "tasks": 1,
+        "timeouts": 1
+      }
+    },
+    "overall": {
+      "pass_1": 0.0,
+      "successes": 0,
+      "tasks": 3,
+      "timeouts": 2,
+      "unscored_errors": 0
+    }
+  },
+  "standard_leaderboard": false,
+  "status": "complete",
+  "task_results": [
+    {
+      "agent_tools": [
+        "cancel_reservation"
+      ],
+      "artifacts": {
+        "agent.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/agent.wav",
+          "sha256": "57229214e16c422b07b0ce0adb59af14c6b395cb68d805776d2975446cb8e137"
+        },
+        "inference.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/inference.json",
+          "sha256": "5f6af6f45d72b57fdb296bf09d157e80f9185dfd7d4fd58da8f6a13e328ef76a"
+        },
+        "profile.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/profile.json",
+          "sha256": "2fc2a1c749294508c84c256b30332e6b4820d30ec95687085b6756a7850dd3ea"
+        },
+        "provenance.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/provenance.json",
+          "sha256": "c7dc618126d3d39d4a8c1320c1c45688b804cb5e13f19840725b1a16c5de5bc6"
+        },
+        "runtime.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/runtime.json",
+          "sha256": "9062fdc829623be779fe4211f78c0a8b36d79ddac5613fafff98bce1e8c7d802"
+        },
+        "settings.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/settings.json",
+          "sha256": "a132c54efab32878819b345f7cd42bdaf35a506640917cb4c5d29413d9e7705d"
+        },
+        "simulation.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/simulation.json",
+          "sha256": "af1f5028b48a024c271fa9cc884009b109a74a8a92b60ce1896a2e1a3dbdf46a"
+        },
+        "user.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/airline/5feceb66ffc86f38/trial-000/user.wav",
+          "sha256": "42f314ba5cb302c2eede89eae71697095951072f72715142d4f9a872f7808e69"
+        }
+      },
+      "caller_tools": [],
+      "communication_checks": [],
+      "conversation_seconds": 208.05,
+      "conversation_ticks": 4161,
+      "database_check": {
+        "db_match": false,
+        "db_reward": 0.0
+      },
+      "domain": "airline",
+      "interruptions": 0,
+      "recognized_utterances": 9,
+      "reward": 0.0,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ],
+      "reward_breakdown": {
+        "COMMUNICATE": 1.0,
+        "DB": 0.0
+      },
+      "seed": 42,
+      "task_id": "0",
+      "termination": "user_stop",
+      "trial": 0,
+      "wall_seconds": 224.89556108298711
+    },
+    {
+      "agent_tools": [
+        "find_user_id_by_name_zip",
+        "get_order_details"
+      ],
+      "artifacts": {
+        "agent.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/agent.wav",
+          "sha256": "11cb4818c26bbe48fbe43f92114d9130e5354981b9a5bd6ce99dcfd9a270abac"
+        },
+        "inference.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/inference.json",
+          "sha256": "77f2fb0ee32b32de00303423032ae40ace1706826ed90665fb57e87b7e828722"
+        },
+        "profile.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/profile.json",
+          "sha256": "2fc2a1c749294508c84c256b30332e6b4820d30ec95687085b6756a7850dd3ea"
+        },
+        "provenance.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/provenance.json",
+          "sha256": "00d9243743036058f218a1941fb45416b8de94cd0670211f30fffad06223a7a2"
+        },
+        "runtime.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/runtime.json",
+          "sha256": "9062fdc829623be779fe4211f78c0a8b36d79ddac5613fafff98bce1e8c7d802"
+        },
+        "settings.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/settings.json",
+          "sha256": "4d2163646f3ee9bcee2653bea7bc20f812ba6a598f295a290df9afc704eefc9b"
+        },
+        "simulation.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/simulation.json",
+          "sha256": "8b50e786a5030665d9be40300e75f01d0302c0314a5d7d55d6a4f5198f8a2e94"
+        },
+        "user.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/retail/5feceb66ffc86f38/trial-000/user.wav",
+          "sha256": "9663fde181f511f698c8792589d97c0fc4b2d3b2313ee9efb54dd2741408e29a"
+        }
+      },
+      "caller_tools": [],
+      "communication_checks": null,
+      "conversation_seconds": 558.1,
+      "conversation_ticks": 11162,
+      "database_check": null,
+      "domain": "retail",
+      "interruptions": 0,
+      "recognized_utterances": 16,
+      "reward": 0.0,
+      "reward_basis": null,
+      "reward_breakdown": null,
+      "seed": 42,
+      "task_id": "0",
+      "termination": "timeout",
+      "trial": 0,
+      "wall_seconds": 607.790734249982
+    },
+    {
+      "agent_tools": [
+        "get_customer_by_phone",
+        "get_customer_by_phone",
+        "get_details_by_id",
+        "get_details_by_id",
+        "enable_roaming"
+      ],
+      "artifacts": {
+        "agent.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/agent.wav",
+          "sha256": "e085403ad478316cd51a2bb9e34d3e4ab0cdfceb109cc0c4902b1d8ab79b043f"
+        },
+        "inference.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/inference.json",
+          "sha256": "23ac7f185ba60bc29d9c0cbf465ab964c90f1dc9caee7162f0d858911a11f54d"
+        },
+        "profile.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/profile.json",
+          "sha256": "2fc2a1c749294508c84c256b30332e6b4820d30ec95687085b6756a7850dd3ea"
+        },
+        "provenance.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/provenance.json",
+          "sha256": "7a0a75f958a32835498da4c2fc8af1345eb41bdf48e4fa98317d4317ae32e581"
+        },
+        "runtime.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/runtime.json",
+          "sha256": "9062fdc829623be779fe4211f78c0a8b36d79ddac5613fafff98bce1e8c7d802"
+        },
+        "settings.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/settings.json",
+          "sha256": "1b45f88919b3514fbe53a0f288499aa58bbd05fad78fc6d778bf7693fa5fa436"
+        },
+        "simulation.json": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/simulation.json",
+          "sha256": "c307e1321736af63e0b6e395e7d5610ea46289d326f7bc5c0337e6da72b209ec"
+        },
+        "user.wav": {
+          "path": "data/simulations/readme-baseline-600/tasks/telecom/25e67b464860a22e/trial-000/user.wav",
+          "sha256": "425ca43d0e43b2bd6930e0bf9ab7bfcbdbdc849dee53b3788b22dfa376b751e7"
+        }
+      },
+      "caller_tools": [
+        "check_network_status"
+      ],
+      "communication_checks": null,
+      "conversation_seconds": 558.65,
+      "conversation_ticks": 11173,
+      "database_check": null,
+      "domain": "telecom",
+      "interruptions": 0,
+      "recognized_utterances": 16,
+      "reward": 0.0,
+      "reward_basis": null,
+      "reward_breakdown": null,
+      "seed": 42,
+      "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+      "termination": "timeout",
+      "trial": 0,
+      "wall_seconds": 601.1237944589811
+    }
+  ]
+}

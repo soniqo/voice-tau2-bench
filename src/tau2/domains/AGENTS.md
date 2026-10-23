@@ -48,7 +48,7 @@ If the domain does NOT support solo mode, raise `ValueError("Solo mode not suppo
 
 ### Data Files
 
-Domain data lives in `data/tau2/domains/<name>/`. Be careful modifying `db.json`/`db.toml` and `tasks.json` — the framework depends on these at runtime. Always run `tau2 check-data` after changing data files.
+Domain data lives in `data/tau2/domains/<name>/`. Be careful modifying `db.json`/`db.toml` and `tasks.json` — the framework depends on these at runtime. Run `tau-voice verify` to check the frozen voice inputs. Do not modify their pins to accommodate code changes.
 
 ### Tool Arguments
 
@@ -61,14 +61,3 @@ Tests go in `tests/test_domains/test_<domain_name>/`:
 - `test_user_tools_<domain_name>.py` — if user tools exist
 
 Run: `pytest tests/test_domains/test_<domain_name>/`
-
-### The `banking_knowledge` Domain (Extended Pattern)
-
-The `banking_knowledge` domain extends the standard domain pattern significantly:
-
-- **Additional source files**: `retrieval.py` (variant registry and policy builder), `retrieval_mixins.py` (tool mixins for KB_search, grep, shell), `retrieval_toolkits.py` (composed toolkits), `db_query.py` (structured DB query helpers).
-- **Dynamic tools and policy**: Which tools the agent gets and which system prompt it sees depend on the `--retrieval-config` flag (e.g., `qwen_embeddings`, `grep_only`, `terminal_use`). This is resolved in `get_environment()` via the `retrieval_variant` parameter.
-- **Dual data sources**: `TransactionalDB` (users, accounts, referrals) + `KnowledgeBase` (document corpus for retrieval).
-- **Extended data directory**: `data/tau2/domains/banking_knowledge/` contains `documents/` (700+ JSON docs), `prompts/` (per-variant policy templates), and `tasks/` (individual task JSON files) in addition to `db.json`.
-- **Retrieval pipeline**: Uses the `src/tau2/knowledge/` module for embeddings, BM25, grep, reranking, and sandboxed shell access. See `src/tau2/knowledge/README.md`.
-- **Solo mode**: Not supported (raises `ValueError`).

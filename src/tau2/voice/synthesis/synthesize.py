@@ -1,33 +1,22 @@
-"""Core voice synthesis (TTS) functions."""
+"""Synthesis through the explicitly bound local runtime."""
 
-from dotenv import load_dotenv
-
-from tau2.data_model.audio import AudioData
-from tau2.data_model.voice import ElevenLabsTTSConfig
-from tau2.utils.retry import tts_retry
-from tau2.voice.utils.elevenlabs_utils import tts_elevenlabs
-
-load_dotenv()
-
-ProviderConfig = ElevenLabsTTSConfig
+from tau2.data_model.audio import PCM_SAMPLE_RATE, AudioData
+from tau2.data_model.voice import ProviderConfig, RuntimeTTSConfig
+from tau2.inference import get_inference_backends
+from tau2.voice.utils.audio_preprocessing import convert_to_mono, resample_audio
 
 
-@tts_retry
 def synthesize_voice(
-    text: str,
-    provider: str,
-    provider_config: ProviderConfig,
+    text: str, provider: str, provider_config: ProviderConfig
 ) -> AudioData:
-    """Synthesize voice from text using the specified configuration."""
-    if provider == "elevenlabs":
-        audio_data = tts_elevenlabs(text=text, config=provider_config)
-    else:
-        raise ValueError(f"Unsupported synthesis provider: {provider}")
-
-    if not audio_data.format.is_pcm16:
-        raise ValueError(
-            f"TTS must output PCM_S16LE, got {audio_data.format.encoding}. "
-            "Configure the provider to use PCM output format."
-        )
-
-    return audio_data
+    if provider != "runtime":
+        raise ValueError("A local runtime cannot call a legacy synthesis provider")
+    backends = get_inference_backends()
+    if backends is None:
+        raise RuntimeError("Runtime synthesis requires injected inference backends")
+    if not isinstance(provider_config, RuntimeTTSConfig):
+        raise TypeError("Runtime synthesis requires RuntimeTTSConfig")
+    audio = backends.synthesis.synthesize(text, provider_config)
+    if not audio.format.is_pcm16:
+        raise ValueError(f"TTS must output PCM_S16LE, got {audio.format.encoding}")
+    return resample_audio(convert_to_mono(audio), PCM_SAMPLE_RATE)

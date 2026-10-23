@@ -1,0 +1,142 @@
+{
+  "benchmark_source_sha256": "fba45ccf959afb4e5a75f82383750e0d27646deec90f17bec9e1b87f95abbd0f",
+  "captured_utc": "2026-10-22T22:07:04.807211+00:00",
+  "checks": {
+    "decoder_context_regression": "passed",
+    "explicit_tokenizer_guard": "passed",
+    "offline_pytest_passed": 394,
+    "real_native_pytest_passed": 7,
+    "resume_in_a_new_process": "passed; three completed trials verified and reused",
+    "ruff_lint_and_format": "passed",
+    "swift_release_build": "passed",
+    "upstream_replays_matched": 2
+  },
+  "domain_smoke_complete": true,
+  "domain_smoke_summary": {
+    "complete": true,
+    "completed_trials": 3,
+    "domains": {
+      "airline": {
+        "pass^k": {
+          "1": 0.0
+        },
+        "tasks": 1
+      },
+      "retail": {
+        "pass^k": {
+          "1": 0.0
+        },
+        "tasks": 1
+      },
+      "telecom": {
+        "pass^k": {
+          "1": 0.0
+        },
+        "tasks": 1
+      }
+    },
+    "overall": {
+      "pass^k": {
+        "1": 0.0
+      },
+      "tasks": 3
+    },
+    "planned_trials": 3,
+    "standard_leaderboard": false
+  },
+  "frozen_inputs": 64,
+  "frozen_tasks": 278,
+  "hardware": "Apple M5 Pro, 48 GB unified memory",
+  "model_assets": {
+    "gemma": {
+      "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+      "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+    },
+    "tokenizer": {
+      "repository": "openai/whisper-large-v3",
+      "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+    },
+    "vad": {
+      "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+      "revision": "523876545a57961474fee9df913e833e130560b8"
+    },
+    "vox": {
+      "repository": "aufklarer/VoxCPM2-MLX-bf16",
+      "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+    },
+    "whisper": {
+      "repository": "argmaxinc/whisperkit-coreml",
+      "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+    }
+  },
+  "native_revision": "53510fb99661942b952184c1a744dcedc0a8fdb3+source-sha256:42e5fdf9f37001a7521b661446503dd58c597aaa26baed0ddd97a664f0ab909e",
+  "native_session_peak_sampled_physical_footprint_bytes": 11402551648,
+  "notes": [
+    "Component checks and task success are reported separately.",
+    "Domain smoke trials use a 180-second deadline; the runner default is 600 seconds.",
+    "No full-frame accuracy estimate has been established.",
+    "Raw trajectories, audio and sampled memory logs remain in the local simulation directory.",
+    "Final domain smoke: 0/3 successes, all reached the 180-second conversation deadline.",
+    "Spoken identifier/number errors and generation latency remain quality limitations.",
+    "An early development run lost pending recognition on interruption; the final domain smoke includes the regression fix."
+  ],
+  "profile": "soniqo-local-v1",
+  "standard_leaderboard": false,
+  "task_runs": [
+    {
+      "agent_tools": [
+        "create_task"
+      ],
+      "artifact_directory": "data/simulations/local-runtime/mock-asr-retained",
+      "benchmark_source_sha256": "6f7f5252004d6c9f704999ed46a67a071ef327b17fea3e316da878570be8732e",
+      "deadline_seconds": 180.0,
+      "domain": "mock",
+      "reward": 0.0,
+      "simulation_sha256": "4b22f50a976d6963a7e7d3be0c47135614c9fe45ec663389c701f89d201a11aa",
+      "task_id": "create_task_1",
+      "termination": "user_stop"
+    },
+    {
+      "agent_tools": [],
+      "artifact_directory": "data/simulations/local-runtime/final-domain-smoke/airline/5feceb66ffc86f38/trial-000",
+      "benchmark_source_sha256": "fba45ccf959afb4e5a75f82383750e0d27646deec90f17bec9e1b87f95abbd0f",
+      "deadline_seconds": 180.0,
+      "domain": "airline",
+      "reward": 0.0,
+      "simulation_sha256": "ad155b8a777539b6bda665bd4979ff548f32174634280ec50047fd315be5ce7d",
+      "task_id": "0",
+      "termination": "timeout"
+    },
+    {
+      "agent_tools": [
+        "find_user_id_by_name_zip"
+      ],
+      "artifact_directory": "data/simulations/local-runtime/final-domain-smoke/retail/5feceb66ffc86f38/trial-000",
+      "benchmark_source_sha256": "fba45ccf959afb4e5a75f82383750e0d27646deec90f17bec9e1b87f95abbd0f",
+      "deadline_seconds": 180.0,
+      "domain": "retail",
+      "reward": 0.0,
+      "simulation_sha256": "c2ebc0de5c4273f0071686cd59b52a4573b86c4e29aec8dbc201bbdd14a71ca5",
+      "task_id": "0",
+      "termination": "timeout"
+    },
+    {
+      "agent_tools": [
+        "get_customer_by_phone"
+      ],
+      "artifact_directory": "data/simulations/local-runtime/final-domain-smoke/telecom/25e67b464860a22e/trial-000",
+      "benchmark_source_sha256": "fba45ccf959afb4e5a75f82383750e0d27646deec90f17bec9e1b87f95abbd0f",
+      "deadline_seconds": 180.0,
+      "domain": "telecom",
+      "reward": 0.0,
+      "simulation_sha256": "b86209694550c581e33dbc0f14a8465c7374f38bdb8f0f1ae3f6d0c4718f6e4f",
+      "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+      "termination": "timeout"
+    }
+  ],
+  "upstream_commit": "05736c27219b769d0be507574dd3135010916644",
+  "voxcpm2_parameter_elements": {
+    "float16": 2290009216,
+    "float32": 93786817
+  }
+}
