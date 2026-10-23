@@ -1,8 +1,10 @@
 """Opt-in checks against a server loaded with the actual pinned local models."""
 
+import audioop
 import hashlib
 import os
 import re
+import time
 import uuid
 from pathlib import Path
 
@@ -10,6 +12,7 @@ import numpy as np
 import pytest
 from jiwer import wer
 
+from tau2.data_model.audio import AudioEncoding, AudioFormat, audio_bytes_to_string
 from tau2.data_model.message import (
     AssistantMessage,
     SystemMessage,
@@ -24,6 +27,7 @@ from tau2.data_model.voice import RuntimeTranscriptionConfig, RuntimeTTSConfig
 from tau2.environment.tool import Tool
 from tau2.evaluator.evaluator_communicate import CommunicateEvaluator
 from tau2.inference import InferenceBackends, use_inference_backends
+from tau2.user.user_simulator_base import FullDuplexUser
 from tau2.voice.runtime_profile import load_profile
 from tau2.voice.speech_swift import SpeechSwiftBackend, SpeechSwiftError, pcm16
 
@@ -212,7 +216,7 @@ def test_real_incremental_speech_matches_buffered_speech(runtime):
 
 
 def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
-    runtime, tmp_path
+    runtime, tmp_path, monkeypatch
 ):
     """Opt-in full conversation plus a negative control for database grading."""
     if os.environ.get("TAU_VOICE_FULL_E2E") != "1":
@@ -222,7 +226,69 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
     from tau2.data_model.simulation import SimulationRun
     from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
     from tau2.orchestrator.modes import CommunicationMode
+    from tau2.voice import local_run
     from tau2.voice.local_run import run_local_task, task_context
+
+    # A fixed spoken request makes this a pipeline check, independent of a caller LLM's omissions.
+    caller_text = (
+        "Please create a task called Important Meeting for user underscore one."
+    )
+    caller_events_start = len(runtime.events)
+    caller_audio = runtime.synthesize(
+        caller_text,
+        RuntimeTTSConfig(
+            model_id="voxcpm2",
+            voice_id="A clear adult male voice speaking American English.",
+            seed=42,
+        ),
+    )
+    speech = audioop.lin2ulaw(pcm16(caller_audio, 8000).data, 2)
+
+    class SpokenUser(FullDuplexUser):
+        stale_generation_count = 0
+
+        def get_init_state(self, message_history=None):
+            return {"phase": "opener", "offset": 0, "heard": ""}
+
+        def get_next_chunk(self, state, participant_chunk=None, tool_results=None):
+            time.sleep(0.05)
+            if participant_chunk is not None:
+                state["heard"] += participant_chunk.content or ""
+                if (
+                    participant_chunk.contains_speech
+                    and participant_chunk.is_final_chunk
+                ):
+                    if state["phase"] == "opener":
+                        state.update(phase="send", heard="")
+                    elif state["phase"] == "wait":
+                        if any(
+                            word in state["heard"].lower()
+                            for word in ("created", "added", "saved", "done")
+                        ):
+                            return UserMessage(
+                                role="user", content="###STOP###", contains_speech=False
+                            ), state
+                        state.update(phase="send", offset=0, heard="")
+            active = state["phase"] == "send"
+            offset = state["offset"]
+            frame = speech[offset : offset + 400] if active else b""
+            if active:
+                state["offset"] += len(frame)
+                if state["offset"] >= len(speech):
+                    state["phase"] = "wait"
+            return UserMessage(
+                role="user",
+                contains_speech=bool(frame),
+                cost=0,
+                is_audio=True,
+                audio_content=audio_bytes_to_string(frame.ljust(400, b"\xff")),
+                audio_format=AudioFormat(encoding=AudioEncoding.ULAW, sample_rate=8000),
+                is_final_chunk=active and state["phase"] == "wait",
+            ), state
+
+    monkeypatch.setattr(
+        local_run, "VoiceStreamingUserSimulator", lambda **_: SpokenUser()
+    )
 
     profile_path = os.environ.get("TAU_VOICE_PROFILE")
     output = Path(os.environ.get("TAU_VOICE_E2E_OUTPUT", str(tmp_path / "voice-task")))
@@ -236,10 +302,29 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
         complexity="control",
         profile_path=Path(profile_path) if profile_path else None,
     )
-    assert result["reward"] == 1, result
     simulation = SimulationRun.model_validate_json(
         (output / "simulation.json").read_text()
     )
+    simulation.info.update(
+        caller_mode="controlled_spoken_input", caller_text=caller_text
+    )
+    (output / "simulation.json").write_text(simulation.model_dump_json(indent=2) + "\n")
+    (output / "controlled-caller.json").write_text(
+        json.dumps(
+            {
+                "text": caller_text,
+                "mode": "controlled_spoken_input",
+                "caller_llm_used": False,
+                "test_source_sha256": hashlib.sha256(
+                    Path(__file__).read_bytes()
+                ).hexdigest(),
+                "inference": runtime.events[caller_events_start:],
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert result["reward"] == 1, result
     assert simulation.reward_info.db_check.db_match is True
     assert simulation.info["local_metrics"]["asr"]
     assert all(
@@ -259,7 +344,7 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
     assert any(
         row["operation"] == "chat" and row["model"] == expected_model for row in events
     )
-    assert {"chat", "speech", "stream_speech", "transcribe", "vad"} <= {
+    assert {"chat", "stream_speech", "transcribe", "vad"} <= {
         row["operation"] for row in events
     }
     wrong = simulation.model_copy(deep=True)

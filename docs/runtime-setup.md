@@ -73,8 +73,14 @@ The mock task is a functional check and contributes no score to the frozen
 278-task benchmark. For domain evaluation, pass the same `--profile` to
 `tau-voice batch --domain all --num-tasks 1` with the other run settings.
 
-The opt-in full conversation test also changes the recorded tool argument in a
-separate negative control and checks that database grading returns zero:
+The opt-in pipeline test uses a fixed request spoken by VoxCPM2: create
+"Important Meeting" for user_1. The agent receives only the rendered telephony
+audio through the normal orchestrator, ASR, model, tool, and response path.
+The test requires a successful database write, then changes the recorded tool
+argument in a separate negative control and checks that grading returns zero.
+Its artifacts identify the controlled caller and record the exact spoken text.
+This is a functional check; the normal CLI and scored domain runs retain the
+generative E4B caller.
 
 ```bash
 SPEECH_SWIFT_INFERENCE_URL=http://127.0.0.1:8787 \
