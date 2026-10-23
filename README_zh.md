@@ -2,11 +2,22 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-独立的 **τ-Voice 语音智能体基准**，通过 [speech-swift](https://github.com/soniqo/speech-swift) 在本地推理。在 Apple Silicon 上评估口语客服对话、工具使用和任务完成情况。
+[Soniqo](https://github.com/soniqo) 维护此 τ-Voice 分支，用于衡量 Apple Silicon 上的**本地语音智能体性能**。智能体、模拟来电者、语音模型和语义评分模型均通过 [speech-swift](https://github.com/soniqo/speech-swift) 运行。
+
+## 文档
+
+- [环境设置与模型文件](docs/runtime-setup.md)
+- [评估与评分](docs/evaluation.md)
+- [实现方式](docs/local-voice-extraction.md)
+- [模型运行记录](docs/results/gemma4-e4b-local-600.json)
+
+## 衡量什么
+
+我们衡量语音智能体能否通过对话和工具使用完成客服任务。任务奖励检查所需的最终数据库状态和沟通内容。
 
 固定的英语 `voice-v1` 包含 **278 个任务**：航空 **50**、零售 **114**、电信 **114**。任务、策略、工具、数据库和奖励规则保留上游指纹。
 
-## 本地模型栈
+## 已测试模型与结果
 
 | 职责 | 模型 | 精度 |
 | --- | --- | --- |
@@ -14,10 +25,6 @@
 | 双方语音生成 | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | 语音识别 | Whisper Large-v3 (full, CoreML) | FP16 |
 | 语音检测 | Silero VAD (CoreML) | Native |
-
-模型在准备阶段下载；推理不使用云服务或 API 密钥。所需 speech-swift 构建和模型准备见[运行时设置](docs/runtime-setup.md)。
-
-## 实测结果
 
 开发样本：每个领域按固定顺序选择首个任务，合计 **3 个任务**，每个 **1 次**，种子 **42**，对话时限 **600 秒**，干净的 `control` 电话音频。硬件：**Apple M5 Pro，48 GB 统一内存**。任务成功率衡量上述完整模型栈。
 
@@ -29,7 +36,7 @@
 
 该小型确定性样本使用本地来电者和评分模型，属于自定义配置，不能代表完整 278 任务得分或上游排行榜结果。超时得零分；推理异常不计分。
 
-## 快速开始
+## 本地运行
 
 需要 Python **3.12/3.13**、Apple Silicon 和 **macOS 15+**。运行任务前启动[本地模型服务](docs/runtime-setup.md#serve)。
 
@@ -50,16 +57,6 @@ uv run --frozen tau-voice batch \
 
 每个任务保存工具/对话轨迹、奖励分项、双方 WAV、耗时、设置及源码和模型指纹。使用 `--resume` 继续同一批次；省略 `--num-tasks` 可评估全部 278 个任务。
 
-## 检查与评估
+检查: `make test` · `make lint` · `make verify`.
 
-```bash
-make test
-make lint
-make verify
-```
-
-参见[评估规则](docs/evaluation.md)、[运行时架构](docs/local-voice-extraction.md)和[模型运行记录](docs/results/gemma4-e4b-local-600.json)。Mock 和组件检查只用于开发，不计入任务得分。
-
-## 来源
-
-源自 [Sierra Research τ²-Bench](https://github.com/sierra-research/tau2-bench)，提交 `05736c27219b769d0be507574dd3135010916644`。保留原代码和数据的 [MIT 许可](LICENSE)。使用时请引用 [τ-Voice 论文](https://arxiv.org/abs/2603.13686)。
+来源: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice 论文](https://arxiv.org/abs/2603.13686) · [MIT 许可](LICENSE).

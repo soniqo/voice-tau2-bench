@@ -2,11 +2,22 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[speech-swift](https://github.com/soniqo/speech-swift) ile yerel çıkarım yapan bağımsız **τ-Voice sesli ajan karşılaştırması**. Apple Silicon üzerinde müşteri görüşmelerini, araç kullanımını ve görev tamamlamayı değerlendirir.
+[Soniqo](https://github.com/soniqo), Apple Silicon üzerinde **yerel sesli ajan performansını** ölçmek için bu τ-Voice çatallanmasını sürdürüyor. Ajanı, simüle edilen arayanı, konuşma modellerini ve anlamsal değerlendiriciyi [speech-swift](https://github.com/soniqo/speech-swift) ile çalıştırıyoruz.
+
+## Belgeler
+
+- [Kurulum ve model dosyaları](docs/runtime-setup.md)
+- [Değerlendirme ve puanlama](docs/evaluation.md)
+- [Uygulama](docs/local-voice-extraction.md)
+- [Model çalıştırma kaydı](docs/results/gemma4-e4b-local-600.json)
+
+## Neyi ölçüyoruz
+
+Sesli bir ajanın konuşma ve araç kullanımı yoluyla müşteri hizmetleri görevlerini tamamlayıp tamamlamadığını ölçüyoruz. Görev ödülleri, gerekli son veritabanı durumunu ve iletilen bilgileri denetler.
 
 Sabit İngilizce `voice-v1` çerçevesi **278 görev** içerir: havayolu **50**, perakende **114**, telekom **114**. Görevler, politikalar, araçlar, veritabanları ve ödül ölçütleri özgün içerik bağlarını korur.
 
-## Yerel modeller
+## Test edilen modeller ve sonuçlar
 
 | Rol | Model | Hassasiyet |
 | --- | --- | --- |
@@ -14,10 +25,6 @@ Sabit İngilizce `voice-v1` çerçevesi **278 görev** içerir: havayolu **50**,
 | Ajan ve arayan konuşması | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | Konuşma tanıma | Whisper Large-v3 (full, CoreML) | FP16 |
 | Konuşma algılama | Silero VAD (CoreML) | Native |
-
-Modeller hazırlıkta indirilir; çıkarım bulut sağlayıcısı veya API anahtarı kullanmaz. Uygun speech-swift derlemesi ve model dosyaları için [çalışma ortamı kurulumuna](docs/runtime-setup.md) bakın.
-
-## Ölçülen sonuçlar
 
 Geliştirme örneklemi: her alanda sabit sıradaki ilk görev, toplam **3 görev**, **1 deneme**, tohum **42**, **600 saniye görüşme sınırı**, temiz `control` telefon sesi. Donanım: **Apple M5 Pro, 48 GB birleşik bellek**. Başarı, yukarıdaki tüm model yığınını ölçer.
 
@@ -29,7 +36,7 @@ Geliştirme örneklemi: her alanda sabit sıradaki ilk görev, toplam **3 görev
 
 Bu küçük ve belirlenimci örneklem yerel arayan ve hakem kullanır. Tüm 278 görevin puanını veya özgün sıralamayı temsil etmez. Zaman aşımı sıfır puandır; çıkarım istisnaları puanlanmaz.
 
-## Hızlı başlangıç
+## Yerel çalıştırma
 
 Python **3.12/3.13**, Apple Silicon ve **macOS 15+** kullanın. Görevlerden önce [yerel model servisini](docs/runtime-setup.md#serve) başlatın.
 
@@ -50,16 +57,6 @@ uv run --frozen tau-voice batch \
 
 Her görev araç/konuşma akışını, ödül bileşenlerini, iki WAV dosyasını, süreleri, ayarları ve kaynak/model parmak izlerini saklar. Aynı grubu `--resume` ile sürdürün. Tüm 278 görev için `--num-tasks` seçeneğini kaldırın.
 
-## Kontroller ve değerlendirme
+Kontroller: `make test` · `make lint` · `make verify`.
 
-```bash
-make test
-make lint
-make verify
-```
-
-[Değerlendirme kuralları](docs/evaluation.md), [mimari](docs/local-voice-extraction.md) ve [model çalışma kaydı](docs/results/gemma4-e4b-local-600.json) belgelerine bakın. Mock ve bileşen kontrolleri geliştirme içindir, görev puanına katılmaz.
-
-## Kaynak
-
-[Sierra Research τ²-Bench](https://github.com/sierra-research/tau2-bench), `05736c27219b769d0be507574dd3135010916644` commit’inden türetilmiştir. [MIT lisansı](LICENSE) korunur. Kullanımda [τ-Voice makalesine](https://arxiv.org/abs/2603.13686) atıf yapın.
+Kaynak: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice makalesi](https://arxiv.org/abs/2603.13686) · [MIT lisansı](LICENSE).
