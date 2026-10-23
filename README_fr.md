@@ -2,11 +2,22 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-Benchmark autonome d’**agents vocaux τ-Voice**, avec inférence locale via [speech-swift](https://github.com/soniqo/speech-swift). Évalue conversations de service client, utilisation d’outils et résolution de tâches sur Apple Silicon.
+[Soniqo](https://github.com/soniqo) maintient cette version dérivée de τ-Voice pour mesurer les **performances des agents vocaux locaux** sur Apple Silicon. Nous exécutons l’agent, l’appelant simulé, les modèles vocaux et le juge sémantique avec [speech-swift](https://github.com/soniqo/speech-swift).
+
+## Documentation
+
+- [Configuration et fichiers des modèles](docs/runtime-setup.md)
+- [Évaluation et notation](docs/evaluation.md)
+- [Implémentation](docs/local-voice-extraction.md)
+- [Compte rendu de l’exécution](docs/results/gemma4-e4b-local-600.json)
+
+## Ce que nous mesurons
+
+Nous mesurons si un agent vocal accomplit des tâches de service client par la conversation et l’utilisation d’outils. Les récompenses vérifient l’état final attendu de la base de données et les informations communiquées.
 
 Le cadre anglais figé `voice-v1` contient **278 tâches** : aérien **50**, commerce **114**, télécommunications **114**. Tâches, règles, outils, bases et critères de récompense conservent leurs empreintes d’origine.
 
-## Modèles locaux
+## Modèles testés et résultats
 
 | Rôle | Modèle | Précision |
 | --- | --- | --- |
@@ -14,10 +25,6 @@ Le cadre anglais figé `voice-v1` contient **278 tâches** : aérien **50**, com
 | Voix de l’agent et de l’appelant | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | Reconnaissance vocale | Whisper Large-v3 (full, CoreML) | FP16 |
 | Détection de parole | Silero VAD (CoreML) | Native |
-
-Les modèles sont téléchargés à la préparation ; l’inférence ne nécessite ni fournisseur cloud ni clé API. La [configuration du service](docs/runtime-setup.md) décrit la compilation de speech-swift et les fichiers requis.
-
-## Résultats mesurés
 
 Échantillon de développement : première tâche figée par domaine, **3 tâches** au total, **1 essai**, graine **42**, délai de conversation de **600 secondes**, téléphonie propre `control`. Matériel : **Apple M5 Pro, 48 Go de mémoire unifiée**. La réussite évalue la pile complète ci-dessus.
 
@@ -29,7 +36,7 @@ Les modèles sont téléchargés à la préparation ; l’inférence ne nécessi
 
 Ce petit échantillon déterministe utilise un appelant et un juge locaux. Il ne constitue ni le score des 278 tâches ni un résultat officiel. Un dépassement de délai vaut zéro ; les exceptions d’inférence restent non notées.
 
-## Démarrage rapide
+## Exécution locale
 
 Utilisez Python **3.12/3.13**, Apple Silicon et **macOS 15+**. Lancez le [service local](docs/runtime-setup.md#serve) avant les tâches.
 
@@ -50,16 +57,6 @@ uv run --frozen tau-voice batch \
 
 Chaque tâche conserve trajectoire, outils, récompenses, deux WAV, durées, paramètres et empreintes des sources/modèles. Reprenez le même lot avec `--resume`. Omettez `--num-tasks` pour les 278 tâches.
 
-## Vérification et évaluation
+Vérifications: `make test` · `make lint` · `make verify`.
 
-```bash
-make test
-make lint
-make verify
-```
-
-Voir les [règles d’évaluation](docs/evaluation.md), l’[architecture](docs/local-voice-extraction.md) et le [relevé du modèle](docs/results/gemma4-e4b-local-600.json). Les cas mock et contrôles de composants sont des vérifications de développement, exclues du score.
-
-## Attribution
-
-Dérivé de [τ²-Bench de Sierra Research](https://github.com/sierra-research/tau2-bench), commit `05736c27219b769d0be507574dd3135010916644`. La [licence MIT](LICENSE) est conservée. Citez l’[article τ-Voice](https://arxiv.org/abs/2603.13686) lors de l’utilisation.
+Source: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [Article τ-Voice](https://arxiv.org/abs/2603.13686) · [Licence MIT](LICENSE).

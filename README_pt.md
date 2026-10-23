@@ -2,11 +2,22 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-Benchmark independente de **agentes de voz τ-Voice**, com inferência local via [speech-swift](https://github.com/soniqo/speech-swift). Avalia conversas de atendimento, uso de ferramentas e conclusão de tarefas no Apple Silicon.
+A [Soniqo](https://github.com/soniqo) mantém este fork do τ-Voice para medir o **desempenho de agentes de voz locais** no Apple Silicon. Executamos o agente, o interlocutor simulado, os modelos de fala e o avaliador semântico com [speech-swift](https://github.com/soniqo/speech-swift).
+
+## Documentação
+
+- [Configuração e arquivos dos modelos](docs/runtime-setup.md)
+- [Avaliação e pontuação](docs/evaluation.md)
+- [Implementação](docs/local-voice-extraction.md)
+- [Registro da execução](docs/results/gemma4-e4b-local-600.json)
+
+## O que medimos
+
+Medimos se um agente de voz conclui tarefas de atendimento ao cliente por meio de conversa e uso de ferramentas. As recompensas verificam o estado final exigido da base de dados e as informações comunicadas.
 
 O conjunto inglês fixo `voice-v1` contém **278 tarefas**: aéreo **50**, varejo **114**, telecomunicações **114**. Tarefas, políticas, ferramentas, bancos de dados e recompensas mantêm suas referências originais.
 
-## Modelos locais
+## Modelos testados e resultados
 
 | Função | Modelo | Precisão |
 | --- | --- | --- |
@@ -14,10 +25,6 @@ O conjunto inglês fixo `voice-v1` contém **278 tarefas**: aéreo **50**, varej
 | Vozes do agente e do chamador | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | Reconhecimento de voz | Whisper Large-v3 (full, CoreML) | FP16 |
 | Detecção de fala | Silero VAD (CoreML) | Native |
-
-Os modelos são baixados na preparação; a inferência não usa nuvem nem chaves API. A [configuração do serviço](docs/runtime-setup.md) explica a compilação de speech-swift e os arquivos necessários.
-
-## Resultados medidos
 
 Amostra de desenvolvimento: primeira tarefa fixa por domínio, **3 tarefas** no total, **1 tentativa**, semente **42**, prazo de conversa de **600 segundos**, telefonia limpa `control`. Hardware: **Apple M5 Pro, 48 GB de memória unificada**. O sucesso avalia toda a pilha acima.
 
@@ -29,7 +36,7 @@ Amostra de desenvolvimento: primeira tarefa fixa por domínio, **3 tarefas** no 
 
 Esta amostra pequena e determinista usa chamador e juiz locais. Não representa a pontuação das 278 tarefas nem uma classificação oficial. Timeout vale zero; exceções de inferência ficam sem pontuação.
 
-## Início rápido
+## Execução local
 
 Use Python **3.12/3.13**, Apple Silicon e **macOS 15+**. Inicie o [serviço local](docs/runtime-setup.md#serve) antes de executar tarefas.
 
@@ -50,16 +57,6 @@ uv run --frozen tau-voice batch \
 
 Cada tarefa salva trajetória, ferramentas, recompensas, dois WAV, tempos, configurações e impressões das fontes/modelos. Continue o mesmo lote com `--resume`. Omita `--num-tasks` para avaliar as 278 tarefas.
 
-## Verificação e avaliação
+Verificações: `make test` · `make lint` · `make verify`.
 
-```bash
-make test
-make lint
-make verify
-```
-
-Veja as [regras de avaliação](docs/evaluation.md), a [arquitetura](docs/local-voice-extraction.md) e o [registro do modelo](docs/results/gemma4-e4b-local-600.json). Casos mock e testes de componentes são verificações de desenvolvimento, fora da pontuação.
-
-## Atribuição
-
-Derivado de [τ²-Bench da Sierra Research](https://github.com/sierra-research/tau2-bench), commit `05736c27219b769d0be507574dd3135010916644`. Mantém a [licença MIT](LICENSE). Cite o [artigo τ-Voice](https://arxiv.org/abs/2603.13686) ao usar o benchmark.
+Fonte: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [Artigo do τ-Voice](https://arxiv.org/abs/2603.13686) · [Licença MIT](LICENSE).
