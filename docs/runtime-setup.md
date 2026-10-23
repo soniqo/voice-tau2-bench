@@ -2,7 +2,7 @@
 
 `voice-tau2-bench` uses Python 3.12/3.13 for tasks, tools, simulation, and grading. Model inference runs through a matching source build of [speech-swift](https://github.com/soniqo/speech-swift) on Apple Silicon with macOS 15 or later. The tested machine is an Apple M5 Pro with 48 GB unified memory.
 
-The runtime needs the native inference service with Gemma tool/result history, VoxCPM2 streaming and FP16 main weights, full Whisper Large-v3, stateful Silero VAD, and cancellation. These extensions are currently prepared on `feat/local-voice-runtime`; a release without `--inference-manifest` cannot serve this profile.
+The runtime needs the native inference service with Gemma tool/result history, VoxCPM2 streaming and FP16 main weights, full Whisper Large-v3, stateful Silero VAD, and cancellation. These extensions are available on `feat/local-voice-runtime` pending release; the matching build exposes `--inference-manifest`. For reproducing the published baseline, use the source commits recorded in its [JSON report](results/gemma4-e4b-local-600.json).
 
 ## Build and stage
 

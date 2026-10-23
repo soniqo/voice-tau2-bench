@@ -4,6 +4,8 @@
     "frame_tasks": 278,
     "frozen_inputs": 64,
     "git_head": "05736c27219b769d0be507574dd3135010916644",
+    "source_commit_url": "https://github.com/soniqo/voice-tau2-bench/commit/6bb29a226064350d2a6c12acfa6837c08ebb795c",
+    "source_equivalent_commit": "6bb29a226064350d2a6c12acfa6837c08ebb795c",
     "uncommitted_changes_included_in_hash": true,
     "upstream": {
       "commit": "05736c27219b769d0be507574dd3135010916644",
@@ -370,6 +372,8 @@
       }
     },
     "name": "speech-swift",
+    "source_commit_url": "https://github.com/soniqo/speech-swift/commit/ff7372453604a0bda01f5bb973ea1521af0e29eb",
+    "source_equivalent_commit": "ff7372453604a0bda01f5bb973ea1521af0e29eb",
     "source_revision": "53510fb99661942b952184c1a744dcedc0a8fdb3+source-sha256:42e5fdf9f37001a7521b661446503dd58c597aaa26baed0ddd97a664f0ab909e",
     "voxcpm2_parameter_elements": {
       "float16": 2290009216,
