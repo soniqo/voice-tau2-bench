@@ -2,7 +2,7 @@
 
 `voice-tau2-bench` uses Python 3.12/3.13 for tasks, tools, simulation, and grading. Model inference runs through a matching source build of [speech-swift](https://github.com/soniqo/speech-swift) on Apple Silicon with macOS 15 or later. The tested machine is an Apple M5 Pro with 48 GB unified memory.
 
-The runtime needs the native inference service with Gemma tool/result history, VoxCPM2 streaming and FP16 main weights, full Whisper Large-v3, stateful Silero VAD, and cancellation. These extensions are available on `feat/local-voice-runtime` pending release; the matching build exposes `--inference-manifest`. For reproducing the published baseline, use the source commits recorded in its [JSON report](results/gemma4-e4b-local-600.json).
+The runtime needs the native inference service with Gemma tool/result history, VoxCPM2 streaming and FP16 main weights, full Whisper Large-v3, stateful Silero VAD, and cancellation. The E4B service is on speech-swift main; the matching build exposes `--inference-manifest`. The optional 12B adapter is in [speech-swift PR #520](https://github.com/soniqo/speech-swift/pull/520). Use the exact source revisions recorded in the [E4B run](results/gemma4-e4b-local-600.json), [12B domain attempt](results/gemma4-12b-local-600.json), or [successful 12B voice check](validation/gemma4-12b-voice-e2e.md) when reproducing them.
 
 ## Build and stage
 
@@ -73,6 +73,12 @@ The mock task is a functional check and contributes no score to the frozen
 278-task benchmark. For domain evaluation, pass the same `--profile` to
 `tau-voice batch --domain all --num-tasks 1` with the other run settings.
 
+The recorded 12B domain attempt completed airline and retail with zero rewards.
+Telecom failed with a native inference error and remains unscored. Its
+[report](results/gemma4-12b-local-600.json) is an incomplete development slice.
+The [controlled voice check and working parameters](validation/gemma4-12b-voice-e2e.md)
+are reported separately.
+
 The opt-in pipeline test uses a fixed request spoken by VoxCPM2: create
 "Important Meeting" for user_1. The agent receives only the rendered telephony
 audio through the normal orchestrator, ASR, model, tool, and response path.
@@ -86,9 +92,12 @@ generative E4B caller.
 SPEECH_SWIFT_INFERENCE_URL=http://127.0.0.1:8787 \
 TAU_VOICE_PROFILE=configs/voice/soniqo-local-gemma12b-v1.json \
 TAU_VOICE_FULL_E2E=1 \
+TAU_VOICE_E2E_OUTPUT=data/simulations/gemma12b-voice-check \
 uv run --frozen pytest -q tests/test_voice_local/test_real_models.py \
   -k full_voice_task
 ```
+
+Choose a fresh output directory for each functional-check attempt.
 
 ### Default E4B run
 

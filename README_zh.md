@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo) 维护此 τ-Voice 分支，用于衡量 Apple Silicon 上的**本地语音智能体性能**。智能体、模拟来电者、语音模型和语义评分模型均通过 [speech-swift](https://github.com/soniqo/speech-swift) 运行。
+[Soniqo](https://github.com/soniqo) 维护此独立的 τ-Voice 基准，用于衡量 Apple Silicon 上的**本地语音智能体性能**。智能体、模拟来电者、语音模型和语义评分模型均通过 [speech-swift](https://github.com/soniqo/speech-swift) 运行。
 
 ## 文档
 
@@ -10,6 +10,7 @@
 - [评估与评分](docs/evaluation.md)
 - [实现方式](docs/local-voice-extraction.md)
 - [模型运行记录](docs/results/gemma4-e4b-local-600.json)
+- [Gemma 4 12B 运行记录与可用参数](docs/validation/gemma4-12b-voice-e2e.md)
 
 ## 衡量什么
 
@@ -21,20 +22,24 @@
 
 | 职责 | 模型 | 精度 |
 | --- | --- | --- |
-| 智能体、来电者、倾听决策、语义评分 | Gemma 4 E4B IT | INT4 |
+| 智能体 | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
+| 来电者、倾听决策、语义评分 | Gemma 4 E4B IT | INT4 |
 | 双方语音生成 | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | 语音识别 | Whisper Large-v3 (full, CoreML) | FP16 |
 | 语音检测 | Silero VAD (CoreML) | Native |
 
 开发样本：每个领域按固定顺序选择首个任务，合计 **3 个任务**，每个 **1 次**，种子 **42**，对话时限 **600 秒**，干净的 `control` 电话音频。硬件：**Apple M5 Pro，48 GB 统一内存**。任务成功率衡量上述完整模型栈。
 
-`soniqo-local-v1` · `2026-10-23`
+`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
 
 | 智能体模型 | 航空 | 零售 | 电信 | 总计 pass^1 |
 | --- | --- | --- | --- | --- |
-| Gemma 4 E4B IT (INT4) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
 
 该小型确定性样本使用本地来电者和评分模型，属于自定义配置，不能代表完整 278 任务得分或上游排行榜结果。超时得零分；推理异常不计分。
+
+12B 样本尚未完成：电信任务出现本地推理错误，未获得分数。受控的 12B 语音检查：正确数据库写入得分 **1.0**，错误写入重放得分 **0.0**。[可用参数](docs/validation/gemma4-12b-voice-e2e.md)。此检查使用固定的来电语句，不计入基准分数。领域测试使用生成式来电者；链接报告记录各次运行的运行时版本。
 
 ## 本地运行
 
