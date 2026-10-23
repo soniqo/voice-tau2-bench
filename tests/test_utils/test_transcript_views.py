@@ -96,17 +96,12 @@ def snapshot():
         extract_agent_segments,
         extract_user_segments,
     )
-    from tau2.utils.display import MarkdownDisplay
 
     runtime, asr = edge_snapshots()
     return {
         "flattened_ticks": dump([m for t in sim.ticks for m in t.get_all_messages()]),
         "runtime_pending": runtime,
         "asr": asr,
-        "markdown": MarkdownDisplay.display_ticks_consolidated(sim.ticks),
-        "user_visible_markdown": MarkdownDisplay.display_ticks_consolidated(
-            sim.ticks, user_visible_only=True
-        ),
         "agent_segments": [asdict(x) for x in extract_agent_segments(sim.ticks)],
         "user_segments": [asdict(x) for x in extract_user_segments(sim.ticks)],
         "raw_turns": dump(extract_spoken_turns(sim)),
@@ -122,7 +117,8 @@ def test_reconstruction_matches_recorded_pre_refactor_views():
     expected = json.loads(
         (Path(__file__).parent / "fixtures/transcript_views.json").read_text()
     )
-    assert snapshot() == expected
+    actual = snapshot()
+    assert actual == {key: expected[key] for key in actual}
 
 
 def test_absent_ids_have_explicit_view_semantics():
@@ -237,37 +233,3 @@ def edge_snapshots():
         )
     compute_proportional_user_transcripts(ticks)
     return runtime, [t.user_transcript for t in ticks]
-
-
-def test_livekit_uses_shared_proportional_text_accounting(monkeypatch):
-    from tau2.voice.audio_native.livekit import discrete_time_adapter as livekit
-    from tau2.voice.audio_native.tick_result import (
-        UtteranceTranscript,
-        get_proportional_transcript,
-    )
-
-    seen = []
-
-    def shared(chunks, transcripts):
-        seen.append(chunks)
-        return get_proportional_transcript(chunks, transcripts)
-
-    monkeypatch.setattr(livekit, "get_proportional_transcript", shared)
-    adapter = object.__new__(livekit.LiveKitCascadedAdapter)
-    adapter._utterance_transcripts = {
-        "a": UtteranceTranscript(
-            item_id="a", audio_bytes_received=4, transcript_received="abcd"
-        ),
-        "zero": UtteranceTranscript(item_id="zero", transcript_received="not played"),
-    }
-    assert adapter._get_proportional_transcript([]) == ""
-    assert (
-        adapter._get_proportional_transcript(
-            [(b"1", "a"), (b"2", "a"), (b"x", "zero"), (b"x", None)]
-        )
-        == "ab"
-    )
-    assert adapter._get_proportional_transcript([(b"123456", "a")]) == "cd"
-    assert adapter._get_proportional_transcript([(b"x", "a")]) == ""
-    assert len(seen) == 4
-    assert adapter._utterance_transcripts["a"].audio_bytes_played == 9

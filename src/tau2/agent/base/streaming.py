@@ -18,6 +18,7 @@ from tau2.data_model.message import (
     TurnTakingAction,
 )
 from tau2.data_model.transcript import LinearizationStrategy, ParticipantTick
+from tau2.inference import get_inference_backends
 from tau2.utils.transcript.linearization import (
     collect_containment_segments,
     expand_env_chunks,
@@ -1013,6 +1014,8 @@ def _run_callback(
     try:
         return callback(state)
     except Exception as e:
+        if get_inference_backends() is not None:
+            raise
         logger.error(f"Error in listener reaction callback: {e}")
         return ListenerReactionDecision(decision=False)
 
@@ -1068,6 +1071,8 @@ def evaluate_listener_reactions(
             try:
                 decisions[name] = future.result()
             except Exception as e:
+                if get_inference_backends() is not None:
+                    raise
                 logger.error(f"Error in {name} callback: {e}")
                 decisions[name] = ListenerReactionDecision(decision=False)
 

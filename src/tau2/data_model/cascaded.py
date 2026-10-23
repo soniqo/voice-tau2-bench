@@ -18,7 +18,7 @@ from tau2.config import (
     DEFAULT_CASCADED_MULTILINGUAL_VOICE_ID,
     DEFAULT_CASCADED_TTS_SAMPLE_RATE,
 )
-from tau2.voice.audio_native.languages import (
+from tau2.data_model.provider_languages import (
     CASCADED_LANGUAGE_CODES,
     ELEVENLABS_V2_5_ONLY_LANGUAGES,
     cascaded_language,

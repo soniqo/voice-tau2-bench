@@ -25,11 +25,10 @@ from tau2.data_model.message import (
 from tau2.data_model.simulation import SimulationRun, TerminationReason
 from tau2.data_model.tasks import Task
 from tau2.environment.environment import Environment
+from tau2.orchestrator.base import DEFAULT_FIRST_AGENT_MESSAGE, BaseOrchestrator
 from tau2.orchestrator.modes import CommunicationMode
-from tau2.orchestrator.orchestrator import DEFAULT_FIRST_AGENT_MESSAGE, BaseOrchestrator
-from tau2.user.user_simulator import UserSimulator
-from tau2.user.user_simulator_base import FullDuplexUser
-from tau2.utils.llm_utils import get_cost
+from tau2.user.user_simulator_base import FullDuplexUser, is_user_stop
+from tau2.utils.usage import get_cost
 from tau2.utils.utils import get_now
 from tau2.voice.pricing import build_session_usage
 from tau2.voice.utils.transcript_utils import compute_proportional_user_transcripts
@@ -434,7 +433,7 @@ class FullDuplexOrchestrator(BaseOrchestrator[StreamingAgentT, StreamingUserT, T
         """
         participant_name = "AGENT" if is_agent else "USER"
 
-        is_stop = self.agent.is_stop if is_agent else UserSimulator.is_stop
+        is_stop = self.agent.is_stop if is_agent else is_user_stop
         termination_reason = (
             TerminationReason.AGENT_STOP if is_agent else TerminationReason.USER_STOP
         )

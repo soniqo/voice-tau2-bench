@@ -1,61 +1,51 @@
-"""
-User module exports.
-"""
+"""Participant exports loaded on demand."""
 
 import warnings
+from importlib import import_module
 
-from tau2.user.user_simulator import DummyUser, UserSimulator
-from tau2.user.user_simulator_base import (
-    FullDuplexUser,
-    FullDuplexVoiceUser,
-    HalfDuplexUser,
-    HalfDuplexVoiceUser,
-    UserState,
-    ValidUserInputMessage,
-)
+_EXPORTS = {
+    "DummyUser": ("tau2.user.user_simulator", "DummyUser"),
+    "UserSimulator": ("tau2.user.user_simulator", "UserSimulator"),
+    "FullDuplexUser": ("tau2.user.user_simulator_base", "FullDuplexUser"),
+    "FullDuplexVoiceUser": ("tau2.user.user_simulator_base", "FullDuplexVoiceUser"),
+    "HalfDuplexUser": ("tau2.user.user_simulator_base", "HalfDuplexUser"),
+    "HalfDuplexVoiceUser": ("tau2.user.user_simulator_base", "HalfDuplexVoiceUser"),
+    "UserState": ("tau2.user.user_simulator_base", "UserState"),
+    "ValidUserInputMessage": ("tau2.user.user_simulator_base", "ValidUserInputMessage"),
+    "VoiceUserSimulator": ("tau2.user.user_simulator_voice", "VoiceUserSimulator"),
+    "VoiceStreamingUserSimulator": (
+        "tau2.user.user_simulator_streaming",
+        "VoiceStreamingUserSimulator",
+    ),
+}
 
-# =============================================================================
-# DEPRECATION ALIASES
-# =============================================================================
-# These aliases maintain backward compatibility with code using old names.
-# They will emit DeprecationWarning when used.
-
-_VOICE_LAZY_IMPORTS = {
-    "VoiceUserSimulator": "tau2.user.user_simulator_voice",
-    "VoiceStreamingUserSimulator": "tau2.user.user_simulator_streaming",
+_ALIASES = {
+    "BaseUser": "HalfDuplexUser",
+    "BaseStreamingUser": "FullDuplexUser",
+    "BaseVoiceUser": "HalfDuplexVoiceUser",
 }
 
 
 def __getattr__(name: str):
-    """Module-level __getattr__ for deprecation warnings and lazy voice imports."""
-    deprecated_aliases = {
-        "BaseUser": ("HalfDuplexUser", HalfDuplexUser),
-        "BaseStreamingUser": ("FullDuplexUser", FullDuplexUser),
-        "BaseVoiceUser": ("HalfDuplexVoiceUser", HalfDuplexVoiceUser),
-    }
-
-    if name in deprecated_aliases:
-        new_name, new_class = deprecated_aliases[name]
+    if name in _ALIASES:
+        replacement = _ALIASES[name]
         warnings.warn(
-            f"{name} is deprecated, use {new_name} instead",
+            f"{name} is deprecated, use {replacement} instead",
             DeprecationWarning,
             stacklevel=2,
         )
-        return new_class
+        return __getattr__(replacement)
+    if name not in _EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_name, attribute = _EXPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attribute) if attribute else module
+    globals()[name] = value
+    return value
 
-    if name in _VOICE_LAZY_IMPORTS:
-        import importlib
 
-        module = importlib.import_module(_VOICE_LAZY_IMPORTS[name])
-        return getattr(module, name)
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-# Direct aliases for static analysis tools (these don't trigger warnings on import)
-BaseUser = HalfDuplexUser
-BaseStreamingUser = FullDuplexUser
-BaseVoiceUser = HalfDuplexVoiceUser
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
 
 
 __all__ = [

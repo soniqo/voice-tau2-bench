@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "upstream_commit": "05736c27219b769d0be507574dd3135010916644",
+  "domain": "mock",
+  "task_id": "update_task_with_user_tools",
+  "tick_duration_seconds": 0.05,
+  "max_steps": 12,
+  "agent": {
+    "1": {"output": {"content": "I can help ", "contains_speech": true, "chunk_id": 0, "is_final_chunk": false}},
+    "2": {"output": {"content": "with that.", "contains_speech": true, "chunk_id": 1, "is_final_chunk": true}},
+    "3": {
+      "incoming": {"content": "Please mark task_1 completed.", "is_audio": true},
+      "output": {"tool_calls": [{"id": "agent-update", "name": "update_task_status", "arguments": {"task_id": "task_1", "status": "completed"}}]}
+    },
+    "4": {"tool_results": ["agent-update"], "output": {"content": "The task is completed.", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}},
+    "5": {"output": {"content": "Anything else?", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}}
+  },
+  "user": {
+    "0": {"output": {"content": "Hello.", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}},
+    "1": {"output": {"tool_calls": [{"id": "user-check", "name": "check_notifications", "arguments": {}, "requestor": "user"}]}},
+    "2": {
+      "tool_results": ["user-check"],
+      "incoming": {"content": "I can help ", "is_audio": true},
+      "output": {"content": "Please mark task_1 completed.", "contains_speech": true, "chunk_id": 0, "is_final_chunk": true}
+    },
+    "5": {"output": {"tool_calls": [{"id": "user-dismiss", "name": "dismiss_notification", "arguments": {"notification_id": "notif_1"}, "requestor": "user"}]}},
+    "6": {"tool_results": ["user-dismiss"], "output": {"content": "Thanks. ###STOP###"}}
+  }
+}

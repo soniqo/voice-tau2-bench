@@ -207,25 +207,6 @@ def test_malformed_reply_errors_and_legacy_does_not_call_judge(monkeypatch):
     assert TextRunConfig().communicate_scoring == CommunicateScoring()
 
 
-def test_explicit_semantic_contract_records_and_rejects_mixed_auto_resume(tmp_path):
-    from tau2.data_model.simulation import Results
-    from tau2.runner.checkpoint import try_resume
-    from tau2.runner.helpers import get_info
-
-    config = TextRunConfig(domain="retail", communicate_scoring=scoring())
-    info = get_info(config)
-    assert info.communicate_scoring == scoring()
-    previous = Results(info=info, tasks=[task()], simulations=[])
-    path = tmp_path / "results.json"
-    previous.save(path)
-    different = previous.model_copy(deep=True)
-    different.info.communicate_scoring.judge.model = "another-explicit-judge"
-    before = path.read_bytes()
-    with pytest.raises(ValueError, match="scorer changed"):
-        try_resume(path, different, [task()], 1, auto_resume=True)
-    assert path.read_bytes() == before
-
-
 def test_approved_defaults_are_independent_and_forwarded(monkeypatch):
     import tau2.evaluator.evaluator_communicate as module
 

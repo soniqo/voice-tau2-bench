@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "profile": "soniqo-local-v1",
+  "language": "en",
+  "roles": {
+    "agent": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": ["tool_calls", "tool_history", "cancel"]
+    },
+    "caller": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": ["tool_calls", "tool_history"]
+    },
+    "listener": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": []
+    },
+    "judge": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": ["json_output"]
+    },
+    "agent_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": ["streaming", "cancel"]
+    },
+    "caller_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": []
+    },
+    "asr": {
+      "model_id": "whisper-large-v3",
+      "engine": "speech-swift/whisper",
+      "precision": "fp16",
+      "features": []
+    },
+    "vad": {
+      "model_id": "silero-vad",
+      "engine": "speech-swift/silero",
+      "features": ["streaming"]
+    }
+  }
+}
