@@ -10,12 +10,14 @@ from tau2.voice.runtime_profile import LocalVoiceProfile, RuntimeCapabilities
 
 
 @pytest.mark.parametrize("domain", ["airline", "retail", "telecom"])
+@pytest.mark.parametrize(
+    "profile_name", ["soniqo-local-v1", "soniqo-local-gemma12b-v1"]
+)
 def test_runner_constructs_domains_with_optional_caller_tools(
-    monkeypatch, tmp_path, domain
+    monkeypatch, tmp_path, domain, profile_name
 ):
-    profile = LocalVoiceProfile.model_validate_json(
-        (local_run.repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
-    )
+    profile_path = local_run.repository_root() / f"configs/voice/{profile_name}.json"
+    profile = LocalVoiceProfile.model_validate_json(profile_path.read_text())
     models = {}
     for requirement in profile.roles.values():
         if requirement.model_id in models:
@@ -60,8 +62,14 @@ def test_runner_constructs_domains_with_optional_caller_tools(
         task_id=None,
         base_url="http://localhost:8080",
         output=tmp_path,
+        profile_path=profile_path,
+        seed=43,
     )
     assert result["domain"] == domain
     assert bool(observed["user"].tools) == (domain == "telecom")
+    assert observed["agent"].model_id == profile.roles["agent"].model_id
+    assert observed["agent"].seed == 43
+    assert profile.roles["caller"].model_id == "gemma4-e4b-it"
+    assert profile.roles["judge"].model_id == "gemma4-e4b-it"
     assert (tmp_path / "simulation.json").exists()
     observed["agent"].stop()

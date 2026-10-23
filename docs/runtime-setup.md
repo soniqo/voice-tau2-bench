@@ -43,6 +43,49 @@ Models load once. Heavy inference requests run sequentially; VAD keeps separate 
 
 ## Run and inspect
 
+### Gemma 4 12B agent
+
+The `soniqo-local-gemma12b-v1` profile selects Gemma 4 12B Unified INT4 for the
+agent and retains E4B INT4 for the caller, listening helpers, and semantic judge.
+VoxCPM2 FP16, full Whisper Large-v3 FP16, and Silero VAD are unchanged.
+
+Stage the additional model with the speech-swift source that includes
+`Gemma4UnifiedChat`:
+
+```bash
+python3 scripts/prepare_speech_swift_models.py \
+  --agent-model gemma4-12b-it \
+  --runtime-source ../speech-swift \
+  --output models-12b.json
+```
+
+Start the guarded service with `--manifest models-12b.json`, then run a complete
+spoken development task with an observable database write:
+
+```bash
+uv run --frozen tau-voice run --domain mock --task-id create_task_1 \
+  --profile configs/voice/soniqo-local-gemma12b-v1.json \
+  --base-url http://127.0.0.1:8787 --seed 42 --max-seconds 600 \
+  --complexity control --output data/simulations/gemma12b-smoke
+```
+
+The mock task is a functional check and contributes no score to the frozen
+278-task benchmark. For domain evaluation, pass the same `--profile` to
+`tau-voice batch --domain all --num-tasks 1` with the other run settings.
+
+The opt-in full conversation test also changes the recorded tool argument in a
+separate negative control and checks that database grading returns zero:
+
+```bash
+SPEECH_SWIFT_INFERENCE_URL=http://127.0.0.1:8787 \
+TAU_VOICE_PROFILE=configs/voice/soniqo-local-gemma12b-v1.json \
+TAU_VOICE_FULL_E2E=1 \
+uv run --frozen pytest -q tests/test_voice_local/test_real_models.py \
+  -k full_voice_task
+```
+
+### Default E4B run
+
 From another terminal in the benchmark checkout:
 
 ```bash

@@ -1,5 +1,6 @@
 """Requested model roles and explicit runtime capability validation."""
 
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -32,7 +33,7 @@ class LocalVoiceProfile(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     schema_version: Literal[1] = 1
-    profile: Literal["soniqo-local-v1"] = "soniqo-local-v1"
+    profile: Literal["soniqo-local-v1", "soniqo-local-gemma12b-v1"] = "soniqo-local-v1"
     language: Literal["en"] = "en"
     roles: dict[
         Literal[
@@ -83,3 +84,11 @@ class LocalVoiceProfile(BaseModel):
                 errors.append(f"{role}: missing features {', '.join(sorted(missing))}")
         if errors:
             raise ValueError("Runtime cannot run this profile:\n" + "\n".join(errors))
+
+
+def load_profile(path: Path | None = None) -> LocalVoiceProfile:
+    from tau2.voice.baseline import repository_root
+
+    return LocalVoiceProfile.model_validate_json(
+        (path or repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
+    )

@@ -39,7 +39,7 @@ from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
 from tau2.user_simulation_voice_presets import sample_voice_config
 from tau2.voice.baseline import repository_root, verify_baseline
 from tau2.voice.provenance import run_provenance, stable_provenance
-from tau2.voice.runtime_profile import LocalVoiceProfile
+from tau2.voice.runtime_profile import load_profile
 from tau2.voice.speech_swift import SpeechSwiftBackend
 
 
@@ -90,6 +90,7 @@ def run_local_task(
     max_seconds: float = 600,
     complexity: str = "control",
     expected_provenance: dict | None = None,
+    profile_path: Path | None = None,
 ) -> dict:
     if max_seconds <= 0:
         raise ValueError("max_seconds must be positive")
@@ -97,9 +98,7 @@ def run_local_task(
         raise ValueError("Task output already contains a completed simulation")
     verify_baseline()
     task, loaded, language = task_context(domain, task_id, seed)
-    profile = LocalVoiceProfile.model_validate_json(
-        (repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
-    )
+    profile = load_profile(profile_path)
     backend = SpeechSwiftBackend(base_url)
     try:
         capabilities = backend.capabilities()
@@ -115,7 +114,8 @@ def run_local_task(
         scoring = CommunicateScoring(
             scorer="semantic",
             judge=SemanticCommunicateSettings(
-                model="gemma4-e4b-it", model_args={"temperature": 0, "max_tokens": 1024}
+                model=profile.roles["judge"].model_id,
+                model_args={"temperature": 0, "max_tokens": 1024},
             ),
         )
         synthesis = SynthesisConfig(
@@ -144,15 +144,21 @@ def run_local_task(
         policy = environment.get_policy()
         if language is not None:
             policy += "\n\n" + agent_language_guidance(language)
-        agent = SpeechSwiftAgent(environment.get_tools(), policy, backend=backend)
+        agent = SpeechSwiftAgent(
+            environment.get_tools(),
+            policy,
+            backend=backend,
+            model_id=profile.roles["agent"].model_id,
+            seed=seed,
+        )
         user = VoiceStreamingUserSimulator(
             tools=environment.get_user_tools(include=task.user_tools)
             if environment.user_tools is not None
             else None,
             instructions=str(task.user_scenario),
-            llm="gemma4-e4b-it",
+            llm=profile.roles["caller"].model_id,
             llm_args={"temperature": 0, "max_tokens": 1024},
-            decision_model="gemma4-e4b-it",
+            decision_model=profile.roles["listener"].model_id,
             decision_model_args={"temperature": 0, "max_tokens": 16},
             voice_settings=VoiceSettings(
                 synthesis_config=synthesis,
@@ -202,6 +208,8 @@ def run_local_task(
             json.dumps(
                 {
                     "domain": domain,
+                    "profile": profile.profile,
+                    "agent_model": profile.roles["agent"].model_id,
                     "task_id": task.id,
                     "seed": seed,
                     "max_seconds": max_seconds,

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from tau2.voice import batch
+from tau2.voice.baseline import repository_root
 from tau2.voice.runtime_profile import LocalVoiceProfile, RuntimeCapabilities
 
 
@@ -43,7 +44,7 @@ def test_pass_k_uses_reliability_and_excludes_incomplete_tasks():
 @pytest.fixture
 def executor(monkeypatch, tmp_path):
     profile = LocalVoiceProfile.model_validate_json(
-        (batch.repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
+        (repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
     )
     models = {}
     for requirement in profile.roles.values():
