@@ -136,7 +136,7 @@ class SpeechSwiftBackend:
         request_id=None,
         **kwargs,
     ):
-        if model != "gemma4-e4b-it":
+        if model not in {"gemma4-e4b-it", "gemma4-12b-it"}:
             raise ValueError(f"Local chat model unavailable: {model}")
         if tool_choice not in {None, "auto", "none", "required"}:
             raise ValueError(f"Unsupported tool choice: {tool_choice}")

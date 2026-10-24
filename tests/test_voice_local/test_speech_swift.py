@@ -30,7 +30,8 @@ def test_transport_rejects_nonlocal_or_ambiguous_endpoints(url):
         SpeechSwiftBackend(url)
 
 
-def test_chat_preserves_native_tool_ids_arguments_and_results():
+@pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
+def test_chat_preserves_native_tool_ids_arguments_and_results(model):
     received = []
 
     def server(request):
@@ -54,7 +55,7 @@ def test_chat_preserves_native_tool_ids_arguments_and_results():
         "http://127.0.0.1:8080", transport=httpx.MockTransport(server)
     )
     reply = backend.generate(
-        "gemma4-e4b-it",
+        model,
         [
             SystemMessage(role="system", content="policy"),
             AssistantMessage(
@@ -67,6 +68,7 @@ def test_chat_preserves_native_tool_ids_arguments_and_results():
         ],
     )
     assert received[0]["messages"][-1]["toolCallID"] == "old"
+    assert received[0]["model"] == model
     assert received[0]["messages"][-2]["toolCalls"][0]["arguments"] == {"id": 3}
     assert reply.content is None
     assert reply.tool_calls[0].arguments == {"text": "a,b}: café", "done": False}

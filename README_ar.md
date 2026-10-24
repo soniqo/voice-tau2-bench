@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-تطوّر [Soniqo](https://github.com/soniqo) هذه النسخة المتفرعة من τ-Voice لقياس **أداء الوكلاء الصوتيين محليًا** على Apple Silicon. نشغّل الوكيل والمتصل المحاكى ونماذج الكلام والمقيّم الدلالي عبر [speech-swift](https://github.com/soniqo/speech-swift).
+تطوّر [Soniqo](https://github.com/soniqo) هذا المعيار المستقل لـ τ-Voice لقياس **أداء الوكلاء الصوتيين محليًا** على Apple Silicon. نشغّل الوكيل والمتصل المحاكى ونماذج الكلام والمقيّم الدلالي عبر [speech-swift](https://github.com/soniqo/speech-swift).
 
 ## التوثيق
 
@@ -10,6 +10,7 @@
 - [التقييم واحتساب الدرجات](docs/evaluation.md)
 - [التنفيذ](docs/local-voice-extraction.md)
 - [سجل تشغيل النماذج](docs/results/gemma4-e4b-local-600.json)
+- [تشغيل Gemma 4 12B والإعدادات التي نجحت](docs/validation/gemma4-12b-voice-e2e.md)
 
 ## ما الذي نقيسه
 
@@ -21,20 +22,24 @@
 
 | الدور | النموذج | الدقة |
 | --- | --- | --- |
-| الوكيل والمتصل وقرارات الاستماع والحكم الدلالي | Gemma 4 E4B IT | INT4 |
+| الوكيل | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
+| المتصل وقرارات الاستماع والحكم الدلالي | Gemma 4 E4B IT | INT4 |
 | توليد صوت الوكيل والمتصل | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | التعرف على الكلام | Whisper Large-v3 (full, CoreML) | FP16 |
 | كشف الكلام | Silero VAD (CoreML) | Native |
 
 عينة تطوير: أول مهمة بالترتيب المثبت لكل مجال، **3 مهام** إجمالاً، **محاولة واحدة**، البذرة **42**، مهلة محادثة **600 ثانية**، وصوت هاتف نظيف `control`. الجهاز: **Apple M5 Pro بذاكرة موحدة 48 GB**. يقيس نجاح المهمة المنظومة الكاملة أعلاه.
 
-`soniqo-local-v1` · `2026-10-23`
+`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
 
 | نموذج الوكيل | الطيران | التجزئة | الاتصالات | إجمالي pass^1 |
 | --- | --- | --- | --- | --- |
-| Gemma 4 E4B IT (INT4) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
 
 تستخدم هذه العينة الصغيرة الحتمية متصلاً وحكماً محليين. لا تثبت نتيجة المهام الـ278 كلها أو ترتيباً رسمياً. انتهاء المهلة يعطي صفراً؛ استثناءات الاستدلال تبقى دون تقييم.
+
+عينة 12B غير مكتملة: حدث خطأ في الاستدلال المحلي لمهمة الاتصالات، ولذلك بقيت بلا درجة. اختبار صوتي مضبوط لنموذج 12B: النتيجة **1.0** للكتابة الصحيحة في قاعدة البيانات و**0.0** عند إعادة تقييم كتابة خاطئة. [الإعدادات التي نجحت](docs/validation/gemma4-12b-voice-e2e.md). إدخال المتصل ثابت ولا يدخل هذا الاختبار ضمن نتيجة المعيار. تستخدم تجارب المجالات المتصل التوليدي، وتسجل التقارير المرتبطة نسخة بيئة التشغيل لكل تجربة.
 
 ## التشغيل محليًا
 

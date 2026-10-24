@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo) mantiene esta bifurcación de τ-Voice para medir el **rendimiento de agentes de voz locales** en Apple Silicon. Ejecutamos el agente, el interlocutor simulado, los modelos de voz y el evaluador semántico con [speech-swift](https://github.com/soniqo/speech-swift).
+[Soniqo](https://github.com/soniqo) mantiene este benchmark independiente de τ-Voice para medir el **rendimiento de agentes de voz locales** en Apple Silicon. Ejecutamos el agente, el interlocutor simulado, los modelos de voz y el evaluador semántico con [speech-swift](https://github.com/soniqo/speech-swift).
 
 ## Documentación
 
@@ -10,6 +10,7 @@
 - [Evaluación y puntuación](docs/evaluation.md)
 - [Implementación](docs/local-voice-extraction.md)
 - [Registro de la ejecución](docs/results/gemma4-e4b-local-600.json)
+- [Ejecución de Gemma 4 12B y parámetros probados](docs/validation/gemma4-12b-voice-e2e.md)
 
 ## Qué medimos
 
@@ -21,20 +22,24 @@ El marco inglés `voice-v1` fija **278 tareas**: aerolíneas **50**, comercio **
 
 | Función | Modelo | Precisión |
 | --- | --- | --- |
-| Agente, interlocutor, escucha y juez semántico | Gemma 4 E4B IT | INT4 |
+| Agente | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
+| Interlocutor, escucha y juez semántico | Gemma 4 E4B IT | INT4 |
 | Voces del agente y del interlocutor | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | Reconocimiento de voz | Whisper Large-v3 (full, CoreML) | FP16 |
 | Detección de voz | Silero VAD (CoreML) | Native |
 
 Muestra de desarrollo: primera tarea congelada de cada dominio, **3 tareas** en total, **1 intento**, semilla **42**, plazo de conversación de **600 segundos**, telefonía limpia `control`. Equipo: **Apple M5 Pro, 48 GB de memoria unificada**. El éxito mide el conjunto de modelos anterior.
 
-`soniqo-local-v1` · `2026-10-23`
+`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
 
 | Modelo del agente | Aerolíneas | Comercio | Telecomunicaciones | pass^1 total |
 | --- | --- | --- | --- | --- |
-| Gemma 4 E4B IT (INT4) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
 
 Esta muestra pequeña y determinista usa interlocutor y juez locales. No establece una puntuación de las 278 tareas ni una clasificación oficial. Los timeouts reciben cero; las excepciones de inferencia quedan sin puntuar.
+
+La muestra de 12B está incompleta: telecomunicaciones tuvo un error de inferencia nativa y no recibió puntuación. Prueba de voz controlada con 12B: **1.0** para la escritura correcta en la base de datos y **0.0** al reevaluar una escritura incorrecta. [Parámetros probados](docs/validation/gemma4-12b-voice-e2e.md). La entrada del interlocutor es fija y esta prueba no aporta puntuación al benchmark. Las ejecuciones por dominio usan el interlocutor generativo; los informes enlazados registran cada revisión del runtime.
 
 ## Ejecución local
 

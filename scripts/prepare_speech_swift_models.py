@@ -16,6 +16,10 @@ PINS = {
         "aufklarer/gemma-4-E4B-it-MLX-4bit",
         "561d32b215dea1fd2747e5367b094581813588b3",
     ),
+    "agent12b": (
+        "mlx-community/gemma-4-12B-it-4bit",
+        "73bcf09092aa277861d5a191b989b666f7f32e8f",
+    ),
     "vox": ("aufklarer/VoxCPM2-MLX-bf16", "6ab24e43c00cb54e129ef93b77edbb8e33190a65"),
     "whisper": (
         "argmaxinc/whisperkit-coreml",
@@ -71,7 +75,12 @@ def stage(kind, root):
             "tokenizer_config.json",
             "special_tokens_map.json",
             "model.safetensors",
-        }:
+        } and not (
+            kind == "agent12b"
+            and (
+                name.endswith(".safetensors") or name == "model.safetensors.index.json"
+            )
+        ):
             continue
         target = folder / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -121,13 +130,22 @@ def main():
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runtime-source", type=Path, required=True)
+    parser.add_argument(
+        "--agent-model",
+        choices=["gemma4-e4b-it", "gemma4-12b-it"],
+        default="gemma4-e4b-it",
+    )
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     config = {"assets": {}}
-    for kind in PINS:
+    for kind in ("gemma", "vox", "whisper", "vad", "tokenizer"):
         folder, provenance = stage(kind, args.cache)
         config[kind + "Directory"] = str(folder)
         config["assets"][kind] = provenance
+    if args.agent_model == "gemma4-12b-it":
+        folder, provenance = stage("agent12b", args.cache)
+        config["agentDirectory"] = str(folder)
+        config["assets"]["agent"] = provenance
     tokenizer = Path(config["tokenizerDirectory"])
     for name in ("tokenizer.json", "tokenizer_config.json"):
         source = tokenizer / name
@@ -152,6 +170,7 @@ def main():
             "--",
             "Sources",
             "Package.swift",
+            "Package.resolved",
         ],
         cwd=source_root,
         text=True,

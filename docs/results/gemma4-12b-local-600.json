@@ -1,0 +1,823 @@
+{
+  "benchmark": {
+    "dependency_lock_sha256": "edf3d02224b678ba3d1e9c59218db72e927ad8317e1c0bd47b78507dbb9f092f",
+    "frame_tasks": 278,
+    "frozen_inputs": 64,
+    "git_head": "a223955bda101da39fb45b3e4628bcccc628e410",
+    "source_commit_url": "https://github.com/soniqo/voice-tau2-bench/commit/a223955bda101da39fb45b3e4628bcccc628e410",
+    "upstream": {
+      "commit": "05736c27219b769d0be507574dd3135010916644",
+      "repository": "https://github.com/sierra-research/tau2-bench"
+    },
+    "working_source_sha256": "875521cfe57da6a8789792d6a1f922c3ee199734ef39f7e0990587117bf19124"
+  },
+  "captured_utc": "2026-10-23T20:57:58.663954+00:00",
+  "diagnostic_replay": {
+    "body": "",
+    "history": "reconstructed diagnostic request, not the original captured payload",
+    "native_error": "Gemma4ToolError.malformed(\"invalid literal\")",
+    "request_sha256": "b042694ecc4d900b20b644a9ab7df8ef95197fd2229ae23e7834ede8564da2c2",
+    "runtime_revision": "ce28f6fa63f8dafcf9f1bb3d7d70665ec9d31f79+source-sha256:f665e2e913b006466f6b06dfed65d46182911ce0bc2ae12c3d85d34659f87e63",
+    "status": 500,
+    "wall_seconds": 15.323313582979608
+  },
+  "hardware": {
+    "chip": "Apple M5 Pro",
+    "macos": "26.6.2",
+    "unified_memory_bytes": 51539607552
+  },
+  "limits": [
+    "Three deterministic tasks are a development slice, not a full-frame accuracy estimate.",
+    "Only airline and retail completed as scored trials. Telecom encountered native HTTP 500 and remains unscored; this slice is incomplete.",
+    "The local caller, voices, helpers and semantic judge differ from the upstream setup.",
+    "Task success measures the complete voice-agent pipeline.",
+    "Runtime revisions differ from the E4B report; these runs do not isolate model size.",
+    "This trial binary predates the additional channel-delimiter cleanup. Its exact source revision is retained above.",
+    "Spoken text alignment is estimated while synthesis is in progress.",
+    "The two scored trials retain WAV files and trajectories locally. Telecom retains failed-run.json and metadata without completed WAV artifacts. This report publishes the saved file hashes."
+  ],
+  "method": {
+    "all_selected_trials_completed": false,
+    "caller_mode": "generative E4B",
+    "complexity": "control",
+    "conversation_deadline_seconds": 600,
+    "scored_trials": 2,
+    "seed": 42,
+    "selection": "first task per domain in frozen order",
+    "task_reward": "preserve each frozen task reward basis; timeouts receive zero; inference exceptions remain unscored",
+    "tasks": 3,
+    "trials_per_task": 1,
+    "unscored_inference_errors": 1
+  },
+  "models": {
+    "agent": {
+      "engine": "speech-swift/gemma4-unified",
+      "features": [
+        "cancel",
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-12b-it",
+      "precision": "int4"
+    },
+    "agent_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [
+        "cancel",
+        "streaming"
+      ],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "asr": {
+      "engine": "speech-swift/whisper",
+      "features": [],
+      "model_id": "whisper-large-v3",
+      "precision": "fp16"
+    },
+    "caller": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "caller_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "judge": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "json_output"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "listener": {
+      "engine": "speech-swift/gemma4",
+      "features": [],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "vad": {
+      "engine": "speech-swift/silero",
+      "features": [
+        "streaming"
+      ],
+      "model_id": "silero-vad",
+      "precision": null
+    }
+  },
+  "performance": {
+    "inference_operations": {
+      "chat": {
+        "requests": 94,
+        "wall_seconds_median": 11.053678541531553,
+        "wall_seconds_total": 1187.6361913740402
+      },
+      "speech": {
+        "requests": 52,
+        "wall_seconds_median": 17.0261307710025,
+        "wall_seconds_total": 986.0339112909278
+      },
+      "stream_speech": {
+        "requests": 21,
+        "wall_seconds_median": 18.73485783301294,
+        "wall_seconds_total": 418.166953707987
+      },
+      "transcribe": {
+        "requests": 27,
+        "wall_seconds_median": 1.2682782500050962,
+        "wall_seconds_total": 35.13607174978824
+      },
+      "vad": {
+        "requests": 31778,
+        "wall_seconds_median": 0.0016675209917593747,
+        "wall_seconds_total": 74.49317202536622
+      }
+    },
+    "memory_scope": "shared native service session including component checks, these trials, and a diagnostic chat replay",
+    "sampled_native_session_peak_physical_footprint_bytes": 17905841088
+  },
+  "profile": "soniqo-local-gemma12b-v1",
+  "repository": "https://github.com/soniqo/voice-tau2-bench",
+  "reproduce_command": "uv run --frozen tau-voice batch --domain all --num-tasks 1 --trials 1 --seed 42 --max-seconds 600 --complexity control --profile configs/voice/soniqo-local-gemma12b-v1.json --base-url http://127.0.0.1:8787 --output data/simulations/gemma12b-domain-slice",
+  "run_started_utc": "2026-10-23T20:14:09.949409+00:00",
+  "runtime": {
+    "binary_sha256": "dfc40c0ea123c1b8eb2feca1aa203cc3f88899abafd838af34ed13bea24c9887",
+    "model_assets": {
+      "agent": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "fbc1c1cb48ed86ec98482b2d41f5a03d3991aba74b7c29a93d430761e6518a38",
+            "size": 5415
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "a8349d9bd64cc5841297fcb5002f0fdc4749c473c8f1b10ea337f9ce4ee7014e",
+            "size": 260
+          },
+          {
+            "path": "model-00001-of-00002.safetensors",
+            "sha256": "0d58feed0c98a69c07317b4481aeae5ab2785f12a496ea96ab24c4842808de78",
+            "size": 5351756584
+          },
+          {
+            "path": "model-00002-of-00002.safetensors",
+            "sha256": "5b00a1bcb596ce6e827b4cdea6ecf2a0f35bb01306eb87c1ea4b3bcde36c7755",
+            "size": 1389282927
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sha256": "9ac99e7a6cf3e4d40eb8df01644fe9c04036ace94f3389df35db9d9449758516",
+            "size": 135329
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "fc1384a911d2c9860ac07bc3ceafff20bff26695991744b7dbe5e1e4522bfa57",
+            "size": 2719
+          }
+        ],
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "3888ffa00a226c6fb8f20603fed45d466afde548565dfe6c936acd043f460ae1",
+            "size": 4929
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+            "size": 208
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "e105100225815b521c6405c57ea23974530b868ddfea1e3ea9ec7ce1cf9fae38",
+            "size": 4198925877
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "8155d42e19a25623e76fc0460ce24ddfd34a7c85b496456684249c68e5f93fc5",
+            "size": 2773
+          }
+        ],
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "files": [
+          {
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+            "size": 2480617
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389",
+            "size": 282843
+          }
+        ],
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "459e764d58cdc13f3db6878adfdf8a29b5fd467ad1f4ef2161137cc115339c81",
+            "size": 888
+          },
+          {
+            "path": "silero_vad.mlmodelc/analytics/coremldata.bin",
+            "sha256": "b777c3751d72b7430eac7f8544769a3d918faf77c15db184fec30e44c56007a3",
+            "size": 243
+          },
+          {
+            "path": "silero_vad.mlmodelc/coremldata.bin",
+            "sha256": "f6fcd92c3132c9c718e5f54e0e770a8c8075beaa50a5b212a6287273b4ddae67",
+            "size": 399
+          },
+          {
+            "path": "silero_vad.mlmodelc/metadata.json",
+            "sha256": "1b953eb3818e7092deedd96e976c05354f77beb2ddc2976fe416af17e47f62d2",
+            "size": 3005
+          },
+          {
+            "path": "silero_vad.mlmodelc/model.mil",
+            "sha256": "b0a1384c4a664697989d9eb9cfb166b4b85f151206aeefd1bfa391ef9e5ad08f",
+            "size": 18203
+          },
+          {
+            "path": "silero_vad.mlmodelc/weights/weight.bin",
+            "sha256": "83210545de90c65195e8d6db1b349b7e5c31f989f48d0a908a8dc0e2f586e5f9",
+            "size": 619136
+          }
+        ],
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "a03ae7c0d11253b6a4ff66972d9d62e6a38c8aba91574cfdfbcce47b544d48fa",
+            "size": 5289
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "cb01f32246be7575d26a58a534b2fa130e2eaff045cc7d43503b550f0f9d5913",
+            "size": 4955255888
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sha256": "068594063e37662c02b21acf42ebb334ef6a74fb810e68a2368f88f08351de76",
+            "size": 1632
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "f8984687e4a92a3503d521396d454b7d68e9fdaab2a0288eb3536c7c1aa4bc20",
+            "size": 3676772
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "e78a3ebb48a0b9437efd1823b6b726c823da89e49dd8bcc90c02419d9baa772b",
+            "size": 5059
+          }
+        ],
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "files": [
+          {
+            "path": "AudioEncoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "195e35e9fbaa218cd59eca69988a2165245e5bfccc4a5d9776847e8955d1625a",
+            "size": 243
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/coremldata.bin",
+            "sha256": "273d6cd004f95763e9d03e5d36622f11038819a81b9eafed64b1d95444e04f62",
+            "size": 348
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/metadata.json",
+            "sha256": "db0d80a1046e03e211928cd2918d5e5924947f4ecbcee5232b125f0f59757fbc",
+            "size": 1826
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mil",
+            "sha256": "3e7737df445ef8fc13238970e3e518c0c6455bcadb6371df2ede1f22dcb8a8e0",
+            "size": 581035
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mlmodel",
+            "sha256": "bf0987c0d8c3fe180877b12ba5b4ac1d890e011f2103926e53186089feced575",
+            "size": 408667
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/weights/weight.bin",
+            "sha256": "eb07bab32dcd62ce653b5b288bd6c27bdc5a538be309f242e33ed05e1cb53457",
+            "size": 1273974400
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+            "sha256": "091a361134891f94e613562771beea0d93a9aefbc6984ba86c60f856e07a508f",
+            "size": 243
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/coremldata.bin",
+            "sha256": "f3c5778c86d6fbc6a9817a56dbcac05a946a4d95c77f6db8355572f3be9e9a68",
+            "size": 329
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/metadata.json",
+            "sha256": "1a94f4dfaec25549cbb386fe59b68c67a7a5af4a1c672a5998e5a84b9111135b",
+            "size": 1850
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/model.mil",
+            "sha256": "17977ed2332430c6cc4c1da2516f2cd4deb662d65ae38d72725ab157f32d4949",
+            "size": 10187
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/weights/weight.bin",
+            "sha256": "97a66b915cd3fc97dcba6806d92381e1a56024b8f68c1a1cd370d4c92505fe87",
+            "size": 373376
+          },
+          {
+            "path": "TextDecoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "7c151c6259c279aa7922d60e82c7851bbad1df10018b1cebc566aa6c2aee5e0f",
+            "size": 243
+          },
+          {
+            "path": "TextDecoder.mlmodelc/coremldata.bin",
+            "sha256": "f41a7939b47f7cf127aa69dfd8c552a141dc773b936bf8621aeffcd201fb9e30",
+            "size": 637
+          },
+          {
+            "path": "TextDecoder.mlmodelc/metadata.json",
+            "sha256": "de900a968f7640e9775c28268e348a0bc6559a4a92defae07d91e7effa838246",
+            "size": 4770
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mil",
+            "sha256": "f8273cbf61aac4a43118a9090fc4d580678ea04abda473b4cb9dda2647d25c27",
+            "size": 1010477
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mlmodel",
+            "sha256": "680d8dfb7c7d8f1f852071ac7bdc96e55c696d0b822e70861045efb426b0a27b",
+            "size": 745579
+          },
+          {
+            "path": "TextDecoder.mlmodelc/weights/weight.bin",
+            "sha256": "680f398925225a313c62da0221aa0a58c9f1bffac5c36f20c449a70a7c9b1e55",
+            "size": 1813201716
+          },
+          {
+            "path": "config.json",
+            "sha256": "798b69c08cf93b2b03d94bea6eb3eb25fd4712259712d8a62ed2483fdf818a9e",
+            "size": 1163
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d24f9cca0f448609a71ae044b736023706382f45e9700e0dffb2559d10cf1fea",
+            "size": 2810
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer.json",
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca"
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer_config.json",
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389"
+          }
+        ],
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "revision": "8991a89de0012d628721117867817f0c01558154+source-sha256:2d3d88127e7e8463434c3e10bb939257413ece5effada7d68197e2db77a79599",
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "schema_version": 1,
+  "standard_leaderboard": false,
+  "summary": {
+    "complete": false,
+    "completed_trials": 2,
+    "domains": {
+      "airline": {
+        "pass^k": {
+          "1": 0.0
+        },
+        "tasks": 1
+      },
+      "retail": {
+        "pass^k": {
+          "1": 0.0
+        },
+        "tasks": 1
+      },
+      "telecom": {
+        "pass^k": {
+          "1": null
+        },
+        "tasks": 0
+      }
+    },
+    "overall": {
+      "pass^k": {
+        "1": 0.0
+      },
+      "tasks": 2
+    },
+    "planned_trials": 3,
+    "standard_leaderboard": false
+  },
+  "tasks": [
+    {
+      "agent_tool_calls": [
+        {
+          "arguments": {
+            "reservation_id": "EHGLP3"
+          },
+          "id": "137CB1DD-0A15-4EB1-8DB3-104478815FF4",
+          "name": "get_reservation_details",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "user_id": "emma_kim_9957"
+          },
+          "id": "135304E8-9C81-4C46-B76D-5836D28A4FCC",
+          "name": "get_user_details",
+          "requestor": "assistant"
+        }
+      ],
+      "agent_tool_errors": [],
+      "artifacts": {
+        "agent.wav": {
+          "path": "airline/5feceb66ffc86f38/trial-000/agent.wav",
+          "sha256": "83b042dcc4afbda16477db8f0b1de43139da5638ec4636dfac007472f16df36f"
+        },
+        "inference.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/inference.json",
+          "sha256": "d493e41e102d7a0fe6d1a1e0171b70c3abe9f6ff6b23f2e55eca3818db15690d"
+        },
+        "profile.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/profile.json",
+          "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+        },
+        "provenance.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/provenance.json",
+          "sha256": "fdd1e1df9a417803833c4f4ebfe50562bfe48e8a031a51d36b50d6fb95de7237"
+        },
+        "runtime.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/runtime.json",
+          "sha256": "f2e8f4fdc3ce968ff0c14fba72b15636faaa800de61689019e5ec0554c4524ce"
+        },
+        "settings.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/settings.json",
+          "sha256": "ae7bd6b09395db2d83e6c13cb9f00b9b65abadf7450cb624f6ff5f0bb6112456"
+        },
+        "simulation.json": {
+          "path": "airline/5feceb66ffc86f38/trial-000/simulation.json",
+          "sha256": "479619f739d858c2809acac7815bf45f7c3eeb6bafd6185c77962e9d3a3a1688"
+        },
+        "user.wav": {
+          "path": "airline/5feceb66ffc86f38/trial-000/user.wav",
+          "sha256": "4b69f682d2d8e12e719c1d2ac542c62e6b1743bf910f8f8ce73a396fc4084fd6"
+        }
+      },
+      "caller_tool_calls": [],
+      "communication_checks": null,
+      "conversation_seconds": 553.0500000000001,
+      "conversation_ticks": 11061,
+      "database_check": null,
+      "domain": "airline",
+      "recognized_utterances": 14,
+      "reward": 0.0,
+      "reward_basis": null,
+      "reward_breakdown": null,
+      "reward_info": {
+        "note": "Simulation terminated prematurely. Termination reason: timeout"
+      },
+      "scored": true,
+      "seed": 42,
+      "task_id": "0",
+      "termination": "timeout",
+      "trace_note": "The agent looked up the reservation and user, then refused the ineligible cancellation. No cancellation write occurred. The caller continued asking about exceptions and refunds until the conversation deadline. A channel-closing marker appeared in one returned reply; the subsequent cleanup is recorded separately.",
+      "trial": 0,
+      "wall_seconds": 612.088040291972
+    },
+    {
+      "agent_tool_calls": [
+        {
+          "arguments": {
+            "first_name": "Yusuf",
+            "last_name": "Rossi",
+            "zip": "1CN122"
+          },
+          "id": "A0E68C6A-6F74-4AB9-8EF5-360162F40785",
+          "name": "find_user_id_by_name_zip",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "first_name": "Yusuf",
+            "last_name": "Rossi",
+            "zip": "19122"
+          },
+          "id": "8483526F-962E-42E5-90D7-0CDB7B42EB20",
+          "name": "find_user_id_by_name_zip",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "order_id": "W2378156"
+          },
+          "id": "14754776-1C06-4E1A-B080-1FC371CF22D4",
+          "name": "get_order_details",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "order_id": "W2378156"
+          },
+          "id": "FDB0CA40-410B-4C0B-A739-722B16A89781",
+          "name": "get_order_details",
+          "requestor": "assistant"
+        }
+      ],
+      "agent_tool_errors": [
+        {
+          "content": "Error: User not found",
+          "error": true,
+          "execution_status": "executed",
+          "id": "A0E68C6A-6F74-4AB9-8EF5-360162F40785",
+          "requestor": "assistant",
+          "role": "tool",
+          "timestamp": "2026-10-23T22:26:07.068018",
+          "turn_idx": null
+        },
+        {
+          "content": "Error: Order not found",
+          "error": true,
+          "execution_status": "executed",
+          "id": "14754776-1C06-4E1A-B080-1FC371CF22D4",
+          "requestor": "assistant",
+          "role": "tool",
+          "timestamp": "2026-10-23T22:29:28.849642",
+          "turn_idx": null
+        },
+        {
+          "content": "Error: Order not found",
+          "error": true,
+          "execution_status": "executed",
+          "id": "FDB0CA40-410B-4C0B-A739-722B16A89781",
+          "requestor": "assistant",
+          "role": "tool",
+          "timestamp": "2026-10-23T22:33:53.790277",
+          "turn_idx": null
+        }
+      ],
+      "artifacts": {
+        "agent.wav": {
+          "path": "retail/5feceb66ffc86f38/trial-000/agent.wav",
+          "sha256": "4603785a2ee7ce41eeb4d9c119ac615a4246de0bd7d63caa7c1e58108ae02a39"
+        },
+        "inference.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/inference.json",
+          "sha256": "3b3848235fe206b3bcbad2ef91d56bfc3d8861aa1b66fd8588955c0d297ffa26"
+        },
+        "profile.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/profile.json",
+          "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+        },
+        "provenance.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/provenance.json",
+          "sha256": "6080436b7b80c4001b74389a005acb82ca922857f3e7522bc01b783e96fdd780"
+        },
+        "runtime.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/runtime.json",
+          "sha256": "f2e8f4fdc3ce968ff0c14fba72b15636faaa800de61689019e5ec0554c4524ce"
+        },
+        "settings.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/settings.json",
+          "sha256": "cfb05502f14afbce33310a517a5369286193e3755ed1390504541c413de5aefa"
+        },
+        "simulation.json": {
+          "path": "retail/5feceb66ffc86f38/trial-000/simulation.json",
+          "sha256": "bc295cfb648039adbdd136be516256eacd1a3a5785bffef7bda306f4639baca3"
+        },
+        "user.wav": {
+          "path": "retail/5feceb66ffc86f38/trial-000/user.wav",
+          "sha256": "de32caabfd1775c510779340d8d125e126b5d0414f7b16a0d205e06acae44025"
+        }
+      },
+      "caller_tool_calls": [],
+      "communication_checks": null,
+      "conversation_seconds": 560.85,
+      "conversation_ticks": 11217,
+      "database_check": null,
+      "domain": "retail",
+      "recognized_utterances": 10,
+      "reward": 0.0,
+      "reward_basis": null,
+      "reward_breakdown": null,
+      "reward_info": {
+        "note": "Simulation terminated prematurely. Termination reason: timeout"
+      },
+      "scored": true,
+      "seed": 42,
+      "task_id": "0",
+      "termination": "timeout",
+      "trace_note": "An incorrect ZIP transcription initially failed the user lookup; a corrected ZIP recovered the user. The agent then requested order W2378156 without the database prefix #, repeated the failing lookup, and reached the deadline. Malformed tool-call closing tokens appeared in returned text; the subsequent parser guard is recorded separately.",
+      "trial": 0,
+      "wall_seconds": 611.7084260419942
+    },
+    {
+      "agent_tool_calls": [
+        {
+          "arguments": {
+            "phone_number": "555-123-2002"
+          },
+          "id": "2AB0DB81-61F3-4EE4-8801-037CA91B3FD9",
+          "name": "get_customer_by_phone",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1001"
+          },
+          "id": "2B13F514-2654-4053-B562-EFF2CAC62AF3",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1002"
+          },
+          "id": "434742CF-3541-4146-A9D7-01F1F0657C88",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1003"
+          },
+          "id": "CF5779A6-A9C9-4B39-928B-2BF83DECFEE7",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1002"
+          },
+          "id": "802886CD-C8F9-4AE5-96C3-799BDAB3B6B6",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "P1002"
+          },
+          "id": "BCA330A1-E45D-42CF-9642-D50AFD1F5E3C",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1001"
+          },
+          "id": "96360536-7CE2-4827-B9D7-0D32F324DB04",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1003"
+          },
+          "id": "DA036945-11A5-4655-9D72-FE1DE5689815",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1001"
+          },
+          "id": "2FB0EAFD-4B59-444B-89D2-B5114492C4D7",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1002"
+          },
+          "id": "E41CEF42-93D0-436D-9CE8-7ED2C5E20E20",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1003"
+          },
+          "id": "C81E3375-F20C-4F07-BE4D-22F63EF4684D",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1001"
+          },
+          "id": "15E12A76-C5B9-48DC-ACA2-D7E8A4D102A5",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1002"
+          },
+          "id": "6B86DCA2-B1A8-4A12-8359-DBAA3EEA7147",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1003"
+          },
+          "id": "1BCFA358-5ACC-4C98-9C8C-2D8C66D4CB6D",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        },
+        {
+          "arguments": {
+            "id": "L1001"
+          },
+          "id": "19494974-C963-4236-8634-DB08F5777135",
+          "name": "get_details_by_id",
+          "requestor": "assistant"
+        }
+      ],
+      "artifacts": {
+        "failed-run.json": {
+          "path": "telecom/25e67b464860a22e/trial-000/failed-run.json",
+          "sha256": "7b85860ba54c1b996be9773bb1136a5aa487e306eda8541847e15fee15da613b"
+        },
+        "profile.json": {
+          "path": "telecom/25e67b464860a22e/trial-000/profile.json",
+          "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+        },
+        "provenance.json": {
+          "path": "telecom/25e67b464860a22e/trial-000/provenance.json",
+          "sha256": "8bd76c0fb6439e0f93b2f3cfc10777c7ce8faccdde13d8cd299c8db1b706a4b0"
+        },
+        "runtime.json": {
+          "path": "telecom/25e67b464860a22e/trial-000/runtime.json",
+          "sha256": "f2e8f4fdc3ce968ff0c14fba72b15636faaa800de61689019e5ec0554c4524ce"
+        },
+        "settings.json": {
+          "path": "telecom/25e67b464860a22e/trial-000/settings.json",
+          "sha256": "4f931fc5785b04f3a9e6a4979fa4481bbe890ebce353a9ad97e21e5739a16fc1"
+        }
+      },
+      "case": "telecom/25e67b464860a22e/trial-000",
+      "conversation_seconds": 474.95000000000005,
+      "conversation_ticks": 9499,
+      "domain": "telecom",
+      "error": "Server error '500 Internal Server Error' for url 'http://127.0.0.1:8787/v1/inference'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500",
+      "recognized_utterances": 3,
+      "reward": null,
+      "scored": false,
+      "seed": 42,
+      "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+      "termination": "inference_error",
+      "trace_note": "The agent identified the customer, then repeatedly read the three account lines without resolving the data issue. A native Gemma 4 12B chat request returned HTTP 500 after 9,499 conversation ticks. The attempt remains unscored. A reconstructed diagnostic request also returned HTTP 500 with an empty response body; its payload is retained separately and is not an exact captured request. The reconstructed replay on the diagnostic binary logged Gemma4ToolError.malformed(\"invalid literal\"); it is evidence of malformed generated tool arguments, not a verbatim replay of the original failed request.",
+      "trial": 0
+    }
+  ]
+}

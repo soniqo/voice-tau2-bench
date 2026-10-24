@@ -91,7 +91,10 @@ def main():
                 child.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 child.kill()
-        print(f"Native server exited: {child.wait()}", flush=True)
+        status = child.wait()
+        print(f"Native server exited: {status}", flush=True)
+        if status:
+            raise SystemExit(status if status > 0 else 128 - status)
 
 
 if __name__ == "__main__":

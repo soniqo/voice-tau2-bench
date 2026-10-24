@@ -43,14 +43,17 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         domain_policy,
         *,
         backend: SpeechSwiftBackend,
+        model_id="gemma4-e4b-it",
+        seed=42,
         tick_seconds=0.05,
         voice="A clear, calm adult female voice speaking American English.",
     ):
         super().__init__(tools=tools, domain_policy=domain_policy)
         self.backend = backend
+        self.model_id = model_id
         self.tick_seconds = tick_seconds
         self.voice = voice
-        self.seed = 42
+        self.seed = seed
         self._executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="local-agent"
         )
@@ -172,7 +175,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                 reply = self._request(
                     "chat",
                     lambda rid: self.backend.generate(
-                        "gemma4-e4b-it",
+                        self.model_id,
                         history,
                         tools=self.tools,
                         request_id=rid,

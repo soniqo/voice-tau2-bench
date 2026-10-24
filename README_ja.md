@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo) は、Apple Silicon 上の**ローカル音声エージェント性能**を測るため、この τ-Voice フォークを管理しています。エージェント、模擬発信者、音声モデル、意味評価モデルを [speech-swift](https://github.com/soniqo/speech-swift) で実行します。
+[Soniqo](https://github.com/soniqo) は、Apple Silicon 上の**ローカル音声エージェント性能**を測るため、この独立した τ-Voice ベンチマークを管理しています。エージェント、模擬発信者、音声モデル、意味評価モデルを [speech-swift](https://github.com/soniqo/speech-swift) で実行します。
 
 ## ドキュメント
 
@@ -10,6 +10,7 @@
 - [評価と採点](docs/evaluation.md)
 - [実装](docs/local-voice-extraction.md)
 - [モデル実行記録](docs/results/gemma4-e4b-local-600.json)
+- [Gemma 4 12B の実行記録と動作パラメータ](docs/validation/gemma4-12b-voice-e2e.md)
 
 ## 測定するもの
 
@@ -21,20 +22,24 @@
 
 | 役割 | モデル | 精度 |
 | --- | --- | --- |
-| エージェント、通話者、傾聴判断、意味評価 | Gemma 4 E4B IT | INT4 |
+| エージェント | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
+| 通話者、傾聴判断、意味評価 | Gemma 4 E4B IT | INT4 |
 | 両者の音声合成 | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
 | 音声認識 | Whisper Large-v3 (full, CoreML) | FP16 |
 | 発話検出 | Silero VAD (CoreML) | Native |
 
 開発用サンプル：固定順で各分野の最初のタスクを選択し、計 **3 タスク**、各 **1 回**、シード **42**、会話期限 **600 秒**、クリーンな `control` 電話音声を使用。機材は **Apple M5 Pro、統合メモリ 48 GB**。成功率は上記の構成全体を評価します。
 
-`soniqo-local-v1` · `2026-10-23`
+`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
 
 | エージェントモデル | 航空 | 小売 | 通信 | 全体 pass^1 |
 | --- | --- | --- | --- | --- |
-| Gemma 4 E4B IT (INT4) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
+| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
 
 この小さな決定的サンプルはローカルの通話者・評価モデルを使う独自設定です。278 タスク全体のスコアや公式ランキングを示しません。タイムアウトはゼロ点、推論例外は未採点です。
+
+12B のサンプルは未完了です。通信タスクでネイティブ推論エラーが発生し、未採点です。制御された 12B 音声チェックでは、正しいデータベース書き込みが **1.0**、誤った書き込みの再評価が **0.0** でした。[動作パラメータ](docs/validation/gemma4-12b-voice-e2e.md)。発信者の入力は固定で、ベンチマークの得点には含めません。分野別の実行には生成モデルの発信者を使い、各ランタイムのリビジョンはリンク先の記録に保存しています。
 
 ## ローカルで実行
 

@@ -5,10 +5,10 @@ import json
 import math
 from pathlib import Path
 
-from tau2.voice.baseline import repository_root, verify_baseline
+from tau2.voice.baseline import verify_baseline
 from tau2.voice.local_run import run_local_task, voice_tasks
 from tau2.voice.provenance import run_provenance, stable_provenance
-from tau2.voice.runtime_profile import LocalVoiceProfile
+from tau2.voice.runtime_profile import load_profile
 from tau2.voice.speech_swift import SpeechSwiftBackend
 
 DOMAINS = ("airline", "retail", "telecom")
@@ -100,15 +100,14 @@ def run_batch(
     max_seconds: float = 600,
     complexity: str = "control",
     resume: bool = False,
+    profile_path: Path | None = None,
 ) -> dict:
     """Run one task at a time; infrastructure errors stop without receiving a score."""
     if max_seconds <= 0:
         raise ValueError("max_seconds must be positive")
     verify_baseline()
     jobs = plan_jobs(domain, num_tasks, trials, seed)
-    profile = LocalVoiceProfile.model_validate_json(
-        (repository_root() / "configs/voice/soniqo-local-v1.json").read_text()
-    )
+    profile = load_profile(profile_path)
     backend = SpeechSwiftBackend(base_url)
     try:
         capabilities = backend.capabilities()
@@ -167,6 +166,7 @@ def run_batch(
                 max_seconds=max_seconds,
                 complexity=complexity,
                 expected_provenance=manifest["provenance"],
+                profile_path=profile_path,
             )
             result.update(job)
             result["artifact_hashes"] = artifact_hashes(case_output)

@@ -40,6 +40,7 @@ def main():
         "--domain", choices=["mock", "airline", "retail", "telecom"], required=True
     )
     run.add_argument("--task-id")
+    run.add_argument("--profile", type=Path, help="Explicit local model-role profile")
     run.add_argument("--base-url", default="http://127.0.0.1:8080")
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--seed", type=int, default=42)
@@ -61,6 +62,7 @@ def main():
         "--complexity", choices=["control", "regular"], default="control"
     )
     batch.add_argument("--resume", action="store_true")
+    batch.add_argument("--profile", type=Path, help="Explicit local model-role profile")
     args = parser.parse_args()
     logger.remove()
     logger.add(sys.stderr, level=args.log_level)
@@ -102,6 +104,7 @@ def main():
                 max_seconds=args.max_seconds,
                 complexity=args.complexity,
                 resume=args.resume,
+                profile_path=args.profile,
             )
         elif args.command == "run":
             from tau2.voice.local_run import run_local_task
@@ -114,6 +117,7 @@ def main():
                 seed=args.seed,
                 max_seconds=args.max_seconds,
                 complexity=args.complexity,
+                profile_path=args.profile,
             )
         else:
             from tau2.voice.replay import canonical_trace, run_replay
