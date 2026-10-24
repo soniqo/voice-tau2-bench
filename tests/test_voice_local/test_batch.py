@@ -28,6 +28,41 @@ def test_invalid_trial_plans_are_rejected(count, trials):
         batch.plan_jobs("all", count, trials, 42)
 
 
+def test_predeclared_pilot_uses_heldout_ids_and_two_independent_seeds():
+    plan = json.loads(
+        (repository_root() / "configs/pilots/local-v2-heldout.json").read_text()
+    )
+    jobs = batch.plan_jobs("all", None, 2, 70, plan)
+    assert Counter(job["domain"] for job in jobs) == {
+        "airline": 6,
+        "retail": 6,
+        "telecom": 6,
+    }
+    assert len(jobs) == 18
+    assert {job["seed"] for job in jobs} == {70, 71}
+    excluded = {
+        (entry["domain"], entry["task_id"]) for entry in plan["excluded_debug_tasks"]
+    }
+    assert not any((job["domain"], job["task_id"]) in excluded for job in jobs)
+
+
+@pytest.mark.parametrize("change", ["duplicate", "unknown", "count", "domain"])
+def test_explicit_plan_rejects_invalid_or_ambiguous_selection(change):
+    plan = {"schema_version": 1, "tasks": [{"domain": "airline", "task_id": "1"}]}
+    if change == "duplicate":
+        plan["tasks"] *= 2
+    elif change == "unknown":
+        plan["tasks"][0]["task_id"] = "not-in-frame"
+    with pytest.raises(ValueError):
+        batch.plan_jobs(
+            "retail" if change == "domain" else "all",
+            1 if change == "count" else None,
+            2,
+            42,
+            plan,
+        )
+
+
 def test_pass_k_uses_reliability_and_excludes_incomplete_tasks():
     jobs = batch.plan_jobs("mock", 2, 3, 42)
     results = [dict(job, reward=0 if i == 2 else 1) for i, job in enumerate(jobs)]

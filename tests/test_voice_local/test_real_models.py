@@ -291,6 +291,15 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
     )
 
     profile_path = os.environ.get("TAU_VOICE_PROFILE")
+    selected = load_profile(Path(profile_path) if profile_path else None)
+    if selected.execution.require_qualification:
+        # This isolates the real spoken agent pipeline with a scripted caller.
+        # It is a functional check and cannot produce a domain benchmark score.
+        monkeypatch.setattr(
+            local_run,
+            "require_qualification",
+            lambda *args: {"controlled_caller": True, "standard_leaderboard": False},
+        )
     output = Path(os.environ.get("TAU_VOICE_E2E_OUTPUT", str(tmp_path / "voice-task")))
     result = run_local_task(
         domain="mock",

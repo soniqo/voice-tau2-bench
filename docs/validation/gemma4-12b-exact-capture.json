@@ -222,13 +222,15 @@
       }
     ],
     "conversation_seconds": 560.5500000000001,
-    "new_native_chat_failure_files": 3,
+    "new_native_chat_failure_files": 0,
     "recognized_utterances": 9,
     "reward": 0.0,
     "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
     "scored": true,
     "termination": "timeout",
-    "ticks": 11211
+    "ticks": 11211,
+    "native_failure_attribution": "Matched by Telecom trial request IDs: zero non-cancellation native chat failures and one CancellationError during timeout finalization. Two other session-directory captures belong to separate checks. Legacy agent metrics did not record cancellation intent.",
+    "native_cancellation_records": 1
   },
   "corrected_exact_replay": {
     "artifact": {

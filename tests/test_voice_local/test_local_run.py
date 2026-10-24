@@ -11,7 +11,8 @@ from tau2.voice.runtime_profile import LocalVoiceProfile, RuntimeCapabilities
 
 @pytest.mark.parametrize("domain", ["airline", "retail", "telecom"])
 @pytest.mark.parametrize(
-    "profile_name", ["soniqo-local-v1", "soniqo-local-gemma12b-v1"]
+    "profile_name",
+    ["soniqo-local-v1", "soniqo-local-gemma12b-v1", "soniqo-local-gemma12b-v2"],
 )
 def test_runner_constructs_domains_with_optional_caller_tools(
     monkeypatch, tmp_path, domain, profile_name
@@ -41,6 +42,7 @@ def test_runner_constructs_domains_with_optional_caller_tools(
     class Orchestrator:
         def __init__(self, **kwargs):
             observed.update(kwargs)
+            self.tool_guards = {"user": SimpleNamespace(events=[])}
 
         def run(self):
             return SimulationRun(
@@ -54,6 +56,10 @@ def test_runner_constructs_domains_with_optional_caller_tools(
             )
 
     monkeypatch.setattr(local_run, "FullDuplexOrchestrator", Orchestrator)
+    monkeypatch.setattr(local_run, "LocalV2Orchestrator", Orchestrator)
+    monkeypatch.setattr(
+        local_run, "require_qualification", lambda *args: {"fixture": True}
+    )
     monkeypatch.setattr(
         local_run, "evaluate_simulation", lambda **_: RewardInfo(reward=1)
     )
@@ -71,5 +77,9 @@ def test_runner_constructs_domains_with_optional_caller_tools(
     assert observed["agent"].seed == 43
     assert profile.roles["caller"].model_id == "gemma4-e4b-it"
     assert profile.roles["judge"].model_id == "gemma4-e4b-it"
+    v2 = profile_name.endswith("-v2")
+    assert observed["user"].realtime_generation is (not v2)
+    assert observed["max_steps"] == (47999 if v2 else 12000)
+    assert observed["timeout"] == (7200 if v2 else 600)
     assert (tmp_path / "simulation.json").exists()
     observed["agent"].stop()

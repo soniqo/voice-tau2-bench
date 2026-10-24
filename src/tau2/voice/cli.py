@@ -44,7 +44,21 @@ def main():
     run.add_argument("--base-url", default="http://127.0.0.1:8080")
     run.add_argument("--output", type=Path, required=True)
     run.add_argument("--seed", type=int, default=42)
-    run.add_argument("--max-seconds", type=float, default=600)
+    run.add_argument(
+        "--max-seconds",
+        type=float,
+        help="Call duration cap (profile default: v1 600s, v2 2400 simulated seconds)",
+    )
+    run.add_argument(
+        "--wall-timeout",
+        type=float,
+        help="Independent wall watchdog in seconds (v2 default 7200)",
+    )
+    run.add_argument(
+        "--qualification",
+        type=Path,
+        help="Passing caller/judge qualification JSON required by v2",
+    )
     run.add_argument("--complexity", choices=["control", "regular"], default="control")
     batch = commands.add_parser("batch", help="Run sequential resumable voice trials")
     batch.add_argument(
@@ -57,12 +71,36 @@ def main():
     batch.add_argument("--seed", type=int, default=42)
     batch.add_argument("--base-url", default="http://127.0.0.1:8080")
     batch.add_argument("--output", type=Path, required=True)
-    batch.add_argument("--max-seconds", type=float, default=600)
+    batch.add_argument(
+        "--max-seconds",
+        type=float,
+        help="Call duration cap; defaults to the selected profile",
+    )
+    batch.add_argument(
+        "--wall-timeout", type=float, help="Independent wall watchdog in seconds"
+    )
+    batch.add_argument("--qualification", type=Path)
+    batch.add_argument(
+        "--task-plan",
+        type=Path,
+        help="Explicit frozen task IDs; mutually exclusive with --num-tasks",
+    )
     batch.add_argument(
         "--complexity", choices=["control", "regular"], default="control"
     )
     batch.add_argument("--resume", action="store_true")
     batch.add_argument("--profile", type=Path, help="Explicit local model-role profile")
+    qualification = commands.add_parser(
+        "qualify",
+        help="Calibrate the local v2 caller and semantic judge on separate fixtures",
+    )
+    qualification.add_argument(
+        "--profile",
+        type=Path,
+        default=repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json",
+    )
+    qualification.add_argument("--base-url", default="http://127.0.0.1:8080")
+    qualification.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     logger.remove()
     logger.add(sys.stderr, level=args.log_level)
@@ -91,6 +129,28 @@ def main():
                 "revision": capabilities.revision,
                 "compatible": True,
             }
+        elif args.command == "qualify":
+            from tau2.voice.batch import write_json
+            from tau2.voice.provenance import run_provenance
+            from tau2.voice.qualification import qualify
+            from tau2.voice.runtime_profile import load_profile
+            from tau2.voice.speech_swift import SpeechSwiftBackend
+
+            profile = load_profile(args.profile)
+            backend = SpeechSwiftBackend(args.base_url)
+            try:
+                profile.check_runtime(backend.capabilities())
+                result = qualify(backend, profile, run_provenance(backend))
+            finally:
+                backend.close()
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            write_json(args.output, result)
+            if not result["passed"]:
+                print(json.dumps(result, indent=2))
+                parser.exit(
+                    1,
+                    "tau-voice: caller/judge qualification failed; inspect the saved report\n",
+                )
         elif args.command == "batch":
             from tau2.voice.batch import run_batch
 
@@ -102,9 +162,12 @@ def main():
                 base_url=args.base_url,
                 output=args.output,
                 max_seconds=args.max_seconds,
+                wall_timeout=args.wall_timeout,
                 complexity=args.complexity,
                 resume=args.resume,
                 profile_path=args.profile,
+                qualification_path=args.qualification,
+                task_plan_path=args.task_plan,
             )
         elif args.command == "run":
             from tau2.voice.local_run import run_local_task
@@ -116,8 +179,10 @@ def main():
                 output=args.output,
                 seed=args.seed,
                 max_seconds=args.max_seconds,
+                wall_timeout=args.wall_timeout,
                 complexity=args.complexity,
                 profile_path=args.profile,
+                qualification_path=args.qualification,
             )
         else:
             from tau2.voice.replay import canonical_trace, run_replay

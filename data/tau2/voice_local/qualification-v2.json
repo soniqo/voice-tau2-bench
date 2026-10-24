@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "suite": "local-caller-judge-v2",
+  "caller": [
+    {
+      "id": "completed-action",
+      "scenario": "Cancel my monthly magazine subscription. No follow-up questions.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "Your subscription has been cancelled."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "promised-action",
+      "scenario": "Cancel my monthly magazine subscription.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "I will cancel your subscription now."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "resolved-refusal",
+      "scenario": "Ask to refund a non-refundable event ticket. If refused, ask if store credit is possible. Accept the final policy answer.",
+      "history": [
+        [
+          "assistant",
+          "Can you refund my ticket?"
+        ],
+        [
+          "user",
+          "Your ticket is non-refundable."
+        ],
+        [
+          "assistant",
+          "Could I get store credit instead?"
+        ],
+        [
+          "user",
+          "Store credit is also unavailable for this ticket."
+        ]
+      ],
+      "decision": "REFUSED"
+    },
+    {
+      "id": "refusal-before-follow-up",
+      "scenario": "Ask to refund a non-refundable event ticket. If refused, ask if store credit is possible. Accept the final policy answer.",
+      "history": [
+        [
+          "assistant",
+          "Can you refund my ticket?"
+        ],
+        [
+          "user",
+          "Your ticket is non-refundable."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "agent-goodbye-with-pending-work",
+      "scenario": "Change my delivery address to 25 River Street.",
+      "history": [
+        [
+          "assistant",
+          "Change my delivery address to 25 River Street."
+        ],
+        [
+          "user",
+          "I will update it later. Goodbye."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "partially-answered",
+      "scenario": "Find out my new monthly bill and when it takes effect.",
+      "history": [
+        [
+          "assistant",
+          "What is my new monthly bill and when does it take effect?"
+        ],
+        [
+          "user",
+          "Your new monthly bill is $42."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "all-questions-answered",
+      "scenario": "Find out my new monthly bill and when it takes effect.",
+      "history": [
+        [
+          "assistant",
+          "What is my new monthly bill and when does it take effect?"
+        ],
+        [
+          "user",
+          "Your bill is $42 per month, effective November 1."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "caller-device-action",
+      "scenario": "Fix mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working. Can you help me fix it?"
+        ],
+        [
+          "user",
+          "Please enable mobile data on your phone now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_mobile_data",
+        "arguments": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "caller-speed-test",
+      "scenario": "Fix mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working. Can you help me fix it?"
+        ],
+        [
+          "user",
+          "Please run a speed test and tell me the result."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "unknown-account",
+      "scenario": "Find out my current monthly bill. I do not know my account number. Do not invent an account number.",
+      "history": [
+        [
+          "user",
+          "What is your account number?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "customer-claim-is-not-agent-confirmation",
+      "scenario": "Cancel my monthly magazine subscription.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "I am checking your subscription now."
+        ],
+        [
+          "assistant",
+          "It has been cancelled."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "disclose-actual-goal",
+      "scenario": "Book a cabin tour for May 12.",
+      "history": [
+        [
+          "user",
+          "Hello! How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "cabin"
+        ]
+      }
+    },
+    {
+      "id": "customer-must-not-do-agent-work",
+      "scenario": "Ask the agent to create an appointment named Annual Checkup.",
+      "history": [
+        [
+          "assistant",
+          "I need you to create an appointment."
+        ],
+        [
+          "user",
+          "What should the appointment be named?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "notification_tools": true,
+        "must_contain": [
+          "annual",
+          "checkup"
+        ]
+      }
+    }
+  ],
+  "judge": [
+    {
+      "id": "fact-paraphrase",
+      "expected": "The refund is $42.50.",
+      "said": "We will return forty-two dollars and fifty cents to you.",
+      "met": true
+    },
+    {
+      "id": "fact-wrong-amount",
+      "expected": "The refund is $42.50.",
+      "said": "Your refund is $24.50.",
+      "met": false
+    },
+    {
+      "id": "fact-negation",
+      "expected": "Your booking was cancelled.",
+      "said": "I have not cancelled your booking.",
+      "met": false
+    },
+    {
+      "id": "fact-promise",
+      "expected": "Your booking was cancelled.",
+      "said": "I can cancel your booking after you confirm.",
+      "met": false
+    },
+    {
+      "id": "fact-partial",
+      "expected": "The plan costs $30 monthly and includes 10 GB of data.",
+      "said": "The plan costs $30 per month.",
+      "met": false
+    },
+    {
+      "id": "fact-caller-only",
+      "expected": "The refund is $42.50.",
+      "said": null,
+      "caller_said": "I expect a refund of $42.50.",
+      "met": false
+    }
+  ]
+}

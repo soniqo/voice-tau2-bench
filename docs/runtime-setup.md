@@ -57,6 +57,11 @@ Models load once. Heavy inference requests run sequentially; VAD keeps separate 
 
 ## Run and inspect
 
+For the experimental simulated-clock profile, caller/judge qualification, and
+the predeclared 18-call pilot, follow [local v2 execution](local-v2.md). It uses
+the same model assets as the 12B profile below. The v1 commands retain their
+original wall-clock behavior and historical result provenance.
+
 ### Gemma 4 12B agent
 
 The `soniqo-local-gemma12b-v1` profile selects Gemma 4 12B Unified INT4 for the

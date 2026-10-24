@@ -38,7 +38,16 @@ from tau2.task_subsets.store import load_subset
 from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
 from tau2.user_simulation_voice_presets import sample_voice_config
 from tau2.voice.baseline import repository_root, verify_baseline
+from tau2.voice.caller_policy import (
+    LOCAL_CALLER_GUIDELINES,
+    CallerPolicyError,
+    QualifiedCallerBackend,
+)
+from tau2.voice.diagnostics import inference_diagnostics
+from tau2.voice.execution import InferenceLane, SimulationClock
+from tau2.voice.local_orchestrator import LocalV2Orchestrator
 from tau2.voice.provenance import run_provenance, stable_provenance
+from tau2.voice.qualification import require_qualification
 from tau2.voice.runtime_profile import load_profile
 from tau2.voice.speech_swift import SpeechSwiftBackend
 
@@ -87,23 +96,25 @@ def run_local_task(
     base_url: str,
     output: Path,
     seed: int = 42,
-    max_seconds: float = 600,
+    max_seconds: float | None = None,
+    wall_timeout: float | None = None,
     complexity: str = "control",
     expected_provenance: dict | None = None,
     profile_path: Path | None = None,
+    qualification_path: Path | None = None,
 ) -> dict:
-    if max_seconds <= 0:
-        raise ValueError("max_seconds must be positive")
     if (output / "simulation.json").exists():
         raise ValueError("Task output already contains a completed simulation")
     verify_baseline()
     task, loaded, language = task_context(domain, task_id, seed)
     profile = load_profile(profile_path)
+    max_seconds, wall_timeout = profile.budgets(max_seconds, wall_timeout)
     backend = SpeechSwiftBackend(base_url)
     try:
         capabilities = backend.capabilities()
         profile.check_runtime(capabilities)
         provenance = run_provenance(backend)
+        qualification = require_qualification(qualification_path, profile, provenance)
         if (
             expected_provenance is not None
             and stable_provenance(provenance) != expected_provenance
@@ -144,12 +155,21 @@ def run_local_task(
         policy = environment.get_policy()
         if language is not None:
             policy += "\n\n" + agent_language_guidance(language)
+        clock = SimulationClock() if profile.execution.mode == "simulation-v2" else None
+        lane = InferenceLane(backend, clock) if clock else None
+        caller_backend = lane.for_role("caller") if lane else backend
+        if profile.execution.caller_policy == "terminal-v2":
+            caller_backend = QualifiedCallerBackend(
+                caller_backend, str(task.user_scenario)
+            )
         agent = SpeechSwiftAgent(
             environment.get_tools(),
             policy,
-            backend=backend,
+            backend=lane.for_role("agent") if lane else backend,
             model_id=profile.roles["agent"].model_id,
             seed=seed,
+            clock=clock,
+            tool_guidance=profile.execution.tool_guard,
         )
         user = VoiceStreamingUserSimulator(
             tools=environment.get_user_tools(include=task.user_tools)
@@ -169,7 +189,8 @@ def run_local_task(
             if language and language.persona
             else sampled.persona_config,
             backchannel=default_backchannel_settings("en"),
-            realtime_generation=True,
+            realtime_generation=clock is None,
+            global_guidelines_override=LOCAL_CALLER_GUIDELINES if clock else None,
             chunk_size=round(PCM_SAMPLE_RATE * 0.05),
             tick_duration_seconds=0.05,
             wait_to_respond_threshold_other=round(
@@ -184,16 +205,18 @@ def run_local_task(
             else None,
             interruption_check_interval=40,
         )
-        orchestrator = FullDuplexOrchestrator(
+        orchestrator_type = LocalV2Orchestrator if clock else FullDuplexOrchestrator
+        orchestrator = orchestrator_type(
+            **({"clock": clock} if clock else {}),
             domain=domain,
             agent=agent,
             user=user,
             environment=environment,
             task=task,
             seed=seed,
-            max_steps=round(max_seconds / 0.05),
+            max_steps=round(max_seconds / 0.05) - (1 if clock else 0),
             tick_duration_seconds=0.05,
-            timeout=max_seconds,
+            timeout=wall_timeout,
             call_context=CallContext(language=language, communicate_scoring=scoring)
             if language
             else None,
@@ -213,6 +236,9 @@ def run_local_task(
                     "task_id": task.id,
                     "seed": seed,
                     "max_seconds": max_seconds,
+                    "wall_timeout_seconds": wall_timeout,
+                    "clock_mode": profile.execution.mode,
+                    "qualification": qualification,
                     "complexity": complexity,
                     "tick_seconds": 0.05,
                     "agent_system_prompt": agent.get_init_state().messages[0].content,
@@ -228,10 +254,21 @@ def run_local_task(
         )
         started = time.perf_counter()
         with use_inference_backends(
-            InferenceBackends(chat=backend, synthesis=backend, transcription=backend)
+            InferenceBackends(
+                chat=caller_backend,
+                synthesis=caller_backend,
+                transcription=caller_backend,
+            )
         ):
             try:
                 simulation = orchestrator.run()
+                if clock and any(
+                    event["execution_status"] == "rejected"
+                    for event in orchestrator.tool_guards["user"].events
+                ):
+                    raise CallerPolicyError(
+                        "Caller attempted an undeclared or repeated failing tool call; trial is unscored"
+                    )
                 simulation.reward_info = evaluate_simulation(
                     simulation=simulation,
                     task=task,
@@ -255,6 +292,20 @@ def run_local_task(
                             ],
                             "agent_metrics": agent.metrics,
                             "inference": backend.events,
+                            "inference_accounting": lane.events if lane else [],
+                            "caller_decisions": getattr(
+                                caller_backend, "decisions", []
+                            ),
+                            "clock_mode": profile.execution.mode,
+                            "audio_seconds": len(orchestrator.ticks) * 0.05,
+                            "scored": False,
+                            "diagnostics": inference_diagnostics(
+                                backend.events,
+                                agent.metrics["cancellations"],
+                                provenance["native"]["configuration"].get(
+                                    "failureCaptureDirectory"
+                                ),
+                            ),
                         },
                         indent=2,
                     )
@@ -268,6 +319,20 @@ def run_local_task(
             "local_metrics": agent.metrics,
             "caller_stale_generations": user.stale_generation_count,
             "standard_leaderboard": False,
+            "clock_mode": profile.execution.mode,
+            "inference_accounting": lane.events if lane else [],
+            "caller_decisions": getattr(caller_backend, "decisions", []),
+            "tool_metrics": {
+                role: guard.events for role, guard in orchestrator.tool_guards.items()
+            }
+            if clock
+            else {},
+            "qualification": qualification,
+            "diagnostics": inference_diagnostics(
+                backend.events,
+                agent.metrics["cancellations"],
+                provenance["native"]["configuration"].get("failureCaptureDirectory"),
+            ),
         }
         (output / "simulation.json").write_text(
             simulation.model_dump_json(indent=2) + "\n"
@@ -293,6 +358,9 @@ def run_local_task(
             "termination": simulation.termination_reason.value,
             "reward": simulation.reward_info.reward,
             "wall_seconds": time.perf_counter() - started,
+            "audio_seconds": len(simulation.ticks) * 0.05,
+            "clock_mode": profile.execution.mode,
+            "scored": True,
             "artifacts": str(output.resolve()),
             "standard_leaderboard": False,
         }
