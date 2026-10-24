@@ -41,6 +41,8 @@ Bu küçük ve belirlenimci örneklem yerel arayan ve hakem kullanır. Tüm 278 
 
 12B örneklemi tamamlanmadı: telekom denemesi yerel çıkarım hatası verdi ve puanlanmadı. Kontrollü 12B ses testi: doğru veritabanı yazımı için **1.0**, yanlış yazımın yeniden değerlendirilmesi için **0.0**. [Doğrulanan parametreler](docs/validation/gemma4-12b-voice-e2e.md). Arayanın girdisi sabittir; bu test kıyaslama puanına katılmaz. Alan denemeleri üretken arayanı kullanır ve bağlantılı raporlar her çalışma zamanı sürümünü kaydeder.
 
+V2 takip kontrolü: **Gemma 4 12B IT (INT4), havayolu alanındaki bir ret tanılamasında 1.0 puan aldı** (görev `0`, seed `42`, arayanın bekleme süresi 15 saniye). Bu görev veritabanının değişmeden kaldığını denetler. Perakende, telekom ve ayrılan 18 aramalık pilot bu koşulda henüz çalıştırılmadı. [Doğrulama ve parametreler](docs/validation/native-prefill.md).
+
 ## Yerel çalıştırma
 
 Python **3.12/3.13**, Apple Silicon ve **macOS 15+** kullanın. Görevlerden önce [yerel model servisini](docs/runtime-setup.md#serve) başlatın.

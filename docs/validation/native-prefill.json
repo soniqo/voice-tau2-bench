@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "scope": "Post-cleanup validation of the local prefix-cache runtime; controlled speech is a functional check, not a domain score.",
+  "benchmark": {
+    "git_head": "3972f0d5be571b772b59c403378877727faa6b6c",
+    "source_sha256": "91a32ec1c3a75e36aa0da96bd6bb2f09afb059da3bba57bbf708a92795e4635c"
+  },
+  "native": {
+    "runtime_revision": "03e525fc7a42d71dafa5777dfe59264689c2b7cf+source-sha256:c8e7b9077752b9eea56ddbdbb4752db83ab2cf1a65d9d57a9dc555fcbf7f0caa",
+    "merge_commit": "deac6841aaff44cfd44e6bd74e7b58a12631d97d",
+    "binary_sha256": "cc538f99363f066888436e953a64042421b40806ffcdd6e5dfa5f7e4e577dbbb",
+    "gemma4_12b_prefix_cache_budget_bytes": 1073741824,
+    "asset_pins": {
+      "agent": {
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 19,
+    "checks_passed": 19,
+    "benchmark_source_sha256": "91a32ec1c3a75e36aa0da96bd6bb2f09afb059da3bba57bbf708a92795e4635c",
+    "suite_sha256": "8836b70f6f01478cfcbbb9d6e176cf55e33321c9cdb07f87c44b6a1002c6dff1"
+  },
+  "http_cache_test": {
+    "passed": 1,
+    "deselected": 9,
+    "pytest_wall_seconds": 1.54,
+    "checks": [
+      "cold count is zero",
+      "warm count is at least 256",
+      "cold and warm replies match",
+      "event and assistant metadata agree"
+    ]
+  },
+  "controlled_spoken_pipeline": {
+    "passed": true,
+    "caller_mode": "controlled_spoken_input",
+    "standard_leaderboard": false,
+    "reward": 1.0,
+    "db_match": true,
+    "negative_control_reward": 0.0,
+    "negative_control_db_match": false,
+    "termination_reason": "user_stop",
+    "ticks": 910,
+    "audio_seconds": 45.5,
+    "simulation_wall_seconds": 51.00878170900978,
+    "pytest_wall_seconds": 62.5,
+    "cancelled_native_requests": 2,
+    "unexplained_failed_requests": 0,
+    "unexpected_native_cancellations": 0
+  },
+  "offline_validation": {
+    "tests_passed": 475,
+    "lint_passed": true,
+    "frozen_inputs_verified": 64,
+    "tasks": 278,
+    "replays_matched": 2
+  },
+  "domain_diagnostic": {
+    "status": "scored",
+    "domain": "airline",
+    "task_id": "0",
+    "seed": 42,
+    "call_seconds": 600,
+    "wall_timeout_seconds": 1200,
+    "caller_idle_seconds": 15,
+    "complexity": "control",
+    "reward": 1.0,
+    "reward_breakdown": {
+      "DB": 1.0,
+      "COMMUNICATE": 1.0
+    },
+    "termination": "user_stop",
+    "ticks": 9975,
+    "audio_seconds": 498.75,
+    "simulation_wall_seconds": 1093.9957329999888,
+    "runner_wall_seconds": 1095.6086579999537,
+    "communication_assertions": 0,
+    "expected_database_behavior": "unchanged; cancellation without a refund was not requested",
+    "successful_agent_chats": 21,
+    "warm_agent_chats": 20,
+    "cached_prefix_tokens": 4608,
+    "cold_chat_wall_seconds": 8.669136665994301,
+    "warm_chat_wall_seconds_min": 3.9040148750063963,
+    "warm_chat_wall_seconds_max": 6.28301883302629,
+    "agent_tool_calls": 2,
+    "executed_tool_errors": 1,
+    "unexplained_failed_requests": 0,
+    "native_chat_failures": 0,
+    "unexpected_native_cancellations": 0
+  },
+  "held_out_pilot": {
+    "planned_calls": 18,
+    "run": false
+  },
+  "historical_scores_changed": false,
+  "artifacts": {
+    "qualification-prefix-cache.json": "905b34016d15a0e12839bd327cb5f18a11c3531a68488b7813a45bd3a387b04c",
+    "prefix-cache-http-test.log": "d95a755e836d502b97951a4e43e69d0806d5b90f189c04a7bbbdf3f77c4b2c2d",
+    "controlled-prefix-cache/simulation.json": "e97ad244a04af291a420b86b0de843e106624c1b9cc30ce30d3a571c0cca89f2",
+    "controlled-prefix-cache/negative-control.json": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad",
+    "controlled-prefix-cache/inference.json": "4e9dd649d7daa380b55eab424a72f5e5e734feaa243c9e32af22cacbf2f08736",
+    "controlled-prefix-cache/provenance.json": "69ca3e8ebef0231cd6ea6e328ad3a4c372a91cda2ff1ffb1d53cd55c89aa8ede",
+    "airline-prefix-cache/simulation.json": "a63e8a13aa2cf6cad31e306a661ba559fc6452a0480b938ca9543529c0bb410d",
+    "airline-prefix-cache/inference.json": "695cd218206ec1b64209abea352a08558e70aba69b9cebb281cc19fe63119b17",
+    "airline-prefix-cache/settings.json": "3a1c6446add8fce77979b64184933122be3a62a70f5bd3b1825bc8a80c97adcf",
+    "airline-prefix-cache/provenance.json": "69ca3e8ebef0231cd6ea6e328ad3a4c372a91cda2ff1ffb1d53cd55c89aa8ede"
+  },
+  "resources": {
+    "hardware": "Apple M5 Pro",
+    "unified_memory_gib": 48,
+    "physical_footprint_guard_gib": 24,
+    "free_disk_guard_gib": 2,
+    "peak_physical_footprint_gib": 16.889,
+    "minimum_free_disk_gib": 7.077,
+    "guard_hits": 0,
+    "service_stopped_after_validation": true
+  }
+}

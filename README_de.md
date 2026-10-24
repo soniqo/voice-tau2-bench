@@ -41,6 +41,8 @@ Diese kleine deterministische Stichprobe nutzt lokale Anrufer- und Bewertungsmod
 
 Die 12B-Stichprobe ist unvollständig: Beim Telekommunikationstest trat ein nativer Inferenzfehler auf; er bleibt unbewertet. Kontrollierter 12B-Sprachtest: **1.0** für den korrekten Datenbankeintrag und **0.0** bei erneuter Bewertung eines falschen Eintrags. [Geprüfte Parameter](docs/validation/gemma4-12b-voice-e2e.md). Die Anrufereingabe ist fest vorgegeben; dieser Test zählt nicht zum Benchmark-Ergebnis. Domänenläufe verwenden den generativen Anrufer. Die verlinkten Berichte enthalten die jeweilige Runtime-Revision.
 
+V2-Nachprüfung: **Gemma 4 12B IT (INT4) erzielte 1.0 in einem Flugreise-Diagnosefall mit Ablehnung** (Aufgabe `0`, Seed `42`, 15 Sekunden Wartezeit des Anrufers). Diese Aufgabe prüft, dass die Datenbank unverändert bleibt. Handel, Telekommunikation und der zurückgehaltene Pilot mit 18 Anrufen wurden unter dieser Bedingung noch nicht ausgeführt. [Validierung und Parameter](docs/validation/native-prefill.md).
+
 ## Lokal ausführen
 
 Benötigt Python **3.12/3.13**, Apple Silicon und **macOS 15+**. Vor den Aufgaben den [lokalen Modelldienst](docs/runtime-setup.md#serve) starten.

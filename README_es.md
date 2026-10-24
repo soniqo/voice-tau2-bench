@@ -41,6 +41,8 @@ Esta muestra pequeña y determinista usa interlocutor y juez locales. No estable
 
 La muestra de 12B está incompleta: telecomunicaciones tuvo un error de inferencia nativa y no recibió puntuación. Prueba de voz controlada con 12B: **1.0** para la escritura correcta en la base de datos y **0.0** al reevaluar una escritura incorrecta. [Parámetros probados](docs/validation/gemma4-12b-voice-e2e.md). La entrada del interlocutor es fija y esta prueba no aporta puntuación al benchmark. Las ejecuciones por dominio usan el interlocutor generativo; los informes enlazados registran cada revisión del runtime.
 
+Seguimiento V2: **Gemma 4 12B IT (INT4) obtuvo 1.0 en un diagnóstico de rechazo de una solicitud aérea** (tarea `0`, semilla `42`, espera del cliente de 15 segundos). Esta tarea comprueba que la base de datos siga sin cambios. Comercio, telecomunicaciones y el piloto reservado de 18 llamadas siguen sin ejecutarse bajo esta condición. [Validación y parámetros](docs/validation/native-prefill.md).
+
 ## Ejecución local
 
 Use Python **3.12/3.13**, Apple Silicon y **macOS 15+**. Inicie el [servicio local](docs/runtime-setup.md#serve) antes de ejecutar las tareas.
