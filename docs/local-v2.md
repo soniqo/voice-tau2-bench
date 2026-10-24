@@ -68,18 +68,22 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 32 checks cover completed versus promised work, required follow-ups after a
+The 33 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Ten checks use the full 30-tool telecom customer interface, including real
+Eleven checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
 requires reassurance before rebooting, and a data-saver status request after
 earlier troubleshooting steps and a VPN question split across streaming speech
-fragments, and an unknown plan-usage question that belongs to the agent.
+fragments, an unknown plan-usage question that belongs to the agent, and a VPN
+question after account discussion and a failed speed test. The longer voice
+diagnostic answered that last question without a device observation; the fixture
+records this unresolved regression. A historical 32-check pass does not qualify
+the expanded suite.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.

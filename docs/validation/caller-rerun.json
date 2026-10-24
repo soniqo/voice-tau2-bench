@@ -169,10 +169,11 @@
         "component": "judge",
         "passed": true
       }
-    ]
+    ],
+    "scope": "Historical 32-check pass on 5dcfba27; not valid for the expanded 33-check suite."
   },
   "offline_validation": {
-    "passed": 517,
+    "passed": 518,
     "model_tests_deselected": 10,
     "frozen_inputs": 64,
     "frozen_tasks": 278,
@@ -180,15 +181,40 @@
     "lint": "passed"
   },
   "fresh_spoken_diagnostic": {
-    "status": "pending",
+    "status": "operator_stopped_after_failed_caller_validity_audit",
     "domain": "telecom",
     "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
     "seed": 42,
-    "scored": false
+    "scored": false,
+    "benchmark_commit": "5dcfba27f28fdf9d5400415604c4302e3939fc66",
+    "audio_seconds": 221.35000000000002,
+    "ticks": 4427,
+    "trace_sha256": "41cc300c6034c0737fdb03aa39b94cf4c7f9def74e94d052d8254329fdcc1a13",
+    "audit": {
+      "agent_question": "Could you please tell me if you're currently using a VPN?",
+      "caller_reply": "No, I'm not using a VPN.",
+      "actual_customer_tools_before_answer": [
+        "run_speed_test"
+      ],
+      "missing_observation": "No check_vpn_status result existed in the caller history.",
+      "secondary_finding": "The caller later ran check_network_status but initially asked the agent for its finding instead of reporting the actual customer tool result."
+    },
+    "diagnostics": {
+      "failed_requests_without_cancellation": [],
+      "native_chat_failures": [],
+      "unexpected_native_cancellations": []
+    },
+    "intentional_shutdown_cancellations": 1
   },
   "heldout_pilot": {
     "planned_calls": 18,
     "complete": false,
-    "status": "pending_spoken_action_audit"
+    "status": "not_started_caller_validity_failed"
+  },
+  "current_gate": {
+    "required_checks": 33,
+    "qualified": false,
+    "reason": "Longer spoken conversation failed caller device-fact grounding; new regression fixture added.",
+    "suite_sha256": "ff027727345171bc6dbdc870001c2a4d8c106762fbf3fe235a3b659940cbce42"
   }
 }

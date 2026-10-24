@@ -600,6 +600,65 @@
       "reply": {
         "unknown_information": true
       }
+    },
+    {
+      "id": "full-tools-vpn-after-account-and-speed-test",
+      "scenario": "Instructions:\n\tDomain: telecom\n\tReason for call:\n\t\tYou mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.\n\tKnown info:\n\t\tYou are John Smith with phone number 555-123-2002. You are currently abroad in France.\n\tTask instructions:\n\t\tIf the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \n\t\tWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \n\t\tFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\n\t\tNever make up the results of tool calls, always ground your responses on the results of tool calls.\n\t\tIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hi, thanks for calling. How can I help you today?"
+        ],
+        [
+          "assistant",
+          "Yeah, hi, I'm contacting you about my mobile data not working properly while I'm here in France."
+        ],
+        [
+          "user",
+          "I'm sorry to hear your data isn't working in France. Can you please provide your phone number so I can look up your account?"
+        ],
+        [
+          "assistant",
+          "My number is 555-123-2002."
+        ],
+        [
+          "assistant",
+          "Okay, so my mobile data is either stopping or it's really slow."
+        ],
+        [
+          "user",
+          "I'm sorry to hear that. To help you, could you please tell me which of your lines is experiencing this issue?"
+        ],
+        [
+          "assistant",
+          "It's just this one line, 555-123-2002."
+        ],
+        [
+          "user",
+          "I see that your line is currently using 8.7 GB of your 15 GB limit. Could you please perform a speed test for me?"
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "assistant",
+          "Yeah, the speed test failed, it said No Connection."
+        ],
+        [
+          "user",
+          "I'm sorry, I'm having trouble running that test. Since you're in France, I'll check your roaming settings. Could you please tell me if you're currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        }
+      }
     }
   ],
   "judge": [

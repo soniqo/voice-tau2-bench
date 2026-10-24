@@ -13,6 +13,7 @@ Historical v1 scores remain separate from these v2 runs and caller revisions.
 | Benchmark `2e674765` | Retail task `0`, seed `42` | Reward 0.0, wall timeout | The agent authenticated the customer and received `#W2378156` from `get_user_details`, then called `get_order_details` without `#`. No writes executed. |
 | Benchmark `2e674765` | Telecom airplane-mode/roaming diagnostic, seed `42` | Reward 0.0, wall timeout; caller validity failed | The customer repeatedly claimed airplane mode was off without executing the mutation. Device state stayed unchanged. This result cannot isolate agent capability. |
 | Subsequent caller-repair candidates | Same telecom diagnostic | Unscored caller-policy errors | Invalid control fields or customer tool responses stopped the calls. These are not additional zero scores. |
+| Benchmark `5dcfba27` | Same telecom diagnostic after 32-check qualification | Stopped unscored after the caller validity audit failed | The caller answered a VPN question without a VPN observation. A read-only speed test and network-status check executed, but no phone-setting mutation ran. |
 
 The retail and telecom timeout rewards were assigned for premature termination.
 Their database checks were null; they are not independent completed database
@@ -43,13 +44,30 @@ Caller qualification is a preflight gate, not a domain score. New source and
 fixture hashes require a fresh report. A passing fixture suite alone does not
 establish that a longer generative conversation is reliable.
 
-The current candidate passed **32/32 live caller/judge checks**, including the
+The `5dcfba27` candidate passed **32/32 live caller/judge checks**, including the
 unknown account question, unobserved VPN read, already-correct setting, and
 actual fixture-device mutations. **517 offline tests**, lint, all 64 frozen
-inputs (278 tasks), and both upstream replay checks passed. A fresh spoken
-telecom diagnostic remains pending; the held-out pilot is gated on its action
-audit. The [validation summary](caller-rerun.json) records the tested source
-and fixture fingerprints. It is not a reusable qualification certificate.
+inputs (278 tasks), and both upstream replay checks passed. The subsequent
+spoken diagnostic failed its validity audit: after account discussion and a
+speed test, the agent asked whether the customer was using a VPN, and the
+customer said no without calling `check_vpn_status`. The scenario explicitly
+requires all device answers to be grounded in tool results. The customer also
+failed to relay a network-status observation at first.
+
+The run was stopped deliberately at **221.35 simulated seconds**, leaving it
+unscored. Its trace records `KeyboardInterrupt`, not a native inference crash.
+There were no unexplained failed requests or native chat failures. One native
+cancellation matched the recorded shutdown cancellation intent. The owned model
+service was stopped after saving the audit.
+
+Qualification now includes a **33rd check** derived from this longer context;
+the old 32-check report no longer enables runs, and the expanded suite has no
+passing live certificate. An offline regression test confirms that the captured
+ungrounded answer fails qualification; **518 offline tests** pass with that
+regression included. The held-out pilot remains gated, and
+the caller changes remain draft. The [validation summary](caller-rerun.json)
+records the source, fixture fingerprints and failed live audit. It is not a
+reusable qualification certificate.
 
 ## Fixed execution parameters
 

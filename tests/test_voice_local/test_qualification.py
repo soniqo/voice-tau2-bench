@@ -104,6 +104,35 @@ def single_case(monkeypatch, case):
     )
 
 
+def test_long_conversation_vpn_answer_without_observation_fails_qualification(
+    monkeypatch,
+):
+    case = next(
+        case
+        for case in qualification.qualification_suite()["caller"]
+        if case["id"] == "full-tools-vpn-after-account-and-speed-test"
+    )
+    profile = single_case(monkeypatch, case)
+
+    class CapturedReplies:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="SPEAK")
+            return AssistantMessage(
+                role="assistant", content="No, I'm not using a VPN."
+            )
+
+    report = qualification.qualify(CapturedReplies(), profile, provenance())
+    assert report["passed"] is False
+    row = report["cases"][0]
+    assert row["actual_action"] == "continue"
+    assert row["final_action"] == "speak"
+    assert row["response"]["content"] == "No, I'm not using a VPN."
+    assert row["passed"] is False
+
+
 def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
     case = {
         "id": "read-before-answer",
