@@ -68,10 +68,12 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 19 checks cover completed versus promised work, required follow-ups after a
+The 22 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
-goal disclosure, and customer claims that lack agent confirmation. These fixtures are outside the frozen task
+goal disclosure, customer claims that lack agent confirmation, partial action
+completion, and device observations that do not establish working connectivity.
+These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
 
@@ -81,7 +83,14 @@ an addressed refusal. It never sees reference actions, grading state, or agent
 private tool results. A terminal assessment requires a supporting quote actually
 heard from the service agent. A conservative English-language guard keeps the
 call open if that quote merely offers or promises a future action; the guard
-cannot generate a stop. Calibration measures continuing versus stopping; the
+cannot generate a stop. A well-formed terminal proposal without a supporting
+agent quote gets at most one model reassessment using the same caller-visible
+scenario and conversation. The rejected proposal is recorded. The reassessment
+must pass the same evidence checks; a second unsupported proposal leaves the
+trial unscored. Malformed responses and inference errors propagate immediately.
+Customer device tool results are observations, and a setting change or strong
+signal alone does not prove that the requested service works end to end.
+Calibration measures continuing versus stopping; the
 completion/refusal label remains diagnostic. Open calls generate a customer response with
 customer tools, the scenario, and persona instructions. V2 uses explicit local
 caller guidelines in production and qualification, avoiding the inherited vague

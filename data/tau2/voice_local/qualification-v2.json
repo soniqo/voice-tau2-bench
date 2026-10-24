@@ -225,6 +225,67 @@
           "checkup"
         ]
       }
+    },
+    {
+      "id": "device-setting-is-not-connectivity",
+      "scenario": "Restore my mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please turn off airplane mode and then check your connection."
+        ],
+        [
+          "tool",
+          "{\"airplane_mode\": false, \"signal\": \"Excellent\", \"mobile_internet\": \"not tested\"}"
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "partially-completed-actions",
+      "scenario": "Change the delivery addresses for both my desk order and my lamp order to 25 River Street.",
+      "history": [
+        [
+          "assistant",
+          "Please change both orders to 25 River Street."
+        ],
+        [
+          "user",
+          "The desk order delivery address has been changed to 25 River Street. I am checking the lamp order."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "verified-connectivity-completion",
+      "scenario": "Restore my mobile internet. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please run a speed test now."
+        ],
+        [
+          "tool",
+          "{\"download_mbps\": 20, \"internet_access\": true}"
+        ],
+        [
+          "assistant",
+          "The speed test works now, at 20 megabits per second."
+        ],
+        [
+          "user",
+          "Your mobile internet connection has been restored and verified by the successful speed test."
+        ]
+      ],
+      "decision": "COMPLETE"
     }
   ],
   "judge": [
