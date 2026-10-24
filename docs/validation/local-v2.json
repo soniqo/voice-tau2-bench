@@ -1,0 +1,287 @@
+{
+  "schema_version": 1,
+  "profile": "soniqo-local-gemma12b-v2",
+  "standard_leaderboard": false,
+  "scope": "Harness regression and customer/judge preflight; not a held-out model accuracy result",
+  "source": {
+    "benchmark_source_sha256": "df2095676b12e3d5af061dbbd2eb1d7699dcb761cefcfc637384b70ef1a5668c",
+    "native_runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b"
+  },
+  "roles": {
+    "agent": {
+      "model_id": "gemma4-12b-it",
+      "engine": "speech-swift/gemma4-unified",
+      "precision": "int4",
+      "features": [
+        "cancel",
+        "tool_calls",
+        "tool_history"
+      ]
+    },
+    "caller": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output",
+        "tool_calls",
+        "tool_history"
+      ]
+    },
+    "listener": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": []
+    },
+    "judge": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output"
+      ]
+    },
+    "agent_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": [
+        "cancel",
+        "streaming"
+      ]
+    },
+    "caller_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": []
+    },
+    "asr": {
+      "model_id": "whisper-large-v3",
+      "engine": "speech-swift/whisper",
+      "precision": "fp16",
+      "features": []
+    },
+    "vad": {
+      "model_id": "silero-vad",
+      "engine": "speech-swift/silero",
+      "precision": null,
+      "features": [
+        "streaming"
+      ]
+    }
+  },
+  "execution": {
+    "mode": "simulation-v2",
+    "call_seconds": 2400.0,
+    "wall_timeout_seconds": 7200.0,
+    "caller_policy": "terminal-v2",
+    "require_qualification": true,
+    "tool_guard": true,
+    "caller_idle_seconds": 15.0
+  },
+  "offline_checks": {
+    "tests_passed": 467,
+    "model_tests_deselected": 9,
+    "lint": "passed",
+    "frozen_inputs_verified": 64,
+    "frozen_tasks": 278,
+    "upstream_replays": "both passed"
+  },
+  "qualification": {
+    "checks": 19,
+    "passed": true,
+    "certificate_sha256": "6761fd91ff3b9914c2d1e925748a72d3051f019269d00266a1daf92650fe6446",
+    "suite_sha256": "8836b70f6f01478cfcbbb9d6e176cf55e33321c9cdb07f87c44b6a1002c6dff1",
+    "cases": [
+      {
+        "id": "completed-action",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "promised-action",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "resolved-refusal",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "refusal-before-follow-up",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "agent-goodbye-with-pending-work",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "partially-answered",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "all-questions-answered",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "caller-device-action",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "caller-speed-test",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "unknown-account",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "customer-claim-is-not-agent-confirmation",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "disclose-actual-goal",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "customer-must-not-do-agent-work",
+        "passed": true,
+        "component": "caller"
+      },
+      {
+        "id": "fact-paraphrase",
+        "passed": true,
+        "component": "judge"
+      },
+      {
+        "id": "fact-wrong-amount",
+        "passed": true,
+        "component": "judge"
+      },
+      {
+        "id": "fact-negation",
+        "passed": true,
+        "component": "judge"
+      },
+      {
+        "id": "fact-promise",
+        "passed": true,
+        "component": "judge"
+      },
+      {
+        "id": "fact-partial",
+        "passed": true,
+        "component": "judge"
+      },
+      {
+        "id": "fact-caller-only",
+        "passed": true,
+        "component": "judge"
+      }
+    ]
+  },
+  "spoken_e2e": {
+    "actual_model_test": "passed",
+    "pytest_wall_seconds": 171.64,
+    "agent_model": "gemma4-12b-it",
+    "caller_mode": "controlled_spoken_input",
+    "caller_llm_used": false,
+    "positive_reward": 1.0,
+    "positive_db_match": true,
+    "negative_reward": 0.0,
+    "negative_db_match": false,
+    "ticks": 2324,
+    "audio_seconds": 116.2,
+    "simulation_wall_seconds": 137.77276862500003,
+    "canonical_identifier_recovery": "ASR produced User_1; the agent retrieved user_1 from get_users before the successful write. No canonical identifier was inserted from a reference answer.",
+    "unexplained_inference_failures": 0,
+    "noncancellation_native_chat_failures": 0,
+    "requested_cancellations": 3,
+    "artifact_sha256": {
+      "simulation.json": "764cd2d2ac87426d463313bd1431c0d3f45d39863660234be7a1f06d15ad5849",
+      "agent.wav": "02f2edf8941bed648e9983738029752532943bee3fb6fedd85c23b34a42bc2f6",
+      "user.wav": "6ca0ac622a2066b082d771f399a15d16d541902b156b1b357d622fbc0ef395a9",
+      "negative-control.json": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad",
+      "settings.json": "78911d242cb638e52552d8a811c22890a0da3a5354bc23c19c187b1d6f4a0186",
+      "inference.json": "48c95be79097adad32e11b96ed1643564d1b669a4273e484c7fcc06e4456bc50"
+    }
+  },
+  "airline_regression": {
+    "status": "operator_interrupted_unscored",
+    "domain": "airline",
+    "task_id": "0",
+    "seed": 42,
+    "call_limit_seconds": 600,
+    "wall_timeout_seconds": 1200,
+    "caller_idle_seconds": 15,
+    "held_out": false,
+    "scored": false,
+    "audio_seconds": 184.70000000000002,
+    "reason": "The caller repeated after 15 seconds of silence while agent replies remained pending; requests were superseded before becoming audible. No domain score is claimed.",
+    "timing_samples": [
+      {
+        "asr_seconds": 3.163869583979249,
+        "chat_seconds": 23.762039124965668,
+        "tts_first_audio_seconds": 1.8075071250204928,
+        "tts_total_seconds": 9.998509583005216,
+        "minimum_response_seconds": 28.73341583396541
+      },
+      {
+        "asr_seconds": 1.7851027920260094,
+        "chat_seconds": 15.87707499996759,
+        "tts_first_audio_seconds": 1.7749342920142226,
+        "tts_total_seconds": 20.274124875024427,
+        "minimum_response_seconds": 19.437112084007822
+      },
+      {
+        "asr_seconds": 2.4367798749590293,
+        "chat_seconds": 22.495913499966264,
+        "tts_first_audio_seconds": 3.617556666955352,
+        "tts_total_seconds": 18.78898349998053,
+        "minimum_response_seconds": 28.550250041880645
+      },
+      {
+        "asr_seconds": 3.6037731250398792,
+        "chat_seconds": 16.298105874971952,
+        "tts_first_audio_seconds": 3.002757209003903,
+        "tts_total_seconds": 15.885261166025884,
+        "minimum_response_seconds": 22.904636209015734
+      },
+      {
+        "asr_seconds": 1.5718227500328794,
+        "chat_seconds": 14.980736166995484,
+        "tts_first_audio_seconds": 3.1347012919723056,
+        "tts_total_seconds": 15.60954670800129,
+        "minimum_response_seconds": 19.68726020900067
+      }
+    ],
+    "chat_seconds_min": 14.980736166995484,
+    "chat_seconds_max": 23.762039124965668,
+    "minimum_response_seconds_min": 19.437112084007822,
+    "minimum_response_seconds_max": 28.73341583396541,
+    "trace_sha256": "b4e93a46d231ced4f51a0bb932ba47a60f4c61c2e33c0a28dda4b29218adcf85"
+  },
+  "pilot": {
+    "plan": "configs/pilots/local-v2-heldout.json",
+    "tasks": 9,
+    "trials_per_task": 2,
+    "calls": 18,
+    "seeds": [
+      70,
+      71
+    ],
+    "executed": false
+  }
+}

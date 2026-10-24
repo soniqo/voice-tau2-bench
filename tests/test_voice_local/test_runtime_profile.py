@@ -1,7 +1,11 @@
 import pytest
 
 from tau2.voice.baseline import repository_root
-from tau2.voice.runtime_profile import LocalVoiceProfile, RuntimeCapabilities
+from tau2.voice.runtime_profile import (
+    LocalVoiceProfile,
+    RuntimeCapabilities,
+    load_profile,
+)
 
 
 def profile():
@@ -65,3 +69,21 @@ def test_listener_and_judge_roles_cannot_be_omitted():
     del requested.roles["judge"]
     with pytest.raises(ValueError, match="missing role: judge"):
         requested.check_runtime(capabilities())
+
+
+def test_v2_budget_defaults_keep_call_and_wall_time_separate():
+    requested = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
+    )
+    assert requested.budgets() == (2400, 7200)
+    assert requested.budgets(600) == (600, 7200)
+    assert profile().budgets() == (600, 600)
+    assert profile().budgets(1200) == (1200, 1200)
+
+
+@pytest.mark.parametrize(
+    "call,wall", [(0, None), (float("nan"), None), (float("inf"), None), (600, -1)]
+)
+def test_invalid_clock_limits_fail_before_inference(call, wall):
+    with pytest.raises(ValueError):
+        profile().budgets(call, wall)

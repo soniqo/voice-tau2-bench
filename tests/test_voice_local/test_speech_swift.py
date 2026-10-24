@@ -241,6 +241,42 @@ def test_cancelled_epoch_audio_and_tools_are_discarded():
     agent.stop()
 
 
+@pytest.mark.parametrize("simulation_time", [False, True])
+def test_new_utterance_waits_for_pending_tool_results_before_starting_asr(
+    simulation_time,
+):
+    from tau2.voice.execution import SimulationClock
+
+    agent = SpeechSwiftAgent(
+        [],
+        "policy",
+        backend=object(),
+        clock=SimulationClock() if simulation_time else None,
+    )
+    state = agent.get_init_state()
+    agent._receive_audio = lambda *args: None
+    started = []
+    agent._start_worker = lambda history, **kwargs: started.append(history)
+    agent._pending_audio.append(b"new caller utterance")
+    message = AssistantMessage(
+        role="assistant", tool_calls=[ToolCall(id="read", name="lookup", arguments={})]
+    )
+    agent._events.put(("tools", 0, message))
+    try:
+        returned, _ = agent.get_next_chunk(state)
+        assert returned == message
+        assert not started
+        agent.get_next_chunk(state)
+        assert not started
+        result = ToolMessage(role="tool", id="read", content="found")
+        agent.get_next_chunk(state, tool_results=result)
+        assert len(started) == 1
+        assert started[0][-2:] == [message, result]
+        assert not agent._awaiting_tools
+    finally:
+        agent.stop()
+
+
 @pytest.mark.parametrize("asr_failure", [False, True])
 def test_resumed_caller_speech_preserves_inflight_recognition(asr_failure):
     import threading

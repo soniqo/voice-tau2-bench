@@ -56,7 +56,13 @@ The agent completed five customer/line/plan reads. The caller ran its device-sid
 `run_speed_test` tool. The agent subsequently tried to call that caller-only tool
 twice itself; both attempts received `Tool 'run_speed_test' not found`. This is a
 tool-selection failure exposed after the protocol correction. No new native chat
-failure record was produced.
+non-cancellation native chat failure was produced.
+
+The JSON report's native-failure count is now attributed by this trial's request
+IDs. A former directory-wide count of three combined one Telecom cancellation
+during timeout finalization with two cancellation records from separate checks.
+The corrected Telecom non-cancellation failure count is zero, with one recorded
+cancellation. Its timeout, reward, and recorded trajectory are unchanged.
 
 A separate environment replay changed only termination to `user_stop` to inspect
 the final state. It still returned zero: the mobile-data and internet-speed

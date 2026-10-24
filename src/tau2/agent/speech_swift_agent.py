@@ -27,6 +27,7 @@ from tau2.data_model.message import (
     UserMessage,
 )
 from tau2.data_model.voice import RuntimeTranscriptionConfig
+from tau2.voice.execution import TimedEventQueue
 from tau2.voice.speech_swift import SpeechSwiftBackend, pcm16
 from tau2.voice.synthesis.audio_effects.effects import StreamingTelephonyConverter
 
@@ -47,6 +48,8 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         seed=42,
         tick_seconds=0.05,
         voice="A clear, calm adult female voice speaking American English.",
+        clock=None,
+        tool_guidance=False,
     ):
         super().__init__(tools=tools, domain_policy=domain_policy)
         self.backend = backend
@@ -54,10 +57,13 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self.tick_seconds = tick_seconds
         self.voice = voice
         self.seed = seed
+        self.clock = clock
+        self.tool_guidance = tool_guidance
+        self._work_timeline = None
         self._executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix="local-agent"
         )
-        self._events = queue.Queue()
+        self._events = TimedEventQueue(clock) if clock else queue.Queue()
         self._future = None
         self._cancelled = threading.Event()
         self._epoch = 0
@@ -65,6 +71,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self._request_lock = threading.Lock()
         self._pending_audio = []
         self._need_reply = False
+        self._awaiting_tools = set()
         self._transfer_pending = False
         self._output = bytearray()
         self._speech_text = ""
@@ -87,6 +94,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self.metrics = {
             "interruptions": 0,
             "asr": [],
+            "cancellations": [],
             "text_alignment": "estimated_until_tts_complete",
         }
 
@@ -101,6 +109,14 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             "Convert explicitly spoken punctuation and digit names into their written characters in identifier arguments.\n\n"
             + self.domain_policy
         )
+        if self.tool_guidance:
+            instructions += (
+                "\n\nOnly call tools declared for you. Ask the caller to perform actions "
+                "on their phone or device. After a lookup error, check a successful "
+                "customer/profile lookup for the exact identifier or ask the caller; "
+                "do not invent identifiers or repeat an unchanged failing call. "
+                "Never claim an action succeeded until its tool result confirms it."
+            )
         return CascadeState(
             messages=[SystemMessage(role="system", content=instructions)]
         )
@@ -210,7 +226,16 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             if not cancelled.is_set():
                 self._events.put(("speech_done", epoch, None))
 
-        self._future = self._executor.submit(copy_context().run, work)
+        if self.clock is None:
+            run = work
+        else:
+            timeline = self._work_timeline = self.clock.new_work()
+
+            def run():
+                with self.clock.activate(timeline):
+                    work()
+
+        self._future = self._executor.submit(copy_context().run, run)
 
     def _finish_spoken_history(self, state, *, interrupted=False):
         heard = self._speech_text[: self._spoken_chars]
@@ -238,6 +263,9 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                 if operation != "asr"
             ]
         for rid in requests:
+            self.metrics["cancellations"].append(
+                {"request_id": rid, "reason": "barge_in"}
+            )
             self.backend.cancel(rid)
         self._epoch += 1
         self._output.clear()
@@ -296,8 +324,11 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
 
     def _drain_events(self, state):
         tool_message = None
-        while not self._events.empty():
-            kind, epoch, value = self._events.get_nowait()
+        while True:
+            try:
+                kind, epoch, value = self._events.get_nowait()
+            except queue.Empty:
+                break
             if kind == "asr_error":
                 raise value
             if kind == "transcript":
@@ -326,7 +357,12 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                 self._transfer_pending = any(
                     call.name == "transfer_to_human_agents" for call in value.tool_calls
                 )
-        if self._future is not None and self._future.done():
+        work_ready = (
+            self.clock is None
+            or self._work_timeline is None
+            or self.clock.now + 1e-9 >= self._work_timeline.ready_at
+        )
+        if self._future is not None and self._future.done() and work_ready:
             try:
                 self._future.result()
             except Exception:
@@ -390,17 +426,35 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self._receive_audio(state, participant_chunk)
         tools = self._drain_events(state)
         if tool_results is not None:
-            state.messages.extend(
+            results = (
                 tool_results.tool_messages
                 if isinstance(tool_results, MultiToolMessage)
                 else [tool_results]
             )
+            if (
+                self._awaiting_tools
+                and {result.id for result in results} != self._awaiting_tools
+            ):
+                raise ValueError(
+                    "Agent received tool results that do not match its pending calls"
+                )
+            self._awaiting_tools.clear()
+            state.messages.extend(results)
             self._need_reply = True
             if self._transfer_pending:
                 return AssistantMessage(
                     role="assistant", content="###STOP###", contains_speech=False
                 ), state
-        if self._future is None and not self._speech_text and not self._in_speech:
+        if tools is not None:
+            self._awaiting_tools = {call.id for call in tools.tool_calls}
+            state.tick_count += 1
+            return tools, state
+        if (
+            self._future is None
+            and not self._speech_text
+            and not self._in_speech
+            and not self._awaiting_tools
+        ):
             if self._pending_audio:
                 audio = self._pending_audio.pop(0)
                 self._need_reply = False
@@ -420,6 +474,9 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         with self._request_lock:
             requests = list(self._request_ids)
         for rid in requests:
+            self.metrics["cancellations"].append(
+                {"request_id": rid, "reason": "shutdown"}
+            )
             self.backend.cancel(rid)
         self._executor.shutdown(wait=True, cancel_futures=True)
         if not self._vad_reset:

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "name": "local-v2-heldout-pilot",
+  "selection_method": "Uniform sampling without replacement within each domain; selection seed 20261024. Excludes the three historical first-task debug cases.",
+  "recommended_trials": 2,
+  "recommended_seed": 70,
+  "complexity": "control",
+  "excluded_debug_tasks": [
+    {
+      "domain": "airline",
+      "task_id": "0"
+    },
+    {
+      "domain": "retail",
+      "task_id": "0"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]"
+    }
+  ],
+  "tasks": [
+    {
+      "domain": "airline",
+      "task_id": "38"
+    },
+    {
+      "domain": "airline",
+      "task_id": "12"
+    },
+    {
+      "domain": "airline",
+      "task_id": "47"
+    },
+    {
+      "domain": "retail",
+      "task_id": "10"
+    },
+    {
+      "domain": "retail",
+      "task_id": "40"
+    },
+    {
+      "domain": "retail",
+      "task_id": "84"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mobile_data_issue]data_saver_mode_on|user_abroad_roaming_enabled_off[PERSONA:Easy]"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mobile_data_issue]airplane_mode_on|bad_network_preference|data_saver_mode_on|data_usage_exceeded|user_abroad_roaming_disabled_off[PERSONA:None]"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mms_issue]break_app_both_permissions|data_usage_exceeded[PERSONA:Hard]"
+    }
+  ]
+}
