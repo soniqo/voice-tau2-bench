@@ -1,0 +1,451 @@
+{
+  "benchmark": {
+    "git_head": "2f8ca64ef5c8142741132fe988e0ce0f2d3741e3",
+    "sha256": "875521cfe57da6a8789792d6a1f922c3ee199734ef39f7e0990587117bf19124"
+  },
+  "diagnostic_trial": true,
+  "domain": "telecom",
+  "limitations": [
+    "Failed model completion was not captured verbatim.",
+    "Repairs the earlier reconstructed unquoted-string case but this task still fails protocol validity.",
+    "A valid tool call does not establish successful troubleshooting.",
+    "Do not combine this rerun with the historical partial slice as an unchanged-runtime model score."
+  ],
+  "method": {
+    "caller_mode": "generative E4B",
+    "complexity": "control",
+    "max_seconds": 600.0,
+    "seed": 42,
+    "selection": "same first frozen Telecom task"
+  },
+  "models": {
+    "agent": {
+      "engine": "speech-swift/gemma4-unified",
+      "features": [
+        "cancel",
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-12b-it",
+      "precision": "int4"
+    },
+    "agent_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [
+        "cancel",
+        "streaming"
+      ],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "asr": {
+      "engine": "speech-swift/whisper",
+      "features": [],
+      "model_id": "whisper-large-v3",
+      "precision": "fp16"
+    },
+    "caller": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "tool_calls",
+        "tool_history"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "caller_tts": {
+      "engine": "speech-swift/voxcpm2",
+      "features": [],
+      "model_id": "voxcpm2",
+      "precision": "fp16"
+    },
+    "judge": {
+      "engine": "speech-swift/gemma4",
+      "features": [
+        "json_output"
+      ],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "listener": {
+      "engine": "speech-swift/gemma4",
+      "features": [],
+      "model_id": "gemma4-e4b-it",
+      "precision": "int4"
+    },
+    "vad": {
+      "engine": "speech-swift/silero",
+      "features": [
+        "streaming"
+      ],
+      "model_id": "silero-vad",
+      "precision": null
+    }
+  },
+  "outcome": {
+    "agent_tool_calls": [
+      {
+        "arguments": {
+          "phone_number": "555-123-2002"
+        },
+        "id": "3D3E3FD6-5967-43E7-A475-0B1BF54A4886",
+        "name": "get_customer_by_phone",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1001"
+        },
+        "id": "F1F8482A-7FC2-4519-A96E-608F12343C9D",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1002"
+        },
+        "id": "21053A65-52DA-4E0D-B07F-32455D14AB51",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      }
+    ],
+    "caller_tool_calls": [],
+    "conversation_seconds": 167.85000000000002,
+    "native_error": "malformed(\"orphan tool call terminator\")",
+    "native_request_id": "d32db2c8002340c3acada8042b278d1c",
+    "recognized_utterances": 3,
+    "reward": null,
+    "scored": false,
+    "termination": "inference_error",
+    "ticks": 3357
+  },
+  "profile": "soniqo-local-gemma12b-v1",
+  "raw_artifact_hashes": {
+    "telecom-after-tool-text/failed-run.json": {
+      "bytes": 10553118,
+      "sha256": "5bee35d9170b538a69ab7d9ba05f482849465fe2139f4c58080fd618d5b6d777"
+    },
+    "telecom-after-tool-text/profile.json": {
+      "bytes": 1485,
+      "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+    },
+    "telecom-after-tool-text/provenance.json": {
+      "bytes": 41843,
+      "sha256": "17896e344a76d7d88bde4668e93283ff7c6ebcb1ba3fb2fe567c1a468834eede"
+    },
+    "telecom-after-tool-text/runtime.json": {
+      "bytes": 1201,
+      "sha256": "ce500646d05f059a163dec6fd5df0feca9deb9dd22cd7d11cf9fc677126c5363"
+    },
+    "telecom-after-tool-text/settings.json": {
+      "bytes": 25092,
+      "sha256": "4f931fc5785b04f3a9e6a4979fa4481bbe890ebce353a9ad97e21e5739a16fc1"
+    }
+  },
+  "runtime": {
+    "model_assets": {
+      "agent": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "fbc1c1cb48ed86ec98482b2d41f5a03d3991aba74b7c29a93d430761e6518a38",
+            "size": 5415
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "a8349d9bd64cc5841297fcb5002f0fdc4749c473c8f1b10ea337f9ce4ee7014e",
+            "size": 260
+          },
+          {
+            "path": "model-00001-of-00002.safetensors",
+            "sha256": "0d58feed0c98a69c07317b4481aeae5ab2785f12a496ea96ab24c4842808de78",
+            "size": 5351756584
+          },
+          {
+            "path": "model-00002-of-00002.safetensors",
+            "sha256": "5b00a1bcb596ce6e827b4cdea6ecf2a0f35bb01306eb87c1ea4b3bcde36c7755",
+            "size": 1389282927
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sha256": "9ac99e7a6cf3e4d40eb8df01644fe9c04036ace94f3389df35db9d9449758516",
+            "size": 135329
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "fc1384a911d2c9860ac07bc3ceafff20bff26695991744b7dbe5e1e4522bfa57",
+            "size": 2719
+          }
+        ],
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "3888ffa00a226c6fb8f20603fed45d466afde548565dfe6c936acd043f460ae1",
+            "size": 4929
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+            "size": 208
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "e105100225815b521c6405c57ea23974530b868ddfea1e3ea9ec7ce1cf9fae38",
+            "size": 4198925877
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "8155d42e19a25623e76fc0460ce24ddfd34a7c85b496456684249c68e5f93fc5",
+            "size": 2773
+          }
+        ],
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "files": [
+          {
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+            "size": 2480617
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389",
+            "size": 282843
+          }
+        ],
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "459e764d58cdc13f3db6878adfdf8a29b5fd467ad1f4ef2161137cc115339c81",
+            "size": 888
+          },
+          {
+            "path": "silero_vad.mlmodelc/analytics/coremldata.bin",
+            "sha256": "b777c3751d72b7430eac7f8544769a3d918faf77c15db184fec30e44c56007a3",
+            "size": 243
+          },
+          {
+            "path": "silero_vad.mlmodelc/coremldata.bin",
+            "sha256": "f6fcd92c3132c9c718e5f54e0e770a8c8075beaa50a5b212a6287273b4ddae67",
+            "size": 399
+          },
+          {
+            "path": "silero_vad.mlmodelc/metadata.json",
+            "sha256": "1b953eb3818e7092deedd96e976c05354f77beb2ddc2976fe416af17e47f62d2",
+            "size": 3005
+          },
+          {
+            "path": "silero_vad.mlmodelc/model.mil",
+            "sha256": "b0a1384c4a664697989d9eb9cfb166b4b85f151206aeefd1bfa391ef9e5ad08f",
+            "size": 18203
+          },
+          {
+            "path": "silero_vad.mlmodelc/weights/weight.bin",
+            "sha256": "83210545de90c65195e8d6db1b349b7e5c31f989f48d0a908a8dc0e2f586e5f9",
+            "size": 619136
+          }
+        ],
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "a03ae7c0d11253b6a4ff66972d9d62e6a38c8aba91574cfdfbcce47b544d48fa",
+            "size": 5289
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "cb01f32246be7575d26a58a534b2fa130e2eaff045cc7d43503b550f0f9d5913",
+            "size": 4955255888
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sha256": "068594063e37662c02b21acf42ebb334ef6a74fb810e68a2368f88f08351de76",
+            "size": 1632
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "f8984687e4a92a3503d521396d454b7d68e9fdaab2a0288eb3536c7c1aa4bc20",
+            "size": 3676772
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "e78a3ebb48a0b9437efd1823b6b726c823da89e49dd8bcc90c02419d9baa772b",
+            "size": 5059
+          }
+        ],
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "files": [
+          {
+            "path": "AudioEncoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "195e35e9fbaa218cd59eca69988a2165245e5bfccc4a5d9776847e8955d1625a",
+            "size": 243
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/coremldata.bin",
+            "sha256": "273d6cd004f95763e9d03e5d36622f11038819a81b9eafed64b1d95444e04f62",
+            "size": 348
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/metadata.json",
+            "sha256": "db0d80a1046e03e211928cd2918d5e5924947f4ecbcee5232b125f0f59757fbc",
+            "size": 1826
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mil",
+            "sha256": "3e7737df445ef8fc13238970e3e518c0c6455bcadb6371df2ede1f22dcb8a8e0",
+            "size": 581035
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mlmodel",
+            "sha256": "bf0987c0d8c3fe180877b12ba5b4ac1d890e011f2103926e53186089feced575",
+            "size": 408667
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/weights/weight.bin",
+            "sha256": "eb07bab32dcd62ce653b5b288bd6c27bdc5a538be309f242e33ed05e1cb53457",
+            "size": 1273974400
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+            "sha256": "091a361134891f94e613562771beea0d93a9aefbc6984ba86c60f856e07a508f",
+            "size": 243
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/coremldata.bin",
+            "sha256": "f3c5778c86d6fbc6a9817a56dbcac05a946a4d95c77f6db8355572f3be9e9a68",
+            "size": 329
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/metadata.json",
+            "sha256": "1a94f4dfaec25549cbb386fe59b68c67a7a5af4a1c672a5998e5a84b9111135b",
+            "size": 1850
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/model.mil",
+            "sha256": "17977ed2332430c6cc4c1da2516f2cd4deb662d65ae38d72725ab157f32d4949",
+            "size": 10187
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/weights/weight.bin",
+            "sha256": "97a66b915cd3fc97dcba6806d92381e1a56024b8f68c1a1cd370d4c92505fe87",
+            "size": 373376
+          },
+          {
+            "path": "TextDecoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "7c151c6259c279aa7922d60e82c7851bbad1df10018b1cebc566aa6c2aee5e0f",
+            "size": 243
+          },
+          {
+            "path": "TextDecoder.mlmodelc/coremldata.bin",
+            "sha256": "f41a7939b47f7cf127aa69dfd8c552a141dc773b936bf8621aeffcd201fb9e30",
+            "size": 637
+          },
+          {
+            "path": "TextDecoder.mlmodelc/metadata.json",
+            "sha256": "de900a968f7640e9775c28268e348a0bc6559a4a92defae07d91e7effa838246",
+            "size": 4770
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mil",
+            "sha256": "f8273cbf61aac4a43118a9090fc4d580678ea04abda473b4cb9dda2647d25c27",
+            "size": 1010477
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mlmodel",
+            "sha256": "680d8dfb7c7d8f1f852071ac7bdc96e55c696d0b822e70861045efb426b0a27b",
+            "size": 745579
+          },
+          {
+            "path": "TextDecoder.mlmodelc/weights/weight.bin",
+            "sha256": "680f398925225a313c62da0221aa0a58c9f1bffac5c36f20c449a70a7c9b1e55",
+            "size": 1813201716
+          },
+          {
+            "path": "config.json",
+            "sha256": "798b69c08cf93b2b03d94bea6eb3eb25fd4712259712d8a62ed2483fdf818a9e",
+            "size": 1163
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d24f9cca0f448609a71ae044b736023706382f45e9700e0dffb2559d10cf1fea",
+            "size": 2810
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer.json",
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca"
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer_config.json",
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389"
+          }
+        ],
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "revision": "86f500577faa1a8c4c76b623063d65894dc70524+source-sha256:0940d2a56d52ddabdb87c194a83e70bb1a4c530e2e40b5239c25fc5a673426e3",
+    "voxcpm2_audio_vae": "float32",
+    "voxcpm2_compute": "mixed; FP16 network inputs and FP32 AudioVAE",
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "settings": {
+    "agent_model": "gemma4-12b-it",
+    "agent_model_args": {
+      "max_tokens": 1024,
+      "temperature": 0
+    },
+    "agent_tts_seed": 42,
+    "caller_model_args": {
+      "max_tokens": 1024,
+      "temperature": 0
+    },
+    "complexity": "control",
+    "decision_model_args": {
+      "max_tokens": 16,
+      "temperature": 0
+    },
+    "domain": "telecom",
+    "max_seconds": 600.0,
+    "profile": "soniqo-local-gemma12b-v1",
+    "seed": 42,
+    "semantic_judge_model_args": {
+      "max_tokens": 1024,
+      "temperature": 0
+    },
+    "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+    "tick_seconds": 0.05
+  },
+  "standard_leaderboard": false,
+  "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]"
+}

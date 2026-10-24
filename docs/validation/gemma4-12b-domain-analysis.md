@@ -51,17 +51,60 @@ diagnosis or asking for device-side checks. The reconstructed native prompt was
 generation budget was 1,024 tokens, with thinking disabled.
 
 The diagnostic native log reported `Gemma4ToolError.malformed("invalid literal")`.
-The HTTP failure remains unscored. Without the original raw completion, the
-error alone cannot identify the offending literal, establish whether generation
-was truncated, or distinguish a generation problem from an adapter mismatch.
-Record the raw completion and stop reason in a separate controlled diagnostic
-before choosing a fix.
+The original failed completion was not saved verbatim, so its exact contents
+remain unknown. A separate same-weight comparison reproduced a malformed call
+from the reconstructed history and isolated a prompt correction. All comparisons
+below used the pinned INT4 weights, temperature 0, a 1,024-token output budget,
+256-token prefill batches, and `mlx-lm` 0.32.2. They ran locally.
 
-An offline comparison found differences between our formatter and the pinned
-checkpoint template: extra Pydantic title metadata, and differing representations
-of tool-response strings/objects and null values. The checkpoint template
-supports both its legacy object form and standard string tool responses, so a
-formatting difference alone is not proof of a bug.
+| Reconstructed-history variant | Generated tokens, including stop | Result |
+| --- | --- | --- |
+| Original Swift prompt and token IDs | 21 | Invalid unquoted `id:L1002` |
+| Original Swift prompt, reference tokenizer | 21 | Same invalid literal |
+| Checkpoint standard chat template | 23 | Valid quoted string `L1002` |
+| Canonical tool schema only | 21 | Same invalid literal |
+| Remove schema titles only | 23 | Valid quoted string |
+| Preserve tool-result content as text only | 23 | Valid quoted string |
+| Canonical schema and text tool results | 23 | Valid quoted string |
+
+The invalid completion was
+`<|tool_call>call:get_details_by_id{id:L1002}<tool_call|>`.
+The valid completion enclosed `L1002` in the checkpoint's `<|"|>` string
+delimiters. Both stopped normally after a short generation. Output-budget
+exhaustion and tokenizer differences do not explain this reproduced failure.
+The comparison also shows prompt sensitivity; it does not establish that every
+malformed call has the same cause.
+
+The checkpoint template supports legacy object responses and standard string
+tool-message content. The native 12B adapter previously decoded JSON text into
+object fields before rendering it. The correction preserves that content as
+text, matching the standard template. The public codec's existing structured
+representation remains in use for E4B. This changes neither accepted tool-call
+syntax nor the task's tools, prompts, reference actions, or reward rules.
+
+With speech-swift revision `86f500577faa1a8c4c76b623063d65894dc70524`, the actual
+Swift 12B adapter parsed the reconstructed history successfully and returned
+`get_details_by_id` with `{"id":"L1002"}`. Fourteen focused unit tests and the
+existing real-model tool/result-history/cancellation test also passed. This
+establishes a fix for the reproduced serialization failure. The next call still
+repeats a line lookup; valid syntax alone does not establish successful diagnosis
+or task completion. The original Telecom attempt remains unscored.
+
+### Complete voice-task rerun: still unscored
+
+The [separate rerun record](gemma4-12b-telecom-tool-text.json) uses that corrected
+runtime with the same frozen Telecom task, profile, seed 42, `control` telephony,
+and 600-second deadline. The E4B caller remained generative. It made three valid
+calls: customer lookup, then reads of `L1001` and `L1002`. After 3,357 ticks
+(167.85 seconds of conversation audio), a subsequent 12B chat request failed
+with `malformed("orphan tool call terminator")`. No caller device tool ran.
+The trial remains unscored, with its original failure artifacts retained.
+
+This is a different invalid-output condition. The text-preservation correction
+does not make the complete task reliable. The raw failed completion was not
+captured, so the parser error must not be presented as a verbatim generation.
+Further diagnosis needs exact failed request/completion capture and a comparison
+against the checkpoint template before changing parsing rules or model settings.
 
 ## Latency limits the useful conversation
 
@@ -94,8 +137,8 @@ on these task outcomes has not been demonstrated.
 
 1. Check caller adherence and termination on a correct refusal using the recorded
    agent responses. Validate a stronger local caller as a separate explicit profile.
-2. Compare the same saved ASR/tool history through the native adapter and the
-   checkpoint reference, retaining raw output, token counts, and stop reason.
+2. Capture the exact failed Telecom request and raw completion, then check the
+   entire 12B chat-template representation against the checkpoint reference.
 3. Test canonical identifier recovery after an unsuccessful lookup, using only
    information available from the customer's tools.
 4. Rerun the same frozen tasks and seed after any correction, with new provenance.
