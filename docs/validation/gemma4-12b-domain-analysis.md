@@ -90,6 +90,22 @@ establishes a fix for the reproduced serialization failure. The next call still
 repeats a line lookup; valid syntax alone does not establish successful diagnosis
 or task completion. The original Telecom attempt remains unscored.
 
+### Complete voice-task rerun: still unscored
+
+The [separate rerun record](gemma4-12b-telecom-tool-text.json) uses that corrected
+runtime with the same frozen Telecom task, profile, seed 42, `control` telephony,
+and 600-second deadline. The E4B caller remained generative. It made three valid
+calls: customer lookup, then reads of `L1001` and `L1002`. After 3,357 ticks
+(167.85 seconds of conversation audio), a subsequent 12B chat request failed
+with `malformed("orphan tool call terminator")`. No caller device tool ran.
+The trial remains unscored, with its original failure artifacts retained.
+
+This is a different invalid-output condition. The text-preservation correction
+does not make the complete task reliable. The raw failed completion was not
+captured, so the parser error must not be presented as a verbatim generation.
+Further diagnosis needs exact failed request/completion capture and a comparison
+against the checkpoint template before changing parsing rules or model settings.
+
 ## Latency limits the useful conversation
 
 The same native process serializes chat, synthesis, and recognition. In the
@@ -121,8 +137,8 @@ on these task outcomes has not been demonstrated.
 
 1. Check caller adherence and termination on a correct refusal using the recorded
    agent responses. Validate a stronger local caller as a separate explicit profile.
-2. Rerun the complete Telecom voice task after the validated 12B tool-result
-   serialization correction, retaining its own outcome and source provenance.
+2. Capture the exact failed Telecom request and raw completion, then check the
+   entire 12B chat-template representation against the checkpoint reference.
 3. Test canonical identifier recovery after an unsuccessful lookup, using only
    information available from the customer's tools.
 4. Rerun the same frozen tasks and seed after any correction, with new provenance.

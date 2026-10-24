@@ -56,6 +56,18 @@
   },
   "telecom": {
     "company_read_calls": 15,
+    "complete_voice_rerun": {
+      "caller_device_tools": 0,
+      "parser_error": "orphan tool call terminator",
+      "report": "gemma4-12b-telecom-tool-text.json",
+      "report_sha256": "d14ab70c44d60d08f517a9044808a5d4e2aaf4870e2b52ee6cd574d72917d0e0",
+      "reward": null,
+      "runtime_revision": "86f500577faa1a8c4c76b623063d65894dc70524+source-sha256:0940d2a56d52ddabdb87c194a83e70bb1a4c530e2e40b5239c25fc5a673426e3",
+      "same_profile_seed_task_time_limit": true,
+      "scored": false,
+      "ticks": 3357,
+      "valid_company_calls": 3
+    },
     "context_limit": 262144,
     "context_truncated": false,
     "generated_token_budget": 1024,
