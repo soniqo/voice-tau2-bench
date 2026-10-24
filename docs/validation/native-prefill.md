@@ -54,7 +54,7 @@ held-out pilot remains unrun; historical domain scores remain unchanged.
 The native tests use the pinned 12B INT4 checkpoint at revision
 `73bcf09092aa277861d5a191b989b666f7f32e8f`, release builds, and compiled MLX Metal
 shaders. See the runtime's
-[prefill report](https://github.com/soniqo/speech-swift/blob/perf/gemma4-prefill/docs/benchmarks/gemma4-prefill.md)
+[prefill report](https://github.com/soniqo/speech-swift/blob/main/docs/benchmarks/gemma4-prefill.md)
 for the native test command and measurement limits.
 
 After starting the complete staged service, run the new HTTP check:
