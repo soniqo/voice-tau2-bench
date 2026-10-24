@@ -68,18 +68,18 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 31 checks cover completed versus promised work, required follow-ups after a
+The 32 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Nine checks use the full 30-tool telecom customer interface, including real
+Ten checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
 requires reassurance before rebooting, and a data-saver status request after
 earlier troubleshooting steps and a VPN question split across streaming speech
-fragments.
+fragments, and an unknown plan-usage question that belongs to the agent.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
@@ -108,8 +108,12 @@ are merged, while speaker changes and tool-call/result boundaries are preserved.
 For open calls with customer tools, a separate TOOL/SPEAK decision reads the
 heard request, caller scenario/persona and actual tool history. TOOL requires a
 native customer function call before speech; saying the action happened does not
-execute it. A prose response in TOOL mode gets one model reassessment with the
-same heard context. A second prose response leaves the trial unscored. Unknown
+execute it. The tool request repeats the actual latest heard agent statement
+before the labelled history so it is treated as the pending instruction rather
+than an old transcript item. A prose response in TOOL mode gets one model
+reassessment with the same heard context. A second prose response leaves the
+trial unscored. Account questions without a matching customer tool route to
+SPEAK, where the caller can admit missing information. Unknown
 tools, invalid arguments and inference errors fail immediately. The ordinary
 orchestrator executes validated tool calls; the controller never changes device
 state itself. The leading routing label is used; any following annotation is

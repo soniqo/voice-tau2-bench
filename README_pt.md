@@ -41,7 +41,7 @@ Esta amostra pequena e determinista usa chamador e juiz locais. Não representa 
 
 A amostra de 12B está incompleta: telecomunicações teve um erro de inferência nativa e ficou sem pontuação. Teste de voz controlado com 12B: **1.0** para a escrita correta na base de dados e **0.0** na reavaliação de uma escrita incorreta. [Parâmetros validados](docs/validation/gemma4-12b-voice-e2e.md). A entrada do chamador é fixa; este teste não contribui para a pontuação do benchmark. As execuções por domínio usam o chamador generativo e os relatórios ligados registam cada revisão do runtime.
 
-Verificação V2: **Gemma 4 12B IT (INT4) obteve 1.0 em um diagnóstico de recusa no domínio aéreo** (tarefa `0`, semente `42`, espera do cliente de 15 segundos). Essa tarefa verifica que o banco de dados permanece inalterado. Varejo, telecomunicações e o piloto reservado de 18 chamadas ainda não foram executados nessa condição. [Validação e parâmetros](docs/validation/native-prefill.md).
+As repetições V2 continuam sendo diagnósticas: um caso de recusa aérea obteve **1.0** pela base de dados inalterada; varejo excedeu o tempo e telecomunicações revelou falhas no controle do chamador. O **piloto reservado de 18 chamadas está incompleto**. Esses ensaios não estabelecem uma taxa geral de aprovação do modelo. [Resultados e parâmetros](docs/validation/caller-rerun.md).
 
 `soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
 

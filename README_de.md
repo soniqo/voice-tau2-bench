@@ -41,7 +41,7 @@ Diese kleine deterministische Stichprobe nutzt lokale Anrufer- und Bewertungsmod
 
 Die 12B-Stichprobe ist unvollständig: Beim Telekommunikationstest trat ein nativer Inferenzfehler auf; er bleibt unbewertet. Kontrollierter 12B-Sprachtest: **1.0** für den korrekten Datenbankeintrag und **0.0** bei erneuter Bewertung eines falschen Eintrags. [Geprüfte Parameter](docs/validation/gemma4-12b-voice-e2e.md). Die Anrufereingabe ist fest vorgegeben; dieser Test zählt nicht zum Benchmark-Ergebnis. Domänenläufe verwenden den generativen Anrufer. Die verlinkten Berichte enthalten die jeweilige Runtime-Revision.
 
-V2-Nachprüfung: **Gemma 4 12B IT (INT4) erzielte 1.0 in einem Flugreise-Diagnosefall mit Ablehnung** (Aufgabe `0`, Seed `42`, 15 Sekunden Wartezeit des Anrufers). Diese Aufgabe prüft, dass die Datenbank unverändert bleibt. Handel, Telekommunikation und der zurückgehaltene Pilot mit 18 Anrufen wurden unter dieser Bedingung noch nicht ausgeführt. [Validierung und Parameter](docs/validation/native-prefill.md).
+Die V2-Wiederholungen dienen weiterhin der Diagnose: Ein Ablehnungsfall im Flugbereich erzielte **1.0** bei unveränderter Datenbank; der Handelsfall lief ins Zeitlimit, und Telekommunikation deckte Fehler in der Anrufersteuerung auf. Der **zurückgehaltene Pilot mit 18 Anrufen ist unvollständig**. Diese Läufe belegen keine Gesamtbestehensquote des Modells. [Ergebnisse und Parameter](docs/validation/caller-rerun.md).
 
 `soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
 

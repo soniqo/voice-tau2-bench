@@ -585,6 +585,21 @@
           "vpn_connected": false
         }
       }
+    },
+    {
+      "id": "full-tools-unknown-plan-usage",
+      "scenario": "Restore my mobile internet. I do not know my current plan data usage or whether I reached the limit. Do not invent account information.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I'll check your data usage. Could you please tell me if you have reached your plan's data limit?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
     }
   ],
   "judge": [

@@ -360,9 +360,16 @@ def test_unexecuted_action_claim_gets_one_native_tool_reassessment():
     assert caller.decisions[-1]["rejected_customer_responses"] == [
         "I have enabled mobile data."
     ]
-    first = json.loads(backend.calls[-2][0][-1].content.split("\n", 1)[1])
-    retry = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
+    first = json.loads(
+        backend.calls[-2][0][-1].content.split("Customer context:\n", 1)[1]
+    )
+    retry = json.loads(
+        backend.calls[-1][0][-1].content.split("Customer context:\n", 1)[1]
+    )
     assert first["conversation"] == retry["conversation"]
+    assert backend.calls[-2][0][-1].content.startswith(
+        "The service agent asks you: Please enable mobile data.\n"
+    )
 
 
 def test_repeated_action_claim_without_tool_is_unscored():
@@ -533,3 +540,72 @@ def test_repeated_invalid_control_fields_remain_unscored():
         caller.assess("model", [])
     assert len(backend.calls) == 2
     assert not caller.decisions
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "I don't know if I've reached my data limit.",
+        "I'm not sure whether I reached the limit.",
+        "I cannot access my plan usage.",
+    ],
+)
+def test_honest_unknown_answer_does_not_require_an_unavailable_customer_tool(answer):
+    backend = Backend(["CONTINUE", "SPEAK", answer])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content="Have you reached your plan data limit?")],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    assert reply.content == answer and not reply.is_tool_call()
+    assert backend.calls[-1][1]["tools"] == []
+    assert len(backend.calls) == 3
+
+
+@pytest.mark.parametrize(
+    "answer",
+    ["I don't know how to enable mobile data.", "I don't know if mobile data is on."],
+)
+def test_unknown_device_state_does_not_replace_an_available_requested_tool(answer):
+    backend = Backend(["CONTINUE", "TOOL", answer, answer])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="after one reassessment"):
+        caller.generate(
+            "model",
+            [UserMessage(role="user", content="Please enable mobile data.")],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+
+
+def test_empty_heard_record_does_not_replace_pending_device_instruction():
+    backend = Backend(["CONTINUE", "TOOL", native_call()])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content="Please enable mobile data."),
+            ToolMessage(role="tool", content="Mobile data is off.", id="observed"),
+            UserMessage(role="user", content=None),
+        ],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    assert backend.calls[-1][0][-1].content.startswith(
+        "The service agent asks you: Please enable mobile data.\n"
+    )
+
+
+def test_unknown_answer_cannot_hide_an_unexecuted_action_claim():
+    claim = "I don't know, but I have turned off airplane mode."
+    backend = Backend(["CONTINUE", "TOOL", claim, claim])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="after one reassessment"):
+        caller.generate(
+            "model",
+            [UserMessage(role="user", content="Please disable airplane mode.")],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )

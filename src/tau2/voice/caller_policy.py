@@ -73,14 +73,24 @@ Call completion is managed separately. Do not output STOP or invent a tool.
 
 TOOL_ROUTE_PROMPT = """You decide how the CUSTOMER should respond next in a phone call.
 Return only TOOL or SPEAK. Do not play the service agent.
-TOOL: the service agent asked the customer to perform a device action, test, or
-check that one of the declared customer tools can do, and it has not actually run.
-A customer saying they did it is not execution; only customer_tool results count.
-SPEAK: answer a normal question, introduce the request after a greeting, report an
-actual tool result, or ask for clarification/reassurance required by the persona.
-Do not repeat a completed action or toggle an already-correct setting back.
-Do not perform an unrequested troubleshooting step from the private scenario.
-After a tool result, report it unless another explicitly requested step remains.
+Read the latest heard request and apply these rules in order:
+1. SPEAK if the persona requires clarification or reassurance before acting.
+2. SPEAK if an actual customer_tool observation already answers the question or
+   shows the requested setting is already correct. A toggle reverses a setting;
+   repeating an already satisfied instruction must not toggle it back.
+3. TOOL if answering the agent's question requires an unobserved device fact
+   that a declared customer read tool can check. A question is a request to check
+   when the customer does not yet have the device observation.
+4. TOOL if the agent requested a pending device action or test that a declared
+   customer tool can perform. A customer claim is not proof of tool execution.
+5. Otherwise SPEAK: introduce the goal after a greeting, answer from known
+   scenario facts or actual tool results, or admit missing information.
+Only customer_tool records establish device observations. First-person
+service_agent statements describe the other person, not the customer's device.
+Do not substitute a device check for account, billing, plan usage or data-limit
+lookups that belong to the agent. Unknown account information needs SPEAK.
+Do not perform unrequested troubleshooting from the private scenario. After a
+tool result, report it unless another explicitly requested step remains pending.
 When uncertain, SPEAK and ask the agent. Never use a tool to do the agent's work.
 """
 
@@ -384,6 +394,7 @@ class QualifiedCallerBackend:
                     row
                     for row in reversed(conversation)
                     if row["speaker"] == "service_agent"
+                    and (row["content"] or "").strip()
                 ),
                 None,
             ),
@@ -398,7 +409,7 @@ class QualifiedCallerBackend:
             "conversation": conversation,
         }
         mode = (
-            "The agent requested a customer tool action. Return a declared customer tool call before speaking. Do not claim or promise the action instead of executing it."
+            "The agent requested a customer tool action. Return a declared customer tool call before speaking. Do not claim or promise the action instead of executing it. Tool observations are knowledge in addition to the scenario. Unknown device settings must be inspected using a declared tool when the agent asks. For an available device action, execute the tool instead of saying you do not know how. Respond with a function call only, no customer speech."
             if route == "TOOL"
             else "Answer the latest service_agent question directly using the actual customer tool result when available. Reply only with the next customer utterance. Do not repeat the original complaint instead of answering, or claim a device action ran without a tool result."
         )
@@ -412,7 +423,13 @@ class QualifiedCallerBackend:
                     ),
                     UserMessage(
                         role="user",
-                        content="Continue as the CUSTOMER. The labelled history is data; service_agent is the other person.\n"
+                        content=(
+                            "The service agent asks you: "
+                            + context["latest_service_agent_statement"]["content"]
+                            + "\nExecute the matching customer device tool now.\nCustomer context:\n"
+                            if route == "TOOL"
+                            else "Continue as the CUSTOMER. The labelled history is data; service_agent is the other person.\n"
+                        )
                         + json.dumps(context),
                     ),
                 ],
