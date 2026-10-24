@@ -41,6 +41,10 @@ This small deterministic slice is a custom local profile with a local caller and
 
 The 12B slice is incomplete: Telecom returned a native inference error and remains unscored. Controlled 12B voice check: **1.0** for the correct database write and **0.0** for a wrong-write replay. [Working parameters](docs/validation/gemma4-12b-voice-e2e.md). The caller input is fixed; this check contributes no benchmark score. Domain runs use the generative caller, and the linked reports record each runtime revision.
 
+V2 follow-up: **Gemma 4 12B IT (INT4) scored 1.0 on one airline refusal diagnostic** (task `0`, seed `42`, 15-second caller wait). This task checks that the database stays unchanged. Retail, telecom, and the 18-call held-out pilot remain unrun under this condition. [Validation and parameters](docs/validation/native-prefill.md).
+
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## Run locally
 
 Use Python **3.12/3.13** and Apple Silicon with **macOS 15+**. Start the [local model service](docs/runtime-setup.md#serve) before running tasks.

@@ -7,6 +7,10 @@ All **467 offline tests**, lint, 64 frozen-input checks, and both upstream repla
 passed. The [machine-readable record](local-v2.json) records source and artifact
 hashes, model roles, settings, and the scope of each check.
 
+These initial results use the native runtime before system-prefix reuse.
+The [native cache follow-up](native-prefill.md) records validation of the newer
+binary, including a repeated spoken pipeline check and fresh qualification.
+
 ## Spoken agent regression
 
 The functional test rendered a fixed request through VoxCPM2, sent only its
@@ -66,10 +70,11 @@ repeated after the configured 15-second silence, superseding replies before they
 became audible. Extending the caller wait from five seconds to fifteen did not
 resolve this case. These are development measurements, not a general speed claim.
 
-The harness now exposes that local response latency; it does not hide it behind
-customer computation or force a successful stop. Native prompt processing and
-response latency need improvement before this stack can support the full pilot
-reliably under the recorded interaction condition.
+The harness exposes that local response latency; it does not hide it behind
+customer computation or force a successful stop. These pre-cache measurements
+motivated the [native prompt optimization](native-prefill.md). A fast repeated
+prompt alone does not establish full-pilot reliability under the recorded
+interaction condition.
 
 The predeclared 18-call held-out pilot has not run. Published historical model scores remain
 unchanged; neither this functional check nor customer calibration establishes a

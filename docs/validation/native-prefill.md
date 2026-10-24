@@ -4,6 +4,8 @@ The native Gemma 4 12B runtime can reuse an unchanged system/tool prefix.
 Benchmark traces now preserve its optional `cachedPrefixTokens` value as
 `cached_prefix_tokens`, and native provenance records the effective cache budget.
 Absent metadata remains distinct from a cold request reporting zero.
+The [validation record](native-prefill.json) contains source/model pins, artifact
+hashes, settings, and the scope of each completed check.
 
 ## Verified runtime behavior
 
@@ -38,16 +40,59 @@ Transport tests cover absent, zero, positive, and invalid cache counts; invalid
 metadata remains an unscored error. An opt-in actual-model HTTP test checks cold
 and warm replies and trace metadata.
 
-The complete voice service has not yet reached HTTP readiness with this binary.
-Both startup attempts stopped at the local resource guard when free disk space
-fell below 2 GiB, before any qualification or domain request. The second attempt
-followed cleanup of this task's rebuildable files. These are infrastructure
-failures, not model failures or scored tasks. The existing
-[spoken pipeline result](local-v2.md) used the earlier native binary.
+The complete voice service now reaches HTTP readiness under the unchanged
+24 GiB physical-footprint and 2 GiB free-disk guards. Two earlier startup attempts
+hit the disk guard; package-cache and archived-compiler-cache cleanup resolved
+that infrastructure limit. Pinned model files, the preserved runtime binary,
+repository work in progress, and the complete benchmark backup verified unchanged.
 
-Caller/judge qualification, the actual-model HTTP cache test, and the airline
-rerun must be repeated after enough local disk space is available. The 18-call
-held-out pilot remains unrun; historical domain scores remain unchanged.
+Against the new binary, the actual-model HTTP cache test passed (1.54 seconds),
+and caller/judge qualification passed **19/19** checks. The controlled full spoken
+pipeline also passed (62.50 seconds including reference synthesis and assertions):
+the requested database write scored **1.0**, and a replay with the successful
+write's title changed scored **0.0**. The call contained 910 ticks, or 45.5 simulated
+audio seconds, and ended with `user_stop`. Two native cancellations matched
+recorded agent cancellation intents; there were no unexplained inference failures.
+
+This functional check substitutes fixed spoken customer input and contributes
+no domain score. It exercises actual VoxCPM2 speech, telephony conversion, full
+Whisper Large-v3, Gemma 4 12B, tools, database grading, and streamed agent speech.
+The 18-call held-out pilot remains unrun; historical domain scores remain unchanged.
+
+## Airline diagnostic
+
+Gemma 4 12B completed airline task `0`, seed `42`, with **reward 1.0** and
+`user_stop`. The generative customer was used under the unchanged local v2
+15-second caller wait, clean `control` telephony, a 600-simulated-second cap,
+and a 1,200-wall-second watchdog. The call lasted **498.75 simulated seconds**;
+the runner took **1,095.61 wall seconds** (18.3 minutes).
+
+This is a refusal case: the customer does not want cancellation without a
+refund, and the expected database stays unchanged. This frozen task has **no
+communication assertions**. Its reward therefore verifies the expected database
+outcome and normal termination; it does not independently verify the spoken
+policy explanation. The controlled mock test above supplies the separate
+positive/negative check for a real database write.
+
+The agent first looked up `EH-GLP-3`, as transcribed by ASR, and received an error.
+It then used `EHGLP3` successfully. These were its only tool calls; neither
+modified the database. It recovered the identifier from the conversation without
+reference actions or task answers being inserted into its input.
+
+Of 21 successful agent chat requests, **20 reused 4,608 prefix tokens**. The cold
+chat took 8.67 seconds; warm chats took 3.90–6.28 seconds, including conversation
+prefill and generation. ASR took 0.82–1.77 seconds per utterance. There were no
+unexplained failed requests, native chat failures, or unexpected cancellations.
+The call demonstrates a passing domain diagnostic, with substantial conversation
+and customer-computation overhead still visible in the timing records.
+
+Across the post-cleanup service session, peak physical footprint was **16.89 GiB**
+on the 48 GiB machine, and minimum free disk space was **7.08 GiB**. Neither
+resource guard triggered. The test service was stopped after validation.
+
+One known diagnostic task is not an overall model score. Retail and telecom have
+not been rerun under this condition, and the predeclared held-out pilot remains
+unrun. Do not combine this result with the historical v1 slice.
 
 ## Reproduction
 
@@ -66,7 +111,29 @@ uv run --frozen pytest -q tests/test_voice_local/test_real_models.py \
   -k native_prefix_reuse
 ```
 
-Then run the 19-check qualification suite and domain commands documented in
+Run the full spoken check with a fresh output directory:
+
+```bash
+SPEECH_SWIFT_INFERENCE_URL=http://127.0.0.1:8787 \
+TAU_VOICE_PROFILE=configs/voice/soniqo-local-gemma12b-v2.json \
+TAU_VOICE_FULL_E2E=1 \
+TAU_VOICE_E2E_OUTPUT=data/simulations/prefix-cache-spoken-check \
+uv run --frozen pytest -q tests/test_voice_local/test_real_models.py \
+  -k full_voice_task
+```
+
+The 19-check qualification suite and domain commands are documented in
 [local v2 execution](../local-v2.md). Use a fresh qualification report matching
 the current benchmark source and native provenance. Keep the same 15-second
 caller wait and count measured agent execution time normally.
+
+The completed airline diagnostic used:
+
+```bash
+uv run --frozen tau-voice run --domain airline --task-id 0 \
+  --profile configs/voice/soniqo-local-gemma12b-v2.json \
+  --qualification data/simulations/prefix-cache-qualification.json \
+  --base-url http://127.0.0.1:8787 --seed 42 \
+  --max-seconds 600 --wall-timeout 1200 --complexity control \
+  --output data/simulations/prefix-cache-airline-0
+```

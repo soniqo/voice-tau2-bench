@@ -9,8 +9,9 @@ v2 results must not be combined with v1 scores or presented as official τ-Voice
 leaderboard results.
 
 See [validation results and working parameters](validation/local-v2.md) for the
-passed spoken pipeline check, qualification results, and remaining airline
-latency limitation. The held-out pilot has not run.
+spoken pipeline checks, qualification results, and known limits. The
+[native cache follow-up](validation/native-prefill.md) verifies the newer runtime.
+The held-out pilot has not run.
 
 ## Models
 
@@ -157,7 +158,7 @@ system/tool prefix can reduce agent latency; its measured execution time still
 counts. Report the native revision, cache budget, and cold/warm request counts
 with timing results. Never prefill private task goals or reference answers.
 See [native cache validation](validation/native-prefill.md) for the measured
-speedup, completed checks, and the current full-service resource limit.
+speedup and completed HTTP, qualification, and spoken pipeline checks.
 
 Batch summaries show planned/completed trials, scored coverage, termination
 counts, and pass^k for tasks with all requested trials. A failed inference or
