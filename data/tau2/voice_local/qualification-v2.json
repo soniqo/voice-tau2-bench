@@ -518,6 +518,73 @@
           "data_saver_mode": false
         }
       }
+    },
+    {
+      "id": "full-tools-streaming-vpn-question",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using customer tools.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I am "
+        ],
+        [
+          "user",
+          "not using "
+        ],
+        [
+          "user",
+          "a VPN. I "
+        ],
+        [
+          "user",
+          "am asking "
+        ],
+        [
+          "user",
+          "if you "
+        ],
+        [
+          "user",
+          "have a VPN "
+        ],
+        [
+          "user",
+          "active on "
+        ],
+        [
+          "user",
+          "your phone, "
+        ],
+        [
+          "user",
+          "as that "
+        ],
+        [
+          "user",
+          "can "
+        ],
+        [
+          "user",
+          "sometimes "
+        ],
+        [
+          "user",
+          "affect "
+        ],
+        [
+          "user",
+          "your connection speed."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        }
+      }
     }
   ],
   "judge": [

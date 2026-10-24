@@ -433,3 +433,58 @@ def test_spoken_reply_uses_recent_result_and_cannot_invent_a_tool():
     payload = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
     assert payload["latest_customer_tool_result"]["content"] == "Data is enabled."
     assert backend.calls[-1][1]["tools"] == []
+
+
+def test_terminal_evidence_can_span_streaming_fragments_of_one_heard_turn():
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", "Your subscription has been cancelled.")]),
+        "Cancel my subscription.",
+    )
+    decision, _ = caller.assess(
+        "model",
+        [
+            UserMessage(role="user", content=text)
+            for text in ("Your ", "subscription ", "has been ", "cancelled.")
+        ],
+    )
+    assert decision == "COMPLETE"
+
+
+def test_tool_route_gets_whole_heard_request_and_preserves_tool_boundaries():
+    backend = Backend(["CONTINUE", "TOOL", native_call()])
+    caller = QualifiedCallerBackend(backend, "Restore internet.")
+    history = [
+        UserMessage(role="user", content=text)
+        for text in ("Could you ", "please ", "enable mobile ", "data?")
+    ]
+    caller.generate(
+        "model",
+        history,
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    routed = json.loads(backend.calls[1][0][-1].content)
+    assert (
+        routed["latest_service_agent_statement"]
+        == "Could you please enable mobile data?"
+    )
+    assert len(routed["conversation"]) == 1
+    history.extend(
+        [
+            AssistantMessage(role="assistant", content="Okay."),
+            native_call(),
+            ToolMessage(
+                role="tool", id="native-id", requestor="user", content="Data enabled."
+            ),
+            UserMessage(role="user", content="Is it working?"),
+        ]
+    )
+    turns = caller.conversation(history)
+    assert [row["speaker"] for row in turns] == [
+        "service_agent",
+        "customer",
+        "customer",
+        "customer_tool",
+        "service_agent",
+    ]
+    assert turns[2]["tool_calls"] and turns[3]["tool_call_id"] == "native-id"

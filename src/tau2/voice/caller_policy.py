@@ -118,8 +118,11 @@ class QualifiedCallerBackend:
 
     @staticmethod
     def conversation(messages):
-        return [
-            {
+        turns = []
+        for message in messages:
+            if isinstance(message, SystemMessage):
+                continue
+            row = {
                 "speaker": {
                     "user": "service_agent",
                     "assistant": "customer",
@@ -132,9 +135,23 @@ class QualifiedCallerBackend:
                 ],
                 "tool_call_id": getattr(message, "id", None),
             }
-            for message in messages
-            if not isinstance(message, SystemMessage)
-        ]
+            # Voice history stores heard text in frame-sized fragments. Merge
+            # adjacent speech while preserving speaker and tool boundaries.
+            if (
+                turns
+                and row["speaker"] in {"service_agent", "customer"}
+                and turns[-1]["speaker"] == row["speaker"]
+                and not row["tool_calls"]
+                and not turns[-1]["tool_calls"]
+            ):
+                turns[-1]["content"] = " ".join(
+                    part.strip()
+                    for part in (turns[-1]["content"] or "", row["content"] or "")
+                    if part.strip()
+                )
+            else:
+                turns.append(row)
+        return turns
 
     def assess(self, model, messages, tools=None):
         payload = {
@@ -142,9 +159,9 @@ class QualifiedCallerBackend:
             "conversation": self.conversation(messages),
         }
         agent_statements = [
-            " ".join((message.content or "").split())
-            for message in messages
-            if message.role == "user"
+            " ".join((row["content"] or "").split())
+            for row in payload["conversation"]
+            if row["speaker"] == "service_agent"
         ]
         rejected = []
         replies = []

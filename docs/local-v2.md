@@ -68,17 +68,18 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 30 checks cover completed versus promised work, required follow-ups after a
+The 31 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Eight checks use the full 30-tool telecom customer interface, including real
+Nine checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
 requires reassurance before rebooting, and a data-saver status request after
-earlier troubleshooting steps.
+earlier troubleshooting steps and a VPN question split across streaming speech
+fragments.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
@@ -98,6 +99,8 @@ must pass the same evidence checks; a second unsupported proposal leaves the
 trial unscored. Malformed decisions and inference errors propagate immediately.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
+Caller control reads heard turns: adjacent speech fragments from the same speaker
+are merged, while speaker changes and tool-call/result boundaries are preserved.
 For open calls with customer tools, a separate TOOL/SPEAK decision reads the
 heard request, caller scenario/persona and actual tool history. TOOL requires a
 native customer function call before speech; saying the action happened does not
@@ -105,10 +108,11 @@ execute it. A prose response in TOOL mode gets one model reassessment with the
 same heard context. A second prose response leaves the trial unscored. Unknown
 tools, invalid arguments and inference errors fail immediately. The ordinary
 orchestrator executes validated tool calls; the controller never changes device
-state itself. The leading routing label is used; any following annotation is recorded and does
-not select a tool or change its arguments. SPEAK turns receive no tools and answer
-the latest agent question using actual customer tool results. Persona-specific clarification requirements
-still apply. Terminal decisions allow 384 tokens, routing allows 16, and normal
+state itself. The leading routing label is used; any following annotation is
+recorded and does not select a tool or change its arguments. SPEAK turns receive
+no tools and answer the latest agent question using actual customer tool results.
+Persona-specific clarification requirements still apply. Terminal decisions
+allow 384 tokens, routing allows 16, and normal
 caller generation uses its configured limit. No reference actions or private
 agent state enter these choices.
 
