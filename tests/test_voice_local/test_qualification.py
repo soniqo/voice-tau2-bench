@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import pytest
 
-from tau2.data_model.message import AssistantMessage, ToolCall
+from tau2.data_model.message import AssistantMessage
 from tau2.voice import qualification
 from tau2.voice.baseline import repository_root
 from tau2.voice.runtime_profile import load_profile
@@ -92,8 +92,12 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
         content=json.dumps(
             {
                 "reasoning": "title question remains open",
-                "agent_evidence": None,
+                "agent_evidence": "What should it be called?",
                 "decision": "CONTINUE",
+                "customer_action": {
+                    "name": "check_notifications",
+                    "arguments": {},
+                },
             }
         ),
     )
@@ -103,11 +107,15 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
             assessment,
             AssistantMessage(
                 role="assistant",
-                tool_calls=[
-                    ToolCall(id="read", name="check_notifications", arguments={})
-                ],
+                content=json.dumps(
+                    {
+                        "reasoning": "The title is known.",
+                        "agent_evidence": None,
+                        "decision": "CONTINUE",
+                        "customer_action": None,
+                    }
+                ),
             ),
-            assessment,
             AssistantMessage(role="assistant", content="Annual Checkup, please."),
         ]
     )
@@ -181,3 +189,110 @@ def test_qualification_labels_device_observations_as_customer_tools(monkeypatch)
     assert observation["speaker"] == "customer_tool"
     assert json.loads(observation["content"])["signal"] == "Excellent"
     assert observation["tool_call_id"] == "fixture-tool-1"
+
+
+def test_qualification_executes_real_device_write_with_full_customer_toolset(
+    monkeypatch,
+):
+    case = {
+        "id": "real-device-mutation",
+        "scenario": "Restore mobile internet.",
+        "toolset": "telecom",
+        "device": {"airplane_mode": True},
+        "history": [["user", "Please turn off Airplane Mode."]],
+        "decision": "CONTINUE",
+        "reply": {
+            "tool": "toggle_airplane_mode",
+            "arguments": {},
+            "device_after": {"airplane_mode": False},
+        },
+    }
+    monkeypatch.setattr(
+        qualification,
+        "qualification_suite",
+        lambda: {"suite": "fixture", "caller": [case], "judge": []},
+    )
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            prompt = messages[0].content
+            declarations = json.loads(prompt.split("DECLARED_CUSTOMER_TOOLS\n")[1])
+            assert len(declarations) == 30
+            return AssistantMessage(
+                role="assistant",
+                content=json.dumps(
+                    {
+                        "reasoning": "The requested setting change needs a real tool.",
+                        "agent_evidence": "Please turn off Airplane Mode.",
+                        "decision": "CONTINUE",
+                        "customer_action": {
+                            "name": "toggle_airplane_mode",
+                            "arguments": {},
+                        },
+                    }
+                ),
+            )
+
+    profile = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
+    )
+    provenance = {
+        "benchmark": {"sha256": "source"},
+        "native": {
+            "configuration": {"assets": {"fixture": True}},
+            "voxcpm2_parameter_elements": {"float16": 1},
+        },
+    }
+    report = qualification.qualify(Backend(), profile, provenance)
+    assert report["passed"] is True
+    assert report["cases"][0]["device_after"] == {"airplane_mode": False}
+    assert "Airplane Mode is now OFF" in report["cases"][0]["fixture_tool_result"]
+
+
+def test_qualification_rejects_terminal_control_after_permitted_fixture_read(
+    monkeypatch,
+):
+    case = {
+        "id": "must-remain-open-after-read",
+        "scenario": "More information is still required.",
+        "history": [["user", "Done."]],
+        "decision": "CONTINUE",
+        "reply": {"notification_tools": True, "must_contain": []},
+    }
+    monkeypatch.setattr(
+        qualification,
+        "qualification_suite",
+        lambda: {"suite": "fixture", "caller": [case], "judge": []},
+    )
+    pending = {
+        "reasoning": "Read needed",
+        "agent_evidence": "Done.",
+        "decision": "CONTINUE",
+        "customer_action": {"name": "check_notifications", "arguments": {}},
+    }
+    terminal = {
+        "reasoning": "Invalid early completion",
+        "agent_evidence": "Done.",
+        "decision": "COMPLETE",
+        "customer_action": None,
+    }
+    replies = iter([pending, pending, terminal])
+
+    class Backend:
+        def generate(self, *args, **kwargs):
+            return AssistantMessage(role="assistant", content=json.dumps(next(replies)))
+
+    profile = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
+    )
+    provenance = {
+        "benchmark": {"sha256": "source"},
+        "native": {
+            "configuration": {"assets": {"pinned": True}},
+            "voxcpm2_parameter_elements": {"float16": 1},
+        },
+    }
+    report = qualification.qualify(Backend(), profile, provenance)
+    assert report["passed"] is False
+    assert report["cases"][0]["final_action"] == "stop"
+    assert report["cases"][0]["response"]["content"] == "###STOP###"

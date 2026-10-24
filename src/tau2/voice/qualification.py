@@ -15,6 +15,7 @@ from tau2.data_model.semantic_communication import (
 from tau2.environment.tool import Tool
 from tau2.evaluator.evaluator_communicate import CommunicateEvaluator
 from tau2.inference import InferenceBackends, use_inference_backends
+from tau2.user.user_simulator_base import STOP
 from tau2.voice.baseline import repository_root
 from tau2.voice.caller_policy import LOCAL_CALLER_GUIDELINES, QualifiedCallerBackend
 
@@ -104,6 +105,25 @@ def qualify(backend, profile, provenance):
     for case in suite["caller"]:
         row = {"id": case["id"], "component": "caller", "passed": False}
         try:
+            expected = case.get("reply", {})
+            fixture_environment = None
+            if case.get("toolset") == "telecom":
+                from tau2.domains.telecom.environment import get_environment
+
+                fixture_environment = get_environment()
+                device = fixture_environment.user_tools.db.device
+                fixture_environment.user_tools.db.device = type(device).model_validate(
+                    {**device.model_dump(), **case.get("device", {})}
+                )
+                tools = fixture_environment.get_user_tools()
+            else:
+                tools = (
+                    [Tool(toggle_mobile_data), Tool(run_speed_test)]
+                    if "tool" in expected
+                    else [Tool(check_notifications), Tool(dismiss_notification)]
+                    if expected.get("notification_tools")
+                    else []
+                )
             caller = QualifiedCallerBackend(backend, case["scenario"])
             messages = [
                 (
@@ -120,9 +140,12 @@ def qualify(backend, profile, provenance):
                 )
                 for index, (role, text) in enumerate(case["history"])
             ]
-            decision, _ = caller.assess(profile.roles["caller"].model_id, messages)
+            decision, _ = caller.assess(
+                profile.roles["caller"].model_id, messages, tools=tools
+            )
             row.update(expected=case["decision"], actual=decision)
             row["assessment"] = caller.decisions[-1]
+            row["assessments"] = caller.decisions
             # Both terminal labels produce the same caller STOP control. Qualify
             # the observable action, while retaining its diagnostic label.
             row["expected_action"] = (
@@ -135,14 +158,6 @@ def qualify(backend, profile, provenance):
                 from tau2.data_model.message import SystemMessage
                 from tau2.user.prompts import build_user_system_prompt
 
-                expected = case["reply"]
-                tools = (
-                    [Tool(toggle_mobile_data), Tool(run_speed_test)]
-                    if "tool" in expected
-                    else [Tool(check_notifications), Tool(dismiss_notification)]
-                    if expected.get("notification_tools")
-                    else []
-                )
                 system = build_user_system_prompt(
                     instructions=case["scenario"],
                     persona_config=PersonaConfig(),
@@ -158,21 +173,32 @@ def qualify(backend, profile, provenance):
                     max_tokens=1024,
                     call_name="user_streaming_response",
                 )
-                if expected.get("notification_tools") and response.is_tool_call():
+                permitted_read = expected.get("permitted_read") or (
+                    "check_notifications"
+                    if expected.get("notification_tools")
+                    else None
+                )
+                if permitted_read and response.is_tool_call():
                     calls = response.tool_calls
                     # A permitted read may precede the answer. Exercise its real
                     # fixture result once; invented tools, writes, or loops fail.
                     if (
                         len(calls) == 1
-                        and calls[0].name == "check_notifications"
+                        and calls[0].name == permitted_read
                         and calls[0].arguments == {}
                     ):
                         row["intermediate_response"] = response.model_dump(mode="json")
+                        selected = next(
+                            tool for tool in tools if tool.name == permitted_read
+                        )
+                        observed = selected()
                         result = ToolMessage(
                             role="tool",
                             id=calls[0].id,
                             requestor="user",
-                            content=check_notifications(),
+                            content=observed
+                            if isinstance(observed, str)
+                            else json.dumps(observed),
                         )
                         row["fixture_tool_result"] = result.model_dump(mode="json")
                         response = caller.generate(
@@ -184,12 +210,42 @@ def qualify(backend, profile, provenance):
                             call_name="user_streaming_response",
                         )
                 row["response"] = response.model_dump(mode="json")
+                row["final_action"] = (
+                    "stop"
+                    if STOP in (response.content or "")
+                    else "tool"
+                    if response.is_tool_call()
+                    else "speak"
+                )
+                row["passed"] &= row["final_action"] != "stop"
                 if "tool" in expected:
                     calls = response.tool_calls or []
                     row["passed"] &= (
                         len(calls) == 1
                         and calls[0].name == expected["tool"]
                         and calls[0].arguments == expected["arguments"]
+                    )
+                    if row["passed"] and "device_after" in expected:
+                        selected = next(
+                            tool for tool in tools if tool.name == calls[0].name
+                        )
+                        row["fixture_tool_result"] = selected(**calls[0].arguments)
+                        device = fixture_environment.user_tools.db.device
+                        row["device_after"] = {
+                            key: getattr(device, key)
+                            for key in expected["device_after"]
+                        }
+                        row["passed"] &= row["device_after"] == expected["device_after"]
+                elif "device_unchanged" in expected:
+                    device = fixture_environment.user_tools.db.device
+                    row["device_after"] = {
+                        key: getattr(device, key)
+                        for key in expected["device_unchanged"]
+                    }
+                    row["passed"] &= (
+                        not response.is_tool_call()
+                        and bool((response.content or "").strip())
+                        and row["device_after"] == expected["device_unchanged"]
                     )
                 elif expected.get("unknown_information"):
                     text = response.content or ""

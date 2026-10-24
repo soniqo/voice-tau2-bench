@@ -286,6 +286,192 @@
         ]
       ],
       "decision": "COMPLETE"
+    },
+    {
+      "id": "full-tools-airplane-action",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "tool",
+          "Airplane Mode: ON; Cellular Connection: no_service."
+        ],
+        [
+          "user",
+          "Please turn off Airplane Mode now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-roaming-action",
+      "scenario": "Restore my mobile internet while travelling abroad. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "assistant",
+          "My internet does not work abroad."
+        ],
+        [
+          "tool",
+          "Data Roaming Enabled: No"
+        ],
+        [
+          "user",
+          "Please enable data roaming on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        }
+      }
+    },
+    {
+      "id": "full-tools-claimed-action-without-execution",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode."
+        ],
+        [
+          "assistant",
+          "I turned it off."
+        ],
+        [
+          "tool",
+          "Airplane Mode: ON; Cellular Connection: no_service."
+        ],
+        [
+          "user",
+          "It is still on. Please turn Airplane Mode off now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-no-repeat-after-device-action",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode."
+        ],
+        [
+          "tool",
+          "Airplane Mode is now OFF."
+        ],
+        [
+          "user",
+          "Is Airplane Mode off now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "off"
+        ],
+        "permitted_read": "check_network_status"
+      }
+    },
+    {
+      "id": "full-tools-no-unsolicited-action",
+      "scenario": "My mobile internet does not work. Ask the agent to help restore it.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hello! How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "internet"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-already-off",
+      "scenario": "Restore mobile internet. Follow the agent instructions with customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "tool",
+          "Airplane Mode: OFF"
+        ],
+        [
+          "user",
+          "Please turn off airplane mode."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "device_unchanged": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-persona-needs-reassurance",
+      "scenario": "Persona: You are worried that rebooting will delete your photos. You must ask whether your photos will be safe before you reboot. Instructions: Ask the agent to restore mobile internet.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please reboot your phone now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "photos"
+        ]
+      }
     }
   ],
   "judge": [

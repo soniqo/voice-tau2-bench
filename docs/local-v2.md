@@ -68,11 +68,16 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 22 checks cover completed versus promised work, required follow-ups after a
+The 29 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
+Seven checks use the full 30-tool telecom customer interface, including real
+airplane-mode and roaming writes in fresh fixture devices, a claimed action that
+never ran, avoiding a repeated toggle after a successful action, an already-off
+setting, an opening greeting that requests no device action, and a persona that
+requires reassurance before rebooting.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
@@ -82,7 +87,9 @@ heard dialogue. It decides whether to continue, finish completed work, or finish
 an addressed refusal. It never sees reference actions, grading state, or agent
 private tool results. A terminal assessment requires a supporting quote actually
 heard from the service agent. A conservative English-language guard keeps the
-call open if that quote merely offers or promises a future action; the guard
+call open if that quote merely offers or promises a future action, or consists
+only of an English confirmation question. A completed-action statement followed
+by a question is still eligible for a terminal decision. These guards
 cannot generate a stop. A well-formed terminal proposal without a supporting
 agent quote gets at most one model reassessment using the same caller-visible
 scenario and conversation. The rejected proposal is recorded. The reassessment
@@ -90,6 +97,19 @@ must pass the same evidence checks; a second unsupported proposal leaves the
 trial unscored. Malformed responses and inference errors propagate immediately.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
+For open calls, the controller also selects a pending customer tool action using
+the declared tool schemas and a quote of the service agent's instruction/question.
+Scenario and persona requirements for clarification still apply before acting.
+The selected name, arguments and quote must validate. The normal orchestrator
+executes that call; the controller never changes device state itself. A customer
+claim is not evidence that a setting changed. When no tool action is selected,
+the customer produces speech without tools; an unplanned tool response is an
+unscored policy error. Controller output is bounded to 768 tokens with customer
+tools and 384 without them. No reference actions or private agent state enter
+this selection.
+The spoken-reply context identifies the latest service-agent question and actual
+customer tool result, alongside the complete heard conversation, so the caller
+can answer the question before repeating its original complaint.
 Calibration measures continuing versus stopping; the
 completion/refusal label remains diagnostic. Open calls generate a customer response with
 customer tools, the scenario, and persona instructions. V2 uses explicit local

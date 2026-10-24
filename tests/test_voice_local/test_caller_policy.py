@@ -6,8 +6,10 @@ from tau2.data_model.message import (
     AssistantMessage,
     SystemMessage,
     ToolCall,
+    ToolMessage,
     UserMessage,
 )
+from tau2.environment.tool import Tool
 from tau2.voice.caller_policy import CallerPolicyError, QualifiedCallerBackend
 
 
@@ -31,6 +33,7 @@ class Backend:
                     "reasoning": "fixture",
                     "agent_evidence": None if reply == "CONTINUE" else "Done.",
                     "decision": reply,
+                    "customer_action": None,
                 }
             )
         return (
@@ -160,7 +163,7 @@ def test_customer_only_quote_cannot_support_terminal_control():
     assert not caller.decisions
 
 
-def assessment(decision, evidence=None, **metadata):
+def assessment(decision, evidence=None, customer_action=None, **metadata):
     return AssistantMessage(
         role="assistant",
         content=json.dumps(
@@ -168,6 +171,7 @@ def assessment(decision, evidence=None, **metadata):
                 "reasoning": "fixture assessment",
                 "agent_evidence": evidence,
                 "decision": decision,
+                "customer_action": customer_action,
             }
         ),
         **metadata,
@@ -273,3 +277,198 @@ def test_quote_cannot_be_assembled_across_separate_agent_statements():
             ],
         )
     assert len(backend.calls) == 2
+
+
+def set_mobile_data(enabled: bool) -> str:
+    """Set mobile data to the requested state on the customer's phone."""
+    return f"Mobile data enabled: {enabled}"
+
+
+def test_controller_action_returns_real_tool_call_without_claiming_execution():
+    executions = []
+
+    def toggle_airplane_mode() -> str:
+        """Toggle airplane mode on the customer's phone."""
+        executions.append("executed")
+        return "Airplane Mode is now OFF."
+
+    instruction = "Please turn off airplane mode."
+    backend = Backend(
+        [
+            assessment(
+                "CONTINUE",
+                instruction,
+                customer_action={
+                    "name": "toggle_airplane_mode",
+                    "arguments": {},
+                },
+                usage={"completion_tokens": 31},
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "Restore mobile internet.")
+    tool = Tool(toggle_airplane_mode)
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=instruction)],
+        tools=[tool],
+        call_name="user_streaming_response",
+    )
+    assert not executions
+    assert reply.content is None
+    assert len(reply.tool_calls) == 1
+    call = reply.tool_calls[0]
+    assert call.id and call.name == tool.name and call.arguments == {}
+    assert reply.usage == {"completion_tokens": 31}
+    assert len(backend.calls) == 1
+    assert tool(**call.arguments) == "Airplane Mode is now OFF."
+    assert executions == ["executed"]
+    assert "DECLARED_CUSTOMER_TOOLS" in backend.calls[0][0][0].content
+
+
+@pytest.mark.parametrize(
+    "decision,name,arguments,quote,error",
+    [
+        (
+            "COMPLETE",
+            "set_mobile_data",
+            {"enabled": True},
+            "Done.",
+            "terminal decision",
+        ),
+        ("CONTINUE", "agent_only_tool", {}, "Done.", "not declared"),
+        (
+            "CONTINUE",
+            "set_mobile_data",
+            {"enabled": True},
+            "Customer said this.",
+            "heard agent",
+        ),
+        ("CONTINUE", "set_mobile_data", {"enabled": "yes"}, "Done.", "valid boolean"),
+        ("CONTINUE", "set_mobile_data", {}, "Done.", "required"),
+        (
+            "CONTINUE",
+            "set_mobile_data",
+            {"enabled": True, "extra": 1},
+            "Done.",
+            "undeclared arguments",
+        ),
+    ],
+)
+def test_invalid_customer_action_is_unscored_without_repair(
+    decision, name, arguments, quote, error
+):
+    backend = Backend(
+        [
+            assessment(
+                decision,
+                quote,
+                {"name": name, "arguments": arguments},
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match=error):
+        caller.assess(
+            "model",
+            [UserMessage(role="user", content="Done.")],
+            tools=[Tool(set_mobile_data)],
+        )
+    assert len(backend.calls) == 1
+    assert not caller.decisions
+
+
+def test_spoken_response_cannot_bypass_controller_with_an_unplanned_tool():
+    backend = Backend(
+        [
+            "CONTINUE",
+            AssistantMessage(
+                role="assistant",
+                tool_calls=[
+                    ToolCall(name="set_mobile_data", arguments={"enabled": True})
+                ],
+            ),
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="outside its assessed action"):
+        caller.generate(
+            "model",
+            [],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+    assert backend.calls[-1][1]["tools"] == []
+    assert backend.calls[-1][1]["tool_choice"] == "none"
+
+
+def test_spoken_response_receives_actual_device_result_and_latest_question():
+    backend = Backend(["CONTINUE", "Yes, airplane mode is off."])
+    caller = QualifiedCallerBackend(backend, "Restore mobile internet.")
+    caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content="Is airplane mode off now?"),
+            ToolMessage(
+                role="tool",
+                id="actual-result",
+                requestor="user",
+                content="Airplane Mode: OFF",
+            ),
+        ],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    payload = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
+    assert (
+        payload["latest_service_agent_statement"]["content"]
+        == "Is airplane mode off now?"
+    )
+    assert payload["latest_customer_tool_result"]["content"] == "Airplane Mode: OFF"
+    assert payload["latest_customer_tool_result"] == payload["conversation"][-1]
+
+
+def test_customer_tools_require_an_explicit_action_or_null_decision():
+    backend = Backend(
+        [
+            json.dumps(
+                {"reasoning": "pending", "agent_evidence": None, "decision": "CONTINUE"}
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="customer action decision is required"):
+        caller.assess("model", [], tools=[Tool(set_mobile_data)])
+    assert len(backend.calls) == 1
+    assert not caller.decisions
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Is Airplane Mode off now?",
+        "Did the connection work?",
+        "Have you checked it?",
+        "Could you confirm it is off?",
+    ],
+)
+def test_agent_confirmation_question_cannot_prove_task_completion(question):
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", question)]), "Restore internet."
+    )
+    decision, _ = caller.assess("model", [UserMessage(role="user", content=question)])
+    assert decision == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "agent_confirmation_question"
+    assert caller.decisions[-1]["proposed_decision"] == "COMPLETE"
+
+
+def test_completed_action_with_following_question_can_still_end_call():
+    confirmation = "Your subscription has been cancelled. Anything else?"
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", confirmation)]),
+        "Cancel my subscription. No other questions.",
+    )
+    decision, _ = caller.assess(
+        "model", [UserMessage(role="user", content=confirmation)]
+    )
+    assert decision == "COMPLETE"
