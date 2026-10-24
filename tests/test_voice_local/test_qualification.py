@@ -132,3 +132,52 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
     assert report["passed"] is True
     assert report["cases"][0]["fixture_tool_result"]["content"] == "[]"
     assert '"speaker": "customer_tool"' in sent[-1][-1].content
+
+
+def test_qualification_labels_device_observations_as_customer_tools(monkeypatch):
+    case = {
+        "id": "device-intermediate-observation",
+        "scenario": "Restore my mobile internet.",
+        "history": [
+            ["user", "Please turn off airplane mode."],
+            ["tool", '{"airplane_mode": false, "signal": "Excellent"}'],
+        ],
+        "decision": "CONTINUE",
+    }
+    monkeypatch.setattr(
+        qualification,
+        "qualification_suite",
+        lambda: {"suite": "fixture", "caller": [case], "judge": []},
+    )
+    sent = []
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            sent.append(json.loads(messages[-1].content))
+            return AssistantMessage(
+                role="assistant",
+                content=json.dumps(
+                    {
+                        "reasoning": "Device setting alone does not prove connectivity.",
+                        "agent_evidence": None,
+                        "decision": "CONTINUE",
+                    }
+                ),
+            )
+
+    profile = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
+    )
+    provenance = {
+        "benchmark": {"sha256": "source"},
+        "native": {
+            "configuration": {"assets": {"fixture": True}},
+            "voxcpm2_parameter_elements": {"float16": 1},
+        },
+    }
+    report = qualification.qualify(Backend(), profile, provenance)
+    assert report["passed"] is True
+    observation = sent[0]["conversation"][-1]
+    assert observation["speaker"] == "customer_tool"
+    assert json.loads(observation["content"])["signal"] == "Excellent"
+    assert observation["tool_call_id"] == "fixture-tool-1"

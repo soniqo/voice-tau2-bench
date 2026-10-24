@@ -14,6 +14,9 @@ TERMINAL_PROMPT = """TASK
 You are an independent conversation evaluator. Do not play either person.
 Read the customer's scenario and the labelled transcript. Only service_agent
 statements count as evidence of service-agent actions. customer statements do not.
+customer_tool records describe observations on the customer's device; they are
+not service-agent confirmations. A changed setting or strong signal alone does
+not establish that the customer's requested service now works end to end.
 Decide whether the customer should continue the call or end it.
 - CONTINUE if an action is only offered, promised, conditional, or will happen later.
   Saying goodbye does not complete pending work. "I will cancel it now" is pending.
@@ -24,6 +27,9 @@ Decide whether the customer should continue the call or end it.
   already done, or supplied all requested information, and no follow-up remains.
 A customer saying "it is done" never confirms service-agent work. The service
 agent saying "I am checking" never confirms completion. When uncertain, CONTINUE.
+An instruction to try a fix or a question asking whether it worked is not a
+completion confirmation. If no exact supporting service_agent quote exists,
+choose CONTINUE with null evidence; never return COMPLETE or REFUSED with null.
 FORMAT
 Return JSON with these keys, in order:
 reasoning: a short factual explanation referring to service_agent statements;
@@ -104,49 +110,89 @@ class QualifiedCallerBackend:
         ]
 
     def assess(self, model, messages):
-        reply = self.backend.generate(
-            model,
-            [
-                SystemMessage(role="system", content=TERMINAL_PROMPT),
-                UserMessage(
-                    role="user",
-                    content=json.dumps(
-                        {
-                            "scenario": self.scenario,
-                            "conversation": self.conversation(messages),
-                        }
-                    ),
+        payload = {
+            "scenario": self.scenario,
+            "conversation": self.conversation(messages),
+        }
+        agent_statements = [
+            " ".join((message.content or "").split())
+            for message in messages
+            if message.role == "user"
+        ]
+        rejected = []
+        replies = []
+        for attempt in range(2):
+            reply = self.backend.generate(
+                model,
+                [
+                    SystemMessage(role="system", content=TERMINAL_PROMPT),
+                    UserMessage(role="user", content=json.dumps(payload)),
+                ],
+                tools=None,
+                temperature=0,
+                max_tokens=384,
+                call_name=(
+                    "caller_terminal_v2_repair" if attempt else "caller_terminal_v2"
                 ),
-            ],
-            tools=None,
-            temperature=0,
-            max_tokens=384,
-            call_name="caller_terminal_v2",
-        )
-        try:
-            if reply.is_tool_call():
-                raise ValueError("assessment cannot call tools")
-            assessment = TerminalAssessment.model_validate_json(
-                extract_json_from_llm_response(reply.content or "")
             )
-            if assessment.decision != "CONTINUE":
-                evidence = " ".join((assessment.agent_evidence or "").split())
-                agent_text = " ".join(
-                    " ".join(
-                        message.content or ""
-                        for message in messages
-                        if message.role == "user"
-                    ).split()
+            replies.append(reply)
+            try:
+                if reply.is_tool_call():
+                    raise ValueError("assessment cannot call tools")
+                assessment = TerminalAssessment.model_validate_json(
+                    extract_json_from_llm_response(reply.content or "")
                 )
-                if not evidence or evidence not in agent_text:
-                    raise ValueError(
-                        "terminal assessment lacks a quote from the service agent"
-                    )
-        except ValueError as error:
-            raise CallerPolicyError(
-                f"Invalid caller terminal decision: {reply.content!r}: {error}"
-            ) from error
+            except ValueError as error:
+                raise CallerPolicyError(
+                    f"Invalid caller terminal decision: {reply.content!r}: {error}"
+                ) from error
+            evidence = " ".join((assessment.agent_evidence or "").split())
+            if assessment.decision == "CONTINUE" or (
+                evidence and any(evidence in text for text in agent_statements)
+            ):
+                break
+            reason = "terminal assessment lacks a quote from the service agent"
+            rejected.append({**assessment.model_dump(), "error": reason})
+            if attempt:
+                raise CallerPolicyError(
+                    f"Invalid caller terminal decision after one reassessment: {json.dumps(rejected)}"
+                )
+            # Reassess once using the same caller-visible inputs. No decision is
+            # accepted automatically and no private agent/grading state is added.
+            payload["rejected_assessment"] = rejected[-1]
+            payload["feedback"] = (
+                "The proposed terminal decision has no supporting quote heard from "
+                "the service agent. Reassess the original conversation. Use CONTINUE "
+                "if work is pending or evidence is insufficient. Do not invent a quote."
+            )
         record = assessment.model_dump()
+        if rejected:
+            record["rejected_assessments"] = rejected
+            usage = {}
+            for response in replies:
+                for key, value in (response.usage or {}).items():
+                    usage[key] = usage.get(key, 0) + value
+            reply = reply.model_copy(
+                update={
+                    "cost": (
+                        sum(response.cost or 0 for response in replies)
+                        if any(response.cost is not None for response in replies)
+                        else None
+                    ),
+                    "usage": usage or None,
+                    "generation_time_seconds": (
+                        sum(
+                            response.generation_time_seconds or 0
+                            for response in replies
+                        )
+                        if any(
+                            response.generation_time_seconds is not None
+                            for response in replies
+                        )
+                        else None
+                    ),
+                }
+            )
         decision = assessment.decision
         # A future-tense offer is not evidence that an action has already run.
         # This can only keep the call open; it never manufactures a stop.

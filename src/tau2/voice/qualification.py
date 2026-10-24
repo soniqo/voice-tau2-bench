@@ -106,10 +106,19 @@ def qualify(backend, profile, provenance):
         try:
             caller = QualifiedCallerBackend(backend, case["scenario"])
             messages = [
-                (UserMessage if role == "user" else AssistantMessage)(
-                    role=role, content=text
+                (
+                    ToolMessage(
+                        role="tool",
+                        content=text,
+                        id=f"fixture-tool-{index}",
+                        requestor="user",
+                    )
+                    if role == "tool"
+                    else (UserMessage if role == "user" else AssistantMessage)(
+                        role=role, content=text
+                    )
                 )
-                for role, text in case["history"]
+                for index, (role, text) in enumerate(case["history"])
             ]
             decision, _ = caller.assess(profile.roles["caller"].model_id, messages)
             row.update(expected=case["decision"], actual=decision)
