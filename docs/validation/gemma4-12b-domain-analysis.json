@@ -70,6 +70,14 @@
     },
     "context_limit": 262144,
     "context_truncated": false,
+    "exact_capture_followup": {
+      "corrected_complete_trial_reward": 0.0,
+      "corrected_complete_trial_scored": true,
+      "native_chat_exceptions": 0,
+      "report": "gemma4-12b-exact-capture.json",
+      "report_sha256": "d10faefd7de56f4d5b61f4d4cd9f43402be7a7e9c7b0b4fd723f8f3298b674f8",
+      "termination": "timeout"
+    },
     "generated_token_budget": 1024,
     "heard_user_utterances": 3,
     "native_correction": {

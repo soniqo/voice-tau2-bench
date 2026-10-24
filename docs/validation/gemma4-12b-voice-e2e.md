@@ -55,3 +55,5 @@ See the [domain failure analysis](gemma4-12b-domain-analysis.md) for the timeout
 counterfactual, identifier recovery failure, reproduced 12B tool-response
 serialization fix, and latency measurements. These diagnostics preserve the
 original domain scores and the historical functional-check provenance above.
+
+The functional check was repeated on corrected runtime `26c901c` in 58.08 seconds, again producing correct-write reward 1.0 and wrong-write reward 0.0. The [exact-capture follow-up](gemma4-12b-exact-capture.md) records the new runtime provenance and separate Telecom result. The historical parameters and results above remain unchanged.

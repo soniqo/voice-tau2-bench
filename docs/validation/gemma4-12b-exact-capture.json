@@ -8,7 +8,7 @@
     "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1003<|\"|>}<tool_call|><tool_call|>",
     "stop_token_id": 50
   },
-  "captured_utc": "2026-10-24T09:31:49.806189+00:00",
+  "captured_utc": "2026-10-24T09:51:27.831362+00:00",
   "component_artifacts": [
     {
       "bytes": 67126,
@@ -49,6 +49,187 @@
       "model": "gemma4-12b-it"
     }
   ],
+  "controlled_functional_check": {
+    "artifacts": [
+      {
+        "bytes": 664844,
+        "path": "functional-fixed/agent.wav",
+        "sha256": "ab70e79051cce87dab14a8d817bb92ee2d37e7be1ab7d8a383798db46830bec5"
+      },
+      {
+        "bytes": 452,
+        "path": "functional-fixed/controlled-caller.json",
+        "sha256": "566f73260e38bc87da4a9380a7a40b55f800adfd383fa3bffd6456b331dcb433"
+      },
+      {
+        "bytes": 155974,
+        "path": "functional-fixed/inference.json",
+        "sha256": "7e946a3566f57e7e0bcf79d658e574d32bfa44a6c8b5dbd6fc07fb5fab9fbbad"
+      },
+      {
+        "bytes": 301,
+        "path": "functional-fixed/negative-control.json",
+        "sha256": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad"
+      },
+      {
+        "bytes": 1485,
+        "path": "functional-fixed/profile.json",
+        "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+      },
+      {
+        "bytes": 41975,
+        "path": "functional-fixed/provenance.json",
+        "sha256": "577403cc8fe7eaa22e90a74bd5f8dda40cbfc422f7d9aba3dab1e3736a2cda07"
+      },
+      {
+        "bytes": 1201,
+        "path": "functional-fixed/runtime.json",
+        "sha256": "5e35c9494133ad2c171dcea9422413a4a539640d5b4f12892bc00722900f1c5d"
+      },
+      {
+        "bytes": 1205,
+        "path": "functional-fixed/settings.json",
+        "sha256": "58e58bc78af92eee7d4a27d151e346fa2097e90514a22dc4e76da5b59e04119f"
+      },
+      {
+        "bytes": 1760444,
+        "path": "functional-fixed/simulation.json",
+        "sha256": "09bbcd9a364214cebe68b670db8bf5d73635c16310c68f53fd18617025b2d2cd"
+      },
+      {
+        "bytes": 664844,
+        "path": "functional-fixed/user.wav",
+        "sha256": "46fad7a6af17784fc7a0c0667157260bc50a2a33947a6d0047dcabfd86bc65c4"
+      }
+    ],
+    "caller_mode": "fixed spoken request; generative caller not used",
+    "negative_reward": 0.0,
+    "not_a_domain_score": true,
+    "positive_reward": 1.0,
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b"
+  },
+  "corrected_complete_voice_attempt": {
+    "agent_tool_calls": [
+      {
+        "arguments": {
+          "phone_number": "555-123-2002"
+        },
+        "id": "514889FE-D8EE-4D57-9FE1-C8F963F71DA0",
+        "name": "get_customer_by_phone",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1001"
+        },
+        "id": "A0B9C6D5-AC6A-4168-A2BF-ADACEB52037B",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1002"
+        },
+        "id": "681F43E3-6CF1-4FBE-9E4C-90658A5F861D",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1003"
+        },
+        "id": "5A61846B-931C-44F1-A3FE-7F21E74E8727",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "P1002"
+        },
+        "id": "5817E9EB-11C4-49F6-ABB8-490EE0B74428",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {},
+        "id": "83FB657D-BA5F-48EE-97BB-037A1C9BE787",
+        "name": "run_speed_test",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {},
+        "id": "BE04B4CD-790F-48C1-A6BB-442B834A1A7A",
+        "name": "run_speed_test",
+        "requestor": "assistant"
+      }
+    ],
+    "agent_tool_errors": [
+      "Error: Tool 'run_speed_test' not found.",
+      "Error: Tool 'run_speed_test' not found."
+    ],
+    "artifacts": [
+      {
+        "bytes": 8968844,
+        "path": "telecom-fixed/agent.wav",
+        "sha256": "eb9d56ef707e2e1ec8b1beac12a3100a7818dd65518fb14599ea50922cce4f85"
+      },
+      {
+        "bytes": 2030715,
+        "path": "telecom-fixed/inference.json",
+        "sha256": "57aa378db4183a5473dc201e0b488d4c99f9b29df54883610052f6a1e7db3dbf"
+      },
+      {
+        "bytes": 1485,
+        "path": "telecom-fixed/profile.json",
+        "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+      },
+      {
+        "bytes": 41975,
+        "path": "telecom-fixed/provenance.json",
+        "sha256": "23f6367d83095d0da6881920db16429212a157402fd579bce33807c636609478"
+      },
+      {
+        "bytes": 1201,
+        "path": "telecom-fixed/runtime.json",
+        "sha256": "5e35c9494133ad2c171dcea9422413a4a539640d5b4f12892bc00722900f1c5d"
+      },
+      {
+        "bytes": 25092,
+        "path": "telecom-fixed/settings.json",
+        "sha256": "4f931fc5785b04f3a9e6a4979fa4481bbe890ebce353a9ad97e21e5739a16fc1"
+      },
+      {
+        "bytes": 30197605,
+        "path": "telecom-fixed/simulation.json",
+        "sha256": "236ef22317df221c72f07e7a6050418efd98948b70a51949086f336258594093"
+      },
+      {
+        "bytes": 8968844,
+        "path": "telecom-fixed/user.wav",
+        "sha256": "4bb00fe30b25c84fe6c8327bebc49bc1242090e59bf39c1cf152d155ca1858b0"
+      }
+    ],
+    "benchmark": {
+      "git_head": "e9abdbe5358000ef03632b28bfac2a7d2f4eedc3",
+      "sha256": "31210d2ed3f0a8a978b09cd0f7146674e784008c53bb64752a08967434e53f13"
+    },
+    "caller_tool_calls": [
+      {
+        "arguments": {},
+        "id": "E23FE54C-CD82-451F-B272-D0C1C0808F78",
+        "name": "run_speed_test",
+        "requestor": "user"
+      }
+    ],
+    "conversation_seconds": 560.5500000000001,
+    "new_native_chat_failure_files": 3,
+    "recognized_utterances": 9,
+    "reward": 0.0,
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
+    "scored": true,
+    "termination": "timeout",
+    "ticks": 11211
+  },
   "corrected_exact_replay": {
     "artifact": {
       "bytes": 12355,
@@ -72,6 +253,58 @@
     "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
     "valid_calls": 1
   },
+  "corrected_timeout_counterfactual": {
+    "counterfactual_termination": "user_stop",
+    "diagnostic_only": true,
+    "official_reward_unchanged": 0.0,
+    "reward_without_timeout_gate": {
+      "action_checks": null,
+      "communicate_checks": null,
+      "db_check": {
+        "db_match": false,
+        "db_reward": 0.0
+      },
+      "env_assertions": [
+        {
+          "env_assertion": {
+            "arguments": {
+              "expected_status": true
+            },
+            "assert_value": true,
+            "env_type": "user",
+            "func_name": "assert_mobile_data_status",
+            "message": null
+          },
+          "met": false,
+          "reward": 0.0
+        },
+        {
+          "env_assertion": {
+            "arguments": {
+              "expected_desc": "excellent",
+              "expected_speed": 200
+            },
+            "assert_value": true,
+            "env_type": "user",
+            "func_name": "assert_internet_speed",
+            "message": null
+          },
+          "met": false,
+          "reward": 0.0
+        }
+      ],
+      "info": null,
+      "nl_assertions": null,
+      "reward": 0.0,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ],
+      "reward_breakdown": {
+        "ENV_ASSERTION": 0.0
+      }
+    },
+    "termination_only_changed": true
+  },
   "correction": {
     "e4b_public_codec_remains_strict": true,
     "incomplete_calls_or_invalid_arguments_still_rejected": true,
@@ -79,6 +312,43 @@
     "scope": "12B only: consume duplicate adjacent closing markers after a fully validated tool call; preserve function and arguments"
   },
   "diagnostic_only": true,
+  "guided_component_artifact": {
+    "bytes": 69933,
+    "path": "guided-component-diagnostics.json",
+    "sha256": "a7553e585678ce19cd2d4579fde1ff685b796ba34b22ab5f01ba12b458ed26e0"
+  },
+  "guided_component_checks": [
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "I don't want to speak to a human agent yet. I just need to know about the refund part.",
+      "experimental_guidance": "When the agent has explained that a requested action is unavailable and has addressed any required follow-up from your scenario, acknowledge that outcome and end the call with ###STOP###. Do not claim that a refused action was performed. Do not end while an action is only promised. Do not add new requests or repeat an already answered request.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-e4b-it",
+      "stops": false
+    },
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "No, I don't want to talk to someone else. I just want to cancel the reservation. And I'm not canceling it unless I get a refund.",
+      "experimental_guidance": "When the agent has explained that a requested action is unavailable and has addressed any required follow-up from your scenario, acknowledge that outcome and end the call with ###STOP###. Do not claim that a refused action was performed. Do not end while an action is only promised. Do not add new requests or repeat an already answered request.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-12b-it",
+      "stops": false
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "experimental_guidance": "After an unsuccessful identifier lookup, do not repeat the same failed arguments or ask again when the caller has already confirmed them. Use available tools and earlier successful results to retrieve the canonical identifier. Do not invent identifiers or use information outside the conversation and tool results.",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-e4b-it"
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "experimental_guidance": "After an unsuccessful identifier lookup, do not repeat the same failed arguments or ask again when the caller has already confirmed them. Use available tools and earlier successful results to retrieve the canonical identifier. Do not invent identifiers or use information outside the conversation and tool results.",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-12b-it"
+    }
+  ],
   "historical_scores_unchanged": true,
   "instrumented_voice_attempt": {
     "benchmark": {

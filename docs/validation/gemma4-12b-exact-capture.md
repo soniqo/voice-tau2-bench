@@ -45,6 +45,25 @@ with the same function, argument, and 23 generated tokens. Only the request ID
 changed for replay. This is an integration diagnostic, not a task reward: reading
 another line does not establish successful troubleshooting.
 
+### Complete corrected-runtime retry: scored zero from timeout
+
+The same frozen task, profile, seed 42, control telephony, and 600-second deadline
+completed without an inference exception. It recorded 11,211 ticks (560.55 seconds
+of conversation audio) and took 609.97 seconds including cleanup. Its reward was
+**0.0**, with termination `timeout`.
+
+The agent completed five customer/line/plan reads. The caller ran its device-side
+`run_speed_test` tool. The agent subsequently tried to call that caller-only tool
+twice itself; both attempts received `Tool 'run_speed_test' not found`. This is a
+tool-selection failure exposed after the protocol correction. No new native chat
+failure record was produced.
+
+A separate environment replay changed only termination to `user_stop` to inspect
+the final state. It still returned zero: the mobile-data and internet-speed
+assertions were unmet. This diagnostic does not replace the official result.
+Unlike the earlier airline refusal, the corrected Telecom attempt left the task
+unresolved even without the timeout gate.
+
 ## Caller termination: increasing caller size did not fix this check
 
 A separate check reconstructed the caller's context from the saved airline
@@ -70,6 +89,17 @@ another lookup in its next response. This tests the recovery decision in that
 context, rather than a complete exchange or a domain reward. The original
 retail zero remains unchanged.
 
+## Separate guidance probe
+
+An additional controlled probe added general caller guidance to acknowledge a
+policy refusal after required follow-ups, and general agent guidance to retrieve
+canonical identifiers through available tools after a failed lookup. It supplied
+no canonical order ID or reference action to the agent. Neither E4B nor 12B
+emitted a caller stop signal or selected another retail lookup in its next reply.
+The exact guidance and local artifact hash are recorded in the JSON report.
+These single-context probes do not establish general model capability. No
+guidance was added to the default profiles or used in the corrected voice trial.
+
 ## Capture and validation
 
 The benchmark now retains the exact sent JSON body and error response for failed
@@ -80,5 +110,12 @@ does not retry a request or convert an exception into a scored result.
 
 Validation passed 24 focused native unit tests, both real-weight trace/history
 tests, and live request-body matching. A deliberately truncated tool call still
-returned HTTP 500 while retaining its raw trace locally. The complete voice retry
-on the corrected runtime is recorded separately when it finishes.
+returned HTTP 500 while retaining its raw trace locally. Hosted native CI ran
+1,787 tests, with 46 skipped and zero failures; CodeQL passed. The benchmark's
+410 offline tests, lint/format checks, frozen inputs, and upstream replays passed.
+
+The complete controlled spoken database-write test also passed on the corrected
+runtime in 58.08 seconds: the correct write earned 1.0 and a separately regraded
+wrong-write control earned 0.0. It used a fixed spoken caller request and does
+not contribute a domain score. Historical results remain unchanged; the new
+Telecom retry is a separate one-task result on its own runtime revision.
