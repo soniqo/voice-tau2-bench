@@ -156,6 +156,8 @@ native prefix-cache budget is recorded in provenance. Reusing an unchanged
 system/tool prefix can reduce agent latency; its measured execution time still
 counts. Report the native revision, cache budget, and cold/warm request counts
 with timing results. Never prefill private task goals or reference answers.
+See [native cache validation](validation/native-prefill.md) for the measured
+speedup, completed checks, and the current full-service resource limit.
 
 Batch summaries show planned/completed trials, scored coverage, termination
 counts, and pass^k for tasks with all requested trials. A failed inference or
