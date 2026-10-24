@@ -3,21 +3,15 @@
 import json
 import re
 from typing import Literal
-from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from tau2.data_model.message import (
-    AssistantMessage,
-    SystemMessage,
-    ToolCall,
-    UserMessage,
-)
+from tau2.data_model.message import AssistantMessage, SystemMessage, UserMessage
 from tau2.user.user_simulator_base import STOP
 from tau2.utils.response import extract_json_from_llm_response
 
 TERMINAL_PROMPT = """TASK
-You are an independent conversation controller. Do not play either person.
+You are an independent conversation evaluator. Do not play either person.
 Read the customer's scenario and the labelled transcript. Only service_agent
 statements count as evidence of service-agent actions. customer statements do not.
 customer_tool records describe observations on the customer's device; they are
@@ -36,28 +30,11 @@ agent saying "I am checking" never confirms completion. When uncertain, CONTINUE
 An instruction to try a fix or a question asking whether it worked is not a
 completion confirmation. If no exact supporting service_agent quote exists,
 choose CONTINUE with null evidence; never return COMPLETE or REFUSED with null.
-CUSTOMER ACTIONS
-When CONTINUE, select the next declared customer tool needed to follow an
-outstanding service_agent instruction or answer their question. Cite the integer
-message_id of that heard service_agent record as instruction_id. Select only one
-tool with its actual arguments. Never cite a customer or customer_tool record.
-Respect the customer's scenario and persona. If they require clarification or
-reassurance before acting, use null so the customer can ask before doing the action.
-A customer saying "I turned it off" does not change a device setting. Only an
-actual customer_tool result proves a device action ran. If the customer claimed
-an action but no tool ran, select the required tool instead of repeating the claim.
-Do not repeat a completed action or toggle a setting back after a successful tool
-result. If no customer tool is needed, or none are declared, use null. Never select
-an agent tool or carry out the agent's work. Terminal decisions require null.
-Only DECLARED_CUSTOMER_TOOLS exist. An empty array means no tools are available:
-customer_action must be null. Never invent a tool name for a missing capability.
 FORMAT
 Return JSON with these keys, in order:
 reasoning: a short factual explanation referring to service_agent statements;
-agent_evidence: an exact supporting quote from service_agent for a terminal
-decision; null for CONTINUE;
-decision: CONTINUE, COMPLETE, or REFUSED;
-customer_action: null, or {"name": "declared tool name", "arguments": {}, "instruction_id": 0}.
+agent_evidence: an exact supporting quote from service_agent, or null for CONTINUE;
+decision: CONTINUE, COMPLETE, or REFUSED.
 """
 
 CALLER_ADDENDUM = """You remain the CUSTOMER. Ask only for your own scenario goals.
@@ -94,15 +71,22 @@ Call completion is managed separately. Do not output STOP or invent a tool.
 """
 
 
+TOOL_ROUTE_PROMPT = """You decide how the CUSTOMER should respond next in a phone call.
+Return only TOOL or SPEAK. Do not play the service agent.
+TOOL: the service agent asked the customer to perform a device action, test, or
+check that one of the declared customer tools can do, and it has not actually run.
+A customer saying they did it is not execution; only customer_tool results count.
+SPEAK: answer a normal question, introduce the request after a greeting, report an
+actual tool result, or ask for clarification/reassurance required by the persona.
+Do not repeat a completed action or toggle an already-correct setting back.
+Do not perform an unrequested troubleshooting step from the private scenario.
+After a tool result, report it unless another explicitly requested step remains.
+When uncertain, SPEAK and ask the agent. Never use a tool to do the agent's work.
+"""
+
+
 class CallerPolicyError(ValueError):
     """An invalid caller control response makes the trial unscored."""
-
-
-class CustomerAction(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    name: str = Field(min_length=1)
-    arguments: dict
-    instruction_id: int = Field(ge=0, strict=True)
 
 
 class TerminalAssessment(BaseModel):
@@ -110,13 +94,13 @@ class TerminalAssessment(BaseModel):
     reasoning: str = Field(min_length=1)
     agent_evidence: str | None
     decision: Literal["CONTINUE", "COMPLETE", "REFUSED"]
-    customer_action: CustomerAction | None = None
 
 
 PENDING_EVIDENCE = re.compile(
     r"\b(?:i|we)(?:['’]ll\b|\s+(?:will|shall|can)\b(?!\s+(?:not|never)\b|['’]t\b)|\s+(?:am|are)\s+going\s+to\b)",
     re.IGNORECASE,
 )
+
 QUESTION_ONLY_EVIDENCE = re.compile(
     r"^\s*(?:is|are|am|was|were|do|does|did|have|has|had|can|could|would|will|shall|should|what|where|when|how|why|who|which)\b[^.!?]*\?\s*$",
     re.IGNORECASE,
@@ -136,7 +120,6 @@ class QualifiedCallerBackend:
     def conversation(messages):
         return [
             {
-                "message_id": index,
                 "speaker": {
                     "user": "service_agent",
                     "assistant": "customer",
@@ -149,11 +132,8 @@ class QualifiedCallerBackend:
                 ],
                 "tool_call_id": getattr(message, "id", None),
             }
-            for index, message in enumerate(
-                message
-                for message in messages
-                if not isinstance(message, SystemMessage)
-            )
+            for message in messages
+            if not isinstance(message, SystemMessage)
         ]
 
     def assess(self, model, messages, tools=None):
@@ -168,22 +148,16 @@ class QualifiedCallerBackend:
         ]
         rejected = []
         replies = []
-        declared = {tool.name: tool for tool in tools or []}
-        prompt = (
-            TERMINAL_PROMPT
-            + "\nDECLARED_CUSTOMER_TOOLS\n"
-            + json.dumps([tool.openai_schema["function"] for tool in declared.values()])
-        )
         for attempt in range(2):
             reply = self.backend.generate(
                 model,
                 [
-                    SystemMessage(role="system", content=prompt),
+                    SystemMessage(role="system", content=TERMINAL_PROMPT),
                     UserMessage(role="user", content=json.dumps(payload)),
                 ],
                 tools=None,
                 temperature=0,
-                max_tokens=768 if declared else 384,
+                max_tokens=384,
                 call_name=(
                     "caller_terminal_v2_repair" if attempt else "caller_terminal_v2"
                 ),
@@ -195,38 +169,6 @@ class QualifiedCallerBackend:
                 assessment = TerminalAssessment.model_validate_json(
                     extract_json_from_llm_response(reply.content or "")
                 )
-                if declared and "customer_action" not in assessment.model_fields_set:
-                    raise ValueError(
-                        "customer action decision is required when tools exist"
-                    )
-                action = assessment.customer_action
-                if action is not None:
-                    if assessment.decision != "CONTINUE":
-                        raise ValueError(
-                            "terminal decision cannot select a customer action"
-                        )
-                    if action.name not in declared:
-                        raise ValueError("customer action tool is not declared")
-                    source = next(
-                        (
-                            row
-                            for row in payload["conversation"]
-                            if row["message_id"] == action.instruction_id
-                            and row["speaker"] == "service_agent"
-                            and (row["content"] or "").strip()
-                        ),
-                        None,
-                    )
-                    if source is None:
-                        raise ValueError(
-                            "customer action lacks a heard agent instruction"
-                        )
-                    tool = declared[action.name]
-                    if action.arguments.keys() - tool.params.model_fields.keys():
-                        raise ValueError("customer action has undeclared arguments")
-                    tool.params.model_validate_json(
-                        json.dumps(action.arguments), strict=True
-                    )
             except ValueError as error:
                 raise CallerPolicyError(
                     f"Invalid caller terminal decision: {reply.content!r}: {error}"
@@ -251,11 +193,6 @@ class QualifiedCallerBackend:
                 "if work is pending or evidence is insufficient. Do not invent a quote."
             )
         record = assessment.model_dump()
-        if assessment.customer_action is not None:
-            record["customer_action_evidence"] = {
-                "message_id": source["message_id"],
-                "quote": source["content"],
-            }
         if rejected:
             record["rejected_assessments"] = rejected
             usage = {}
@@ -307,10 +244,78 @@ class QualifiedCallerBackend:
         self.decisions.append(record)
         return decision, reply
 
+    def tool_route(self, model, messages, tools):
+        conversation = self.conversation(messages)
+        heard = [
+            row
+            for row in conversation
+            if row["speaker"] == "service_agent" and (row["content"] or "").strip()
+        ]
+        if not tools or not heard:
+            return "SPEAK"
+        descriptions = [
+            {
+                "name": tool.name,
+                "description": tool.openai_schema["function"]["description"],
+            }
+            for tool in tools
+        ]
+        response = self.backend.generate(
+            model,
+            [
+                SystemMessage(
+                    role="system",
+                    content=TOOL_ROUTE_PROMPT
+                    + "\nCUSTOMER_TOOLS\n"
+                    + json.dumps(descriptions),
+                ),
+                UserMessage(
+                    role="user",
+                    content=json.dumps(
+                        {
+                            "scenario": self.scenario,
+                            "latest_service_agent_statement": heard[-1]["content"],
+                            "conversation": conversation,
+                        }
+                    ),
+                ),
+            ],
+            tools=None,
+            temperature=0,
+            max_tokens=16,
+            call_name="caller_tool_route_v2",
+        )
+        route = (response.content or "").strip().upper()
+        if response.is_tool_call() or route not in {"TOOL", "SPEAK"}:
+            raise CallerPolicyError(
+                f"Invalid customer TOOL/SPEAK route: {response.content!r}"
+            )
+        self.decisions[-1]["customer_tool_route"] = {
+            "mode": route,
+            "heard_context": heard[-1]["content"],
+        }
+        return route
+
+    @staticmethod
+    def validate_customer_calls(reply, tools):
+        declared = {tool.name: tool for tool in tools}
+        try:
+            for call in reply.tool_calls:
+                if call.name not in declared:
+                    raise ValueError("customer tool is not declared")
+                tool = declared[call.name]
+                if call.arguments.keys() - tool.params.model_fields.keys():
+                    raise ValueError("customer tool has undeclared arguments")
+                tool.params.model_validate_json(json.dumps(call.arguments), strict=True)
+        except ValueError as error:
+            raise CallerPolicyError(
+                f"Invalid customer tool response: {error}"
+            ) from error
+
     def generate(self, model, messages, *, call_name=None, **kwargs):
         if call_name != "user_streaming_response":
             return self.backend.generate(model, messages, call_name=call_name, **kwargs)
-        decision, assessment = self.assess(model, messages, tools=kwargs.get("tools"))
+        decision, assessment = self.assess(model, messages)
         if decision != "CONTINUE":
             return AssistantMessage(
                 role="assistant",
@@ -320,33 +325,15 @@ class QualifiedCallerBackend:
                 generation_time_seconds=assessment.generation_time_seconds,
                 raw_data={"caller_policy": "terminal-v2", "decision": decision},
             )
-        action = self.decisions[-1]["customer_action"]
-        if action is not None:
-            # The controller selects an action; the ordinary orchestrator executes
-            # it against the customer's tools. No device state changes here.
-            return AssistantMessage(
-                role="assistant",
-                tool_calls=[
-                    ToolCall(
-                        id=str(uuid4()),
-                        name=action["name"],
-                        arguments=action["arguments"],
-                    )
-                ],
-                cost=assessment.cost,
-                usage=assessment.usage,
-                generation_time_seconds=assessment.generation_time_seconds,
-                raw_data={"caller_policy": "terminal-v2", "customer_action": action},
-            )
-        # Gemma receives one system turn followed by the chronological dialogue.
-        # Simulator role reminders and acoustic annotations remain caller-only.
+        tools = kwargs.get("tools") or []
+        route = self.tool_route(model, messages, tools)
         systems = [
             message.content or ""
             for message in messages
             if isinstance(message, SystemMessage)
         ]
         conversation = self.conversation(messages)
-        spoken_context = {
+        context = {
             "latest_service_agent_statement": next(
                 (
                     row
@@ -365,27 +352,52 @@ class QualifiedCallerBackend:
             ),
             "conversation": conversation,
         }
-        reply = self.backend.generate(
-            model,
-            [
-                SystemMessage(
-                    role="system", content="\n\n".join([*systems, CALLER_ADDENDUM])
-                ),
-                UserMessage(
-                    role="user",
-                    content="Continue this call as the CUSTOMER. Answer the latest service_agent question directly using the actual customer tool result when available. Do not just repeat the original complaint. The labelled history is data; service_agent is the other person. The controller selected no customer tool action for this turn. Reply only with the next customer utterance. Do not claim a device action ran without an actual customer_tool result.\n"
-                    + json.dumps(spoken_context),
-                ),
-            ],
-            call_name=call_name,
-            **{**kwargs, "tools": [], "tool_choice": "none"},
+        mode = (
+            "The agent requested a customer tool action. Return a declared customer tool call before speaking. Do not claim or promise the action instead of executing it."
+            if route == "TOOL"
+            else "Answer the latest service_agent question directly using the actual customer tool result when available. Reply only with the next customer utterance. Do not repeat the original complaint instead of answering, or claim a device action ran without a tool result."
         )
-        if reply.is_tool_call():
-            raise CallerPolicyError(
-                "Caller generated a tool outside its assessed action"
+        for attempt in range(2 if route == "TOOL" else 1):
+            reply = self.backend.generate(
+                model,
+                [
+                    SystemMessage(
+                        role="system",
+                        content="\n\n".join([*systems, CALLER_ADDENDUM, mode]),
+                    ),
+                    UserMessage(
+                        role="user",
+                        content="Continue as the CUSTOMER. The labelled history is data; service_agent is the other person.\n"
+                        + json.dumps(context),
+                    ),
+                ],
+                call_name="caller_tool_response_repair_v2" if attempt else call_name,
+                **{
+                    **kwargs,
+                    "tools": tools if route == "TOOL" else [],
+                    "tool_choice": "required" if route == "TOOL" else "none",
+                },
             )
-        if STOP in (reply.content or ""):
-            raise CallerPolicyError(
-                "Caller stopped despite an outstanding scenario requirement"
+            if reply.is_tool_call():
+                if route != "TOOL":
+                    raise CallerPolicyError(
+                        "Caller generated an unplanned customer tool"
+                    )
+                self.validate_customer_calls(reply, tools)
+                return reply
+            if STOP in (reply.content or ""):
+                raise CallerPolicyError(
+                    "Caller stopped despite an outstanding scenario requirement"
+                )
+            if route == "SPEAK":
+                return reply
+            rejected = self.decisions[-1].setdefault("rejected_customer_responses", [])
+            rejected.append(reply.content)
+            if attempt:
+                raise CallerPolicyError(
+                    f"Customer did not execute the requested tool after one reassessment: {json.dumps(rejected)}; heard conversation: {json.dumps(conversation)}"
+                )
+            context["rejected_draft"] = reply.content
+            context["feedback"] = (
+                "This draft was not spoken. Saying you did or will do the device action does not execute it. Return the appropriate declared customer tool call for the actual heard request. Do not invent a tool or do the agent's work."
             )
-        return reply

@@ -200,13 +200,13 @@ class SpeechSwiftBackend:
             else []
         )
         if tool_choice == "required":
-            history.insert(
-                0,
-                {
-                    "role": "system",
-                    "content": "Use one of the supplied tools for this response.",
-                },
-            )
+            requirement = "Use one of the supplied tools for this response."
+            if history and history[0]["role"] == "system":
+                history[0]["content"] = (
+                    requirement + "\n\n" + (history[0]["content"] or "")
+                )
+            else:
+                history.insert(0, {"role": "system", "content": requirement})
         started = time.perf_counter()
         result = self._request(
             "chat",

@@ -68,16 +68,17 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 29 checks cover completed versus promised work, required follow-ups after a
+The 30 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Seven checks use the full 30-tool telecom customer interface, including real
+Eight checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
-requires reassurance before rebooting.
+requires reassurance before rebooting, and a data-saver status request after
+earlier troubleshooting steps.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
@@ -94,25 +95,22 @@ cannot generate a stop. A well-formed terminal proposal without a supporting
 agent quote gets at most one model reassessment using the same caller-visible
 scenario and conversation. The rejected proposal is recorded. The reassessment
 must pass the same evidence checks; a second unsupported proposal leaves the
-trial unscored. Malformed responses and inference errors propagate immediately.
+trial unscored. Malformed decisions and inference errors propagate immediately.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
-For open calls, the controller also selects a pending customer tool action using
-the declared tool schemas and the heard message ID of the service agent's
-instruction/question. The runtime records that message's verbatim text as the
-action evidence; the model need not recopy or paraphrase it.
-Scenario and persona requirements for clarification still apply before acting.
-The selected name, arguments and message reference must validate. References to
-customer/tool records, empty messages, or nonexistent IDs fail. The normal orchestrator
-executes that call; the controller never changes device state itself. A customer
-claim is not evidence that a setting changed. When no tool action is selected,
-the customer produces speech without tools; an unplanned tool response is an
-unscored policy error. Controller output is bounded to 768 tokens with customer
-tools and 384 without them. No reference actions or private agent state enter
-this selection.
-The spoken-reply context identifies the latest service-agent question and actual
-customer tool result, alongside the complete heard conversation, so the caller
-can answer the question before repeating its original complaint.
+For open calls with customer tools, a separate TOOL/SPEAK decision reads the
+heard request, caller scenario/persona and actual tool history. TOOL requires a
+native customer function call before speech; saying the action happened does not
+execute it. A prose response in TOOL mode gets one model reassessment with the
+same heard context. A second prose response leaves the trial unscored. Unknown
+tools, invalid arguments and inference errors fail immediately. The ordinary
+orchestrator executes validated tool calls; the controller never changes device
+state itself. SPEAK turns receive no tools and answer the latest agent question
+using actual customer tool results. Persona-specific clarification requirements
+still apply. Terminal decisions allow 384 tokens, routing allows 16, and normal
+caller generation uses its configured limit. No reference actions or private
+agent state enter these choices.
+
 Calibration measures continuing versus stopping; the
 completion/refusal label remains diagnostic. Open calls generate a customer response with
 customer tools, the scenario, and persona instructions. V2 uses explicit local

@@ -3,7 +3,7 @@ from copy import deepcopy
 
 import pytest
 
-from tau2.data_model.message import AssistantMessage
+from tau2.data_model.message import AssistantMessage, ToolCall
 from tau2.voice import qualification
 from tau2.voice.baseline import repository_root
 from tau2.voice.runtime_profile import load_profile
@@ -74,70 +74,70 @@ def test_historical_profiles_do_not_require_new_caller_policy():
     assert qualification.require_qualification(None, profile, {}) is None
 
 
-def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
-    case = {
-        "id": "caller-tool-continuation",
-        "scenario": "Create an appointment named Annual Checkup.",
-        "history": [["user", "What should it be called?"]],
-        "decision": "CONTINUE",
-        "reply": {"notification_tools": True, "must_contain": ["annual", "checkup"]},
+def terminal(decision="CONTINUE", evidence=None):
+    return AssistantMessage(
+        role="assistant",
+        content=json.dumps(
+            {"reasoning": "fixture", "agent_evidence": evidence, "decision": decision}
+        ),
+    )
+
+
+def provenance():
+    return {
+        "benchmark": {"sha256": "source"},
+        "native": {
+            "configuration": {"assets": {"pinned": True}},
+            "voxcpm2_parameter_elements": {"float16": 1},
+        },
     }
+
+
+def single_case(monkeypatch, case):
     monkeypatch.setattr(
         qualification,
         "qualification_suite",
         lambda: {"suite": "fixture", "caller": [case], "judge": []},
     )
-    assessment = AssistantMessage(
-        role="assistant",
-        content=json.dumps(
-            {
-                "reasoning": "title question remains open",
-                "agent_evidence": "What should it be called?",
-                "decision": "CONTINUE",
-                "customer_action": {
-                    "name": "check_notifications",
-                    "arguments": {},
-                    "instruction_id": 0,
-                },
-            }
-        ),
+    return load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
     )
-    replies = iter(
-        [
-            assessment,
-            assessment,
-            AssistantMessage(
-                role="assistant",
-                content=json.dumps(
-                    {
-                        "reasoning": "The title is known.",
-                        "agent_evidence": None,
-                        "decision": "CONTINUE",
-                        "customer_action": None,
-                    }
-                ),
-            ),
-            AssistantMessage(role="assistant", content="Annual Checkup, please."),
-        ]
-    )
+
+
+def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
+    case = {
+        "id": "read-before-answer",
+        "scenario": "Create an appointment named Annual Checkup.",
+        "history": [["user", "What should it be called?"]],
+        "decision": "CONTINUE",
+        "reply": {"notification_tools": True, "must_contain": ["annual", "checkup"]},
+    }
+    profile = single_case(monkeypatch, case)
     sent = []
 
     class Backend:
         def generate(self, model, messages, **kwargs):
             sent.append(messages)
-            return next(replies)
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                history = json.loads(messages[-1].content)["conversation"]
+                return AssistantMessage(
+                    role="assistant",
+                    content="SPEAK"
+                    if any(row["speaker"] == "customer_tool" for row in history)
+                    else "TOOL",
+                )
+            if kwargs.get("tool_choice") == "required":
+                return AssistantMessage(
+                    role="assistant",
+                    tool_calls=[
+                        ToolCall(id="read", name="check_notifications", arguments={})
+                    ],
+                )
+            return AssistantMessage(role="assistant", content="Annual Checkup, please.")
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"fixture": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
-        },
-    }
-    report = qualification.qualify(Backend(), profile, provenance)
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is True
     assert report["cases"][0]["fixture_tool_result"]["content"] == "[]"
     assert '"speaker": "customer_tool"' in sent[-1][-1].content
@@ -145,59 +145,33 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
 
 def test_qualification_labels_device_observations_as_customer_tools(monkeypatch):
     case = {
-        "id": "device-intermediate-observation",
-        "scenario": "Restore my mobile internet.",
+        "id": "observations",
+        "scenario": "Restore internet.",
         "history": [
             ["user", "Please turn off airplane mode."],
-            ["tool", '{"airplane_mode": false, "signal": "Excellent"}'],
+            ["tool", "Airplane Mode: OFF"],
         ],
         "decision": "CONTINUE",
     }
-    monkeypatch.setattr(
-        qualification,
-        "qualification_suite",
-        lambda: {"suite": "fixture", "caller": [case], "judge": []},
-    )
-    sent = []
+    profile = single_case(monkeypatch, case)
+    received = []
 
     class Backend:
         def generate(self, model, messages, **kwargs):
-            sent.append(json.loads(messages[-1].content))
-            return AssistantMessage(
-                role="assistant",
-                content=json.dumps(
-                    {
-                        "reasoning": "Device setting alone does not prove connectivity.",
-                        "agent_evidence": None,
-                        "decision": "CONTINUE",
-                    }
-                ),
-            )
+            received.append(json.loads(messages[-1].content))
+            return terminal()
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"fixture": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
-        },
-    }
-    report = qualification.qualify(Backend(), profile, provenance)
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is True
-    observation = sent[0]["conversation"][-1]
-    assert observation["speaker"] == "customer_tool"
-    assert json.loads(observation["content"])["signal"] == "Excellent"
-    assert observation["tool_call_id"] == "fixture-tool-1"
+    assert received[0]["conversation"][-1]["speaker"] == "customer_tool"
 
 
 def test_qualification_executes_real_device_write_with_full_customer_toolset(
     monkeypatch,
 ):
     case = {
-        "id": "real-device-mutation",
-        "scenario": "Restore mobile internet.",
+        "id": "actual-device-write",
+        "scenario": "Restore internet.",
         "toolset": "telecom",
         "device": {"airplane_mode": True},
         "history": [["user", "Please turn off Airplane Mode."]],
@@ -208,44 +182,23 @@ def test_qualification_executes_real_device_write_with_full_customer_toolset(
             "device_after": {"airplane_mode": False},
         },
     }
-    monkeypatch.setattr(
-        qualification,
-        "qualification_suite",
-        lambda: {"suite": "fixture", "caller": [case], "judge": []},
-    )
+    profile = single_case(monkeypatch, case)
 
     class Backend:
         def generate(self, model, messages, **kwargs):
-            prompt = messages[0].content
-            declarations = json.loads(prompt.split("DECLARED_CUSTOMER_TOOLS\n")[1])
-            assert len(declarations) == 30
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="TOOL")
+            assert kwargs["tool_choice"] == "required" and len(kwargs["tools"]) == 30
             return AssistantMessage(
                 role="assistant",
-                content=json.dumps(
-                    {
-                        "reasoning": "The requested setting change needs a real tool.",
-                        "agent_evidence": "Please turn off Airplane Mode.",
-                        "decision": "CONTINUE",
-                        "customer_action": {
-                            "name": "toggle_airplane_mode",
-                            "arguments": {},
-                            "instruction_id": 0,
-                        },
-                    }
-                ),
+                tool_calls=[
+                    ToolCall(id="write", name="toggle_airplane_mode", arguments={})
+                ],
             )
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"fixture": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
-        },
-    }
-    report = qualification.qualify(Backend(), profile, provenance)
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is True
     assert report["cases"][0]["device_after"] == {"airplane_mode": False}
     assert "Airplane Mode is now OFF" in report["cases"][0]["fixture_tool_result"]
@@ -255,50 +208,32 @@ def test_qualification_rejects_terminal_control_after_permitted_fixture_read(
     monkeypatch,
 ):
     case = {
-        "id": "must-remain-open-after-read",
-        "scenario": "More information is still required.",
+        "id": "early-stop-after-read",
+        "scenario": "More help needed.",
         "history": [["user", "Done."]],
         "decision": "CONTINUE",
         "reply": {"notification_tools": True, "must_contain": []},
     }
-    monkeypatch.setattr(
-        qualification,
-        "qualification_suite",
-        lambda: {"suite": "fixture", "caller": [case], "judge": []},
-    )
-    pending = {
-        "reasoning": "Read needed",
-        "agent_evidence": "Done.",
-        "decision": "CONTINUE",
-        "customer_action": {
-            "name": "check_notifications",
-            "arguments": {},
-            "instruction_id": 0,
-        },
-    }
-    terminal = {
-        "reasoning": "Invalid early completion",
-        "agent_evidence": "Done.",
-        "decision": "COMPLETE",
-        "customer_action": None,
-    }
-    replies = iter([pending, pending, terminal])
+    profile = single_case(monkeypatch, case)
 
     class Backend:
-        def generate(self, *args, **kwargs):
-            return AssistantMessage(role="assistant", content=json.dumps(next(replies)))
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                history = json.loads(messages[-1].content)["conversation"]
+                return (
+                    terminal("COMPLETE", "Done.")
+                    if any(row["speaker"] == "customer_tool" for row in history)
+                    else terminal()
+                )
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="TOOL")
+            return AssistantMessage(
+                role="assistant",
+                tool_calls=[
+                    ToolCall(id="read", name="check_notifications", arguments={})
+                ],
+            )
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"pinned": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
-        },
-    }
-    report = qualification.qualify(Backend(), profile, provenance)
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is False
     assert report["cases"][0]["final_action"] == "stop"
-    assert report["cases"][0]["response"]["content"] == "###STOP###"

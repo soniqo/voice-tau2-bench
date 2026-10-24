@@ -472,6 +472,52 @@
           "photos"
         ]
       }
+    },
+    {
+      "id": "full-tools-later-troubleshooting-read",
+      "scenario": "Restore my mobile internet while travelling. Follow the agent instructions with customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "data_saver_mode": false
+      },
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working while I travel."
+        ],
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "No internet connection; download speed 0 Mbps."
+        ],
+        [
+          "user",
+          "Check your mobile data and network mode."
+        ],
+        [
+          "tool",
+          "Mobile Data Enabled: Yes; Preferred Network Mode: 4G/5G preferred."
+        ],
+        [
+          "assistant",
+          "Mobile data is enabled and the preferred mode is 4G/5G."
+        ],
+        [
+          "user",
+          "Could you check whether Data Saver mode is enabled?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_data_restriction_status",
+        "arguments": {},
+        "device_after": {
+          "data_saver_mode": false
+        }
+      }
     }
   ],
   "judge": [

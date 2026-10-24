@@ -33,7 +33,6 @@ class Backend:
                     "reasoning": "fixture",
                     "agent_evidence": None if reply == "CONTINUE" else "Done.",
                     "decision": reply,
-                    "customer_action": None,
                 }
             )
         return (
@@ -163,7 +162,7 @@ def test_customer_only_quote_cannot_support_terminal_control():
     assert not caller.decisions
 
 
-def assessment(decision, evidence=None, customer_action=None, **metadata):
+def assessment(decision, evidence=None, **metadata):
     return AssistantMessage(
         role="assistant",
         content=json.dumps(
@@ -171,7 +170,6 @@ def assessment(decision, evidence=None, customer_action=None, **metadata):
                 "reasoning": "fixture assessment",
                 "agent_evidence": evidence,
                 "decision": decision,
-                "customer_action": customer_action,
             }
         ),
         **metadata,
@@ -279,201 +277,6 @@ def test_quote_cannot_be_assembled_across_separate_agent_statements():
     assert len(backend.calls) == 2
 
 
-def set_mobile_data(enabled: bool) -> str:
-    """Set mobile data to the requested state on the customer's phone."""
-    return f"Mobile data enabled: {enabled}"
-
-
-def test_controller_action_returns_real_tool_call_without_claiming_execution():
-    executions = []
-
-    def toggle_airplane_mode() -> str:
-        """Toggle airplane mode on the customer's phone."""
-        executions.append("executed")
-        return "Airplane Mode is now OFF."
-
-    instruction = "Please turn off airplane mode."
-    backend = Backend(
-        [
-            assessment(
-                "CONTINUE",
-                "Switch airplane mode off, please.",
-                customer_action={
-                    "name": "toggle_airplane_mode",
-                    "arguments": {},
-                    "instruction_id": 0,
-                },
-                usage={"completion_tokens": 31},
-            )
-        ]
-    )
-    caller = QualifiedCallerBackend(backend, "Restore mobile internet.")
-    tool = Tool(toggle_airplane_mode)
-    reply = caller.generate(
-        "model",
-        [
-            SystemMessage(role="system", content="caller reminder"),
-            UserMessage(role="user", content=instruction),
-        ],
-        tools=[tool],
-        call_name="user_streaming_response",
-    )
-    assert not executions
-    assert reply.content is None
-    assert len(reply.tool_calls) == 1
-    call = reply.tool_calls[0]
-    assert call.id and call.name == tool.name and call.arguments == {}
-    assert reply.usage == {"completion_tokens": 31}
-    assert len(backend.calls) == 1
-    assert tool(**call.arguments) == "Airplane Mode is now OFF."
-    assert executions == ["executed"]
-    assert caller.decisions[-1]["customer_action_evidence"] == {
-        "message_id": 0,
-        "quote": instruction,
-    }
-    assert "DECLARED_CUSTOMER_TOOLS" in backend.calls[0][0][0].content
-
-
-@pytest.mark.parametrize(
-    "decision,name,arguments,instruction_id,error",
-    [
-        ("COMPLETE", "set_mobile_data", {"enabled": True}, 0, "terminal decision"),
-        ("CONTINUE", "agent_only_tool", {}, 0, "not declared"),
-        ("CONTINUE", "set_mobile_data", {"enabled": True}, 1, "heard agent"),
-        ("CONTINUE", "set_mobile_data", {"enabled": True}, 99, "heard agent"),
-        ("CONTINUE", "set_mobile_data", {"enabled": True}, True, "valid integer"),
-        ("CONTINUE", "set_mobile_data", {"enabled": "yes"}, 0, "valid boolean"),
-        ("CONTINUE", "set_mobile_data", {}, 0, "required"),
-        (
-            "CONTINUE",
-            "set_mobile_data",
-            {"enabled": True, "extra": 1},
-            0,
-            "undeclared arguments",
-        ),
-    ],
-)
-def test_invalid_customer_action_is_unscored_without_repair(
-    decision, name, arguments, instruction_id, error
-):
-    backend = Backend(
-        [
-            assessment(
-                decision,
-                "Done.",
-                {
-                    "name": name,
-                    "arguments": arguments,
-                    "instruction_id": instruction_id,
-                },
-            )
-        ]
-    )
-    caller = QualifiedCallerBackend(backend, "scenario")
-    with pytest.raises(CallerPolicyError, match=error):
-        caller.assess(
-            "model",
-            [
-                UserMessage(role="user", content="Done."),
-                AssistantMessage(role="assistant", content="Customer claim."),
-            ],
-            tools=[Tool(set_mobile_data)],
-        )
-    assert len(backend.calls) == 1
-    assert not caller.decisions
-
-
-@pytest.mark.parametrize(
-    "source",
-    [
-        ToolMessage(role="tool", id="device", requestor="user", content="Done."),
-        UserMessage(role="user", content=None),
-    ],
-)
-def test_customer_action_cannot_cite_a_tool_or_empty_message(source):
-    backend = Backend(
-        [
-            assessment(
-                "CONTINUE",
-                customer_action={
-                    "name": "set_mobile_data",
-                    "arguments": {"enabled": True},
-                    "instruction_id": 0,
-                },
-            )
-        ]
-    )
-    caller = QualifiedCallerBackend(backend, "scenario")
-    with pytest.raises(CallerPolicyError, match="heard agent instruction"):
-        caller.assess("model", [source], tools=[Tool(set_mobile_data)])
-    assert not caller.decisions
-
-
-def test_spoken_response_cannot_bypass_controller_with_an_unplanned_tool():
-    backend = Backend(
-        [
-            "CONTINUE",
-            AssistantMessage(
-                role="assistant",
-                tool_calls=[
-                    ToolCall(name="set_mobile_data", arguments={"enabled": True})
-                ],
-            ),
-        ]
-    )
-    caller = QualifiedCallerBackend(backend, "scenario")
-    with pytest.raises(CallerPolicyError, match="outside its assessed action"):
-        caller.generate(
-            "model",
-            [],
-            tools=[Tool(set_mobile_data)],
-            call_name="user_streaming_response",
-        )
-    assert backend.calls[-1][1]["tools"] == []
-    assert backend.calls[-1][1]["tool_choice"] == "none"
-
-
-def test_spoken_response_receives_actual_device_result_and_latest_question():
-    backend = Backend(["CONTINUE", "Yes, airplane mode is off."])
-    caller = QualifiedCallerBackend(backend, "Restore mobile internet.")
-    caller.generate(
-        "model",
-        [
-            UserMessage(role="user", content="Is airplane mode off now?"),
-            ToolMessage(
-                role="tool",
-                id="actual-result",
-                requestor="user",
-                content="Airplane Mode: OFF",
-            ),
-        ],
-        tools=[Tool(set_mobile_data)],
-        call_name="user_streaming_response",
-    )
-    payload = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
-    assert (
-        payload["latest_service_agent_statement"]["content"]
-        == "Is airplane mode off now?"
-    )
-    assert payload["latest_customer_tool_result"]["content"] == "Airplane Mode: OFF"
-    assert payload["latest_customer_tool_result"] == payload["conversation"][-1]
-
-
-def test_customer_tools_require_an_explicit_action_or_null_decision():
-    backend = Backend(
-        [
-            json.dumps(
-                {"reasoning": "pending", "agent_evidence": None, "decision": "CONTINUE"}
-            )
-        ]
-    )
-    caller = QualifiedCallerBackend(backend, "scenario")
-    with pytest.raises(CallerPolicyError, match="customer action decision is required"):
-        caller.assess("model", [], tools=[Tool(set_mobile_data)])
-    assert len(backend.calls) == 1
-    assert not caller.decisions
-
-
 @pytest.mark.parametrize(
     "question",
     [
@@ -503,3 +306,129 @@ def test_completed_action_with_following_question_can_still_end_call():
         "model", [UserMessage(role="user", content=confirmation)]
     )
     assert decision == "COMPLETE"
+
+
+def set_mobile_data(enabled: bool) -> str:
+    """Set mobile data on the customer's phone."""
+    return str(enabled)
+
+
+def native_call(name="set_mobile_data", arguments=None):
+    return AssistantMessage(
+        role="assistant",
+        tool_calls=[
+            ToolCall(
+                id="native-id",
+                name=name,
+                arguments={"enabled": True} if arguments is None else arguments,
+            )
+        ],
+    )
+
+
+def test_required_customer_action_uses_native_function_call_before_speaking():
+    backend = Backend(["CONTINUE", "TOOL", native_call()])
+    caller = QualifiedCallerBackend(backend, "Restore internet.")
+    tool = Tool(set_mobile_data)
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content="Please enable mobile data.")],
+        tools=[tool],
+        call_name="user_streaming_response",
+    )
+    assert reply.is_tool_call() and reply.content is None
+    assert reply.tool_calls[0].arguments == {"enabled": True}
+    assert backend.calls[-1][1]["tool_choice"] == "required"
+    assert backend.calls[-1][1]["tools"] == [tool]
+    assert caller.decisions[-1]["customer_tool_route"]["mode"] == "TOOL"
+
+
+def test_unexecuted_action_claim_gets_one_native_tool_reassessment():
+    backend = Backend(
+        ["CONTINUE", "TOOL", "I have enabled mobile data.", native_call()]
+    )
+    caller = QualifiedCallerBackend(backend, "Restore internet.")
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content="Please enable mobile data.")],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    assert reply.is_tool_call()
+    assert backend.calls[-1][1]["call_name"] == "caller_tool_response_repair_v2"
+    assert caller.decisions[-1]["rejected_customer_responses"] == [
+        "I have enabled mobile data."
+    ]
+    first = json.loads(backend.calls[-2][0][-1].content.split("\n", 1)[1])
+    retry = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
+    assert first["conversation"] == retry["conversation"]
+
+
+def test_repeated_action_claim_without_tool_is_unscored():
+    backend = Backend(["CONTINUE", "TOOL", "Done.", "Done."])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="after one reassessment"):
+        caller.generate(
+            "model",
+            [UserMessage(role="user", content="Enable data.")],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+    assert len(backend.calls) == 4
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        native_call("agent_only"),
+        native_call(arguments={"enabled": "yes"}),
+        native_call(arguments={"enabled": True, "extra": 1}),
+    ],
+)
+def test_invalid_native_customer_tool_never_gets_repaired_or_executed(reply):
+    backend = Backend(["CONTINUE", "TOOL", reply])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="Invalid customer tool"):
+        caller.generate(
+            "model",
+            [UserMessage(role="user", content="Enable data.")],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+    assert len(backend.calls) == 3
+
+
+@pytest.mark.parametrize("label", ["", "maybe", "TOOL because I think so"])
+def test_unknown_tool_route_remains_unscored(label):
+    backend = Backend(["CONTINUE", label])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="TOOL/SPEAK route"):
+        caller.generate(
+            "model",
+            [UserMessage(role="user", content="Enable data.")],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+
+
+def test_spoken_reply_uses_recent_result_and_cannot_invent_a_tool():
+    backend = Backend(["CONTINUE", "SPEAK", native_call()])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="unplanned customer tool"):
+        caller.generate(
+            "model",
+            [
+                UserMessage(role="user", content="Is data enabled?"),
+                ToolMessage(
+                    role="tool",
+                    id="actual",
+                    requestor="user",
+                    content="Data is enabled.",
+                ),
+            ],
+            tools=[Tool(set_mobile_data)],
+            call_name="user_streaming_response",
+        )
+    payload = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
+    assert payload["latest_customer_tool_result"]["content"] == "Data is enabled."
+    assert backend.calls[-1][1]["tools"] == []
