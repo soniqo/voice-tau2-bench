@@ -41,6 +41,13 @@ another response early merely because its background worker has already finished
 Interruptions discard superseded speech and tools while preserving recognition
 of speech already heard.
 
+The local v2 customer waits 15 simulated seconds after their own speech before
+repeating a request into silence. V1 retains its five-second setting. This common
+local condition gives the ASR/LLM/TTS cascade time to begin responding; all agent
+execution time still counts, and every model uses the same patience setting.
+The selected value is recorded in the profile and per-trial settings. It changes
+the interaction condition and must be reported with any result.
+
 This is a paced local cascade. It does not reproduce an audio-native provider's
 network timing or claim equivalence to a live telephone deployment. Speech text
 alignment remains estimated until synthesis completes.

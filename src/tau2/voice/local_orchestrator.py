@@ -91,7 +91,7 @@ class LocalV2Orchestrator(FullDuplexOrchestrator):
             if self.max_steps == 0:
                 self.done = True
                 self.termination_reason = TerminationReason.MAX_STEPS
-        except Exception:
+        except (Exception, KeyboardInterrupt):
             # BaseOrchestrator initializes before its cleanup try/finally.
             self._cleanup()
             raise

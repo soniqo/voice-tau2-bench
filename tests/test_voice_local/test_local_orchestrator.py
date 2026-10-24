@@ -7,6 +7,7 @@ from tau2.data_model.semantic_communication import CommunicateScoring
 from tau2.data_model.simulation import TerminationReason
 from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
 from tau2.orchestrator import base
+from tau2.orchestrator.full_duplex_orchestrator import FullDuplexOrchestrator
 from tau2.orchestrator.modes import CommunicationMode
 from tau2.registry import registry
 from tau2.voice.baseline import repository_root
@@ -93,3 +94,16 @@ def test_wall_watchdog_and_call_cap_remain_distinct_failures(
     simulation, _ = run(monkeypatch, caller_delay=2, **kwargs)
     assert simulation.termination_reason == reason
     assert simulation.reward_info.reward == 0
+
+
+def test_interrupted_initialization_cleans_up_agent_and_customer(monkeypatch):
+    def interrupted(_):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(FullDuplexOrchestrator, "initialize", interrupted)
+    orchestrator = LocalV2Orchestrator.__new__(LocalV2Orchestrator)
+    cleaned = []
+    orchestrator._cleanup = lambda: cleaned.append(True)
+    with pytest.raises(KeyboardInterrupt):
+        orchestrator.initialize()
+    assert cleaned == [True]

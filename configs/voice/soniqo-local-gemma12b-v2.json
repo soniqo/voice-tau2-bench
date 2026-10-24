@@ -72,6 +72,7 @@
     "wall_timeout_seconds": 7200,
     "caller_policy": "terminal-v2",
     "require_qualification": true,
-    "tool_guard": true
+    "tool_guard": true,
+    "caller_idle_seconds": 15
   }
 }

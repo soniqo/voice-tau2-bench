@@ -10,7 +10,6 @@ from tau2.agent.speech_swift_agent import SpeechSwiftAgent
 from tau2.backchannel import default_backchannel_settings
 from tau2.config import (
     DEFAULT_WAIT_TO_RESPOND_THRESHOLD_OTHER_SECONDS,
-    DEFAULT_WAIT_TO_RESPOND_THRESHOLD_SELF_SECONDS,
 )
 from tau2.data_model.audio import PCM_SAMPLE_RATE
 from tau2.data_model.language import CallContext, TaskSelection
@@ -197,7 +196,7 @@ def run_local_task(
                 DEFAULT_WAIT_TO_RESPOND_THRESHOLD_OTHER_SECONDS / 0.05
             ),
             wait_to_respond_threshold_self=round(
-                DEFAULT_WAIT_TO_RESPOND_THRESHOLD_SELF_SECONDS / 0.05
+                profile.execution.caller_idle_seconds / 0.05
             ),
             use_llm_backchannel=sampled.use_llm_backchannel,
             backchannel_min_threshold=int(sampled.backchannel_min_threshold / 0.05)
@@ -238,6 +237,7 @@ def run_local_task(
                     "max_seconds": max_seconds,
                     "wall_timeout_seconds": wall_timeout,
                     "clock_mode": profile.execution.mode,
+                    "caller_idle_seconds": profile.execution.caller_idle_seconds,
                     "qualification": qualification,
                     "complexity": complexity,
                     "tick_seconds": 0.05,
@@ -279,11 +279,12 @@ def run_local_task(
                     env_kwargs=env_kwargs,
                     communicate_scoring=scoring,
                 )
-            except Exception as error:
+            except (Exception, KeyboardInterrupt) as error:
                 (output / "failed-run.json").write_text(
                     json.dumps(
                         {
                             "error": str(error),
+                            "error_type": type(error).__name__,
                             "domain": domain,
                             "task_id": task.id,
                             "ticks": [

@@ -362,6 +362,12 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
         for tick in wrong.ticks
         for call in tick.agent_tool_calls
         if call.name == "create_task"
+        and any(
+            result.id == call.id
+            and not result.error
+            and result.execution_status == "executed"
+            for result in tick.agent_tool_results
+        )
     )
     changed.arguments["title"] = "Deliberately wrong title"
     task, _, _ = task_context("mock", "create_task_1", 42)

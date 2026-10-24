@@ -81,5 +81,6 @@ def test_runner_constructs_domains_with_optional_caller_tools(
     assert observed["user"].realtime_generation is (not v2)
     assert observed["max_steps"] == (47999 if v2 else 12000)
     assert observed["timeout"] == (7200 if v2 else 600)
+    assert observed["user"].wait_to_respond_threshold_self == (300 if v2 else 100)
     assert (tmp_path / "simulation.json").exists()
     observed["agent"].stop()
