@@ -70,8 +70,10 @@ private tool results. A terminal assessment requires a supporting quote actually
 heard from the service agent. A conservative English-language guard keeps the
 call open if that quote merely offers or promises a future action; the guard
 cannot generate a stop. Calibration measures continuing versus stopping; the
-completion/refusal label remains diagnostic. Open calls generate the normal customer response with
-customer tools and persona instructions. Caller system reminders are combined
+completion/refusal label remains diagnostic. Open calls generate a customer response with
+customer tools, the scenario, and persona instructions. V2 uses explicit local
+caller guidelines in production and qualification, avoiding the inherited vague
+opener instruction. Caller system reminders are combined
 into one initial system turn for Gemma; the dialogue is supplied as labelled
 customer/service-agent/tool records to avoid speaker-role confusion. Malformed decisions, an unsupported early
 stop, or rejected customer tool calls invalidate the trial and leave it unscored.

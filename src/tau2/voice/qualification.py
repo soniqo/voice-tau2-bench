@@ -6,7 +6,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 
-from tau2.data_model.message import AssistantMessage, UserMessage
+from tau2.data_model.message import AssistantMessage, ToolMessage, UserMessage
 from tau2.data_model.persona import PersonaConfig
 from tau2.data_model.semantic_communication import (
     CommunicateScoring,
@@ -140,14 +140,40 @@ def qualify(backend, profile, provenance):
                     mode="voice",
                     guidelines=LOCAL_CALLER_GUIDELINES,
                 )
+                history = [SystemMessage(role="system", content=system), *messages]
                 response = caller.generate(
                     profile.roles["caller"].model_id,
-                    [SystemMessage(role="system", content=system), *messages],
+                    history,
                     tools=tools,
                     temperature=0,
                     max_tokens=1024,
                     call_name="user_streaming_response",
                 )
+                if expected.get("notification_tools") and response.is_tool_call():
+                    calls = response.tool_calls
+                    # A permitted read may precede the answer. Exercise its real
+                    # fixture result once; invented tools, writes, or loops fail.
+                    if (
+                        len(calls) == 1
+                        and calls[0].name == "check_notifications"
+                        and calls[0].arguments == {}
+                    ):
+                        row["intermediate_response"] = response.model_dump(mode="json")
+                        result = ToolMessage(
+                            role="tool",
+                            id=calls[0].id,
+                            requestor="user",
+                            content=check_notifications(),
+                        )
+                        row["fixture_tool_result"] = result.model_dump(mode="json")
+                        response = caller.generate(
+                            profile.roles["caller"].model_id,
+                            [*history, response, result],
+                            tools=tools,
+                            temperature=0,
+                            max_tokens=1024,
+                            call_name="user_streaming_response",
+                        )
                 row["response"] = response.model_dump(mode="json")
                 if "tool" in expected:
                     calls = response.tool_calls or []
