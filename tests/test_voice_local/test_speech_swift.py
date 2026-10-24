@@ -77,6 +77,16 @@ def test_transport_failure_keeps_sent_chat_body_without_masking_exception():
     backend.close()
 
 
+def test_request_encoding_failure_releases_active_request_without_a_wire_body():
+    backend = SpeechSwiftBackend("http://127.0.0.1:8080")
+    with pytest.raises(TypeError):
+        backend._request("chat", "gemma4-12b-it", invalid=object())
+    assert not backend._active
+    assert backend.events[-1]["success"] is False
+    assert "failure" not in backend.events[-1]
+    backend.close()
+
+
 @pytest.mark.parametrize(
     "url",
     [
