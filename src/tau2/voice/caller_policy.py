@@ -4,7 +4,7 @@ import json
 import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from tau2.data_model.message import AssistantMessage, SystemMessage, UserMessage
 from tau2.user.user_simulator_base import STOP
@@ -187,8 +187,32 @@ class QualifiedCallerBackend:
                     extract_json_from_llm_response(reply.content or "")
                 )
             except ValueError as error:
+                if isinstance(error, ValidationError) and all(
+                    item["type"] != "json_invalid" for item in error.errors()
+                ):
+                    rejected.append(
+                        {"invalid_response": reply.content, "error": str(error)}
+                    )
+                    if not attempt:
+                        payload["rejected_assessment"] = rejected[-1]
+                        payload["required_schema"] = (
+                            TerminalAssessment.model_json_schema()
+                        )
+                        payload["feedback"] = (
+                            "Reassess the same heard conversation and return valid JSON "
+                            "matching required_schema. The previous response had invalid "
+                            "control fields. Use exactly CONTINUE, COMPLETE, or REFUSED; "
+                            "a terminal decision still needs an exact heard agent quote. "
+                            "Do not invent evidence or call tools."
+                        )
+                        continue
                 raise CallerPolicyError(
                     f"Invalid caller terminal decision: {reply.content!r}: {error}"
+                    + (
+                        f"; rejected assessments: {json.dumps(rejected)}"
+                        if rejected
+                        else ""
+                    )
                 ) from error
             evidence = " ".join((assessment.agent_evidence or "").split())
             if assessment.decision == "CONTINUE" or (

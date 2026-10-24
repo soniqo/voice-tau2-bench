@@ -488,3 +488,48 @@ def test_tool_route_gets_whole_heard_request_and_preserves_tool_boundaries():
         "service_agent",
     ]
     assert turns[2]["tool_calls"] and turns[3]["tool_call_id"] == "native-id"
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {
+            "reasoning": "Work is still pending.",
+            "agent_evidence": None,
+            "decision": "CONTINE",
+        },
+        {"reasoning": None, "agent_evidence": None, "decision": "CONTINUE"},
+    ],
+)
+def test_invalid_control_fields_get_one_model_reassessment(bad):
+    backend = Backend([json.dumps(bad), "CONTINUE"])
+    caller = QualifiedCallerBackend(backend, "private scenario")
+    decision, _ = caller.assess(
+        "model", [UserMessage(role="user", content="I am checking.")]
+    )
+    assert decision == "CONTINUE"
+    assert len(backend.calls) == 2
+    initial = json.loads(backend.calls[0][0][-1].content)
+    retry = json.loads(backend.calls[1][0][-1].content)
+    assert retry["scenario"] == initial["scenario"]
+    assert retry["conversation"] == initial["conversation"]
+    assert retry["required_schema"]["properties"]["decision"]["enum"] == [
+        "CONTINUE",
+        "COMPLETE",
+        "REFUSED",
+    ]
+    assert caller.decisions[-1]["rejected_assessments"][0][
+        "invalid_response"
+    ] == json.dumps(bad)
+
+
+def test_repeated_invalid_control_fields_remain_unscored():
+    invalid = json.dumps(
+        {"reasoning": "pending", "agent_evidence": None, "decision": "CONTINE"}
+    )
+    backend = Backend([invalid, invalid])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="rejected assessments"):
+        caller.assess("model", [])
+    assert len(backend.calls) == 2
+    assert not caller.decisions

@@ -92,11 +92,15 @@ heard from the service agent. A conservative English-language guard keeps the
 call open if that quote merely offers or promises a future action, or consists
 only of an English confirmation question. A completed-action statement followed
 by a question is still eligible for a terminal decision. These guards
-cannot generate a stop. A well-formed terminal proposal without a supporting
-agent quote gets at most one model reassessment using the same caller-visible
+cannot generate a stop. A terminal proposal with invalid control-field values
+(such as a misspelled decision enum) or without a supporting agent quote gets
+at most one model reassessment using the same caller-visible
 scenario and conversation. The rejected proposal is recorded. The reassessment
 must pass the same evidence checks; a second unsupported proposal leaves the
-trial unscored. Malformed decisions and inference errors propagate immediately.
+trial unscored. Invalid JSON syntax, assessment tool calls and inference errors
+propagate immediately; typed control-field errors receive the single bounded
+schema repair above. Every rejected response is retained, and no decision or
+evidence is filled in by the runtime.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
 Caller control reads heard turns: adjacent speech fragments from the same speaker
