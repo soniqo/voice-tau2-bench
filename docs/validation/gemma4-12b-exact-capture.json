@@ -1,0 +1,762 @@
+{
+  "captured_generation": {
+    "context_limit": 262144,
+    "finish_reason": "stop",
+    "generated_tokens_excluding_stop": 23,
+    "max_tokens": 1024,
+    "prompt_tokens": 8112,
+    "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1003<|\"|>}<tool_call|><tool_call|>",
+    "stop_token_id": 50
+  },
+  "captured_utc": "2026-10-24T09:51:27.831362+00:00",
+  "component_artifacts": [
+    {
+      "bytes": 67126,
+      "path": "component-diagnostics.json",
+      "sha256": "532dfd209785ef803c583b26a48e2c8c64106c1dc81dcb9d643b4f19f506e80d"
+    },
+    {
+      "bytes": 711,
+      "path": "component-inference.json",
+      "sha256": "e4424a14e303e8991efe4bb45d3aaaf72e18a8ae7b7590d6e0e82d8519735b9e"
+    }
+  ],
+  "component_checks": [
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "I don't want to speak to a human agent yet. I just want to know if there's any way to get a refund if I cancel.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-e4b-it",
+      "stops": false
+    },
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "No, I want to cancel the reservation. But I'm not going to cancel it if I don't get a refund.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-12b-it",
+      "stops": false
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-e4b-it"
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-12b-it"
+    }
+  ],
+  "controlled_functional_check": {
+    "artifacts": [
+      {
+        "bytes": 664844,
+        "path": "functional-fixed/agent.wav",
+        "sha256": "ab70e79051cce87dab14a8d817bb92ee2d37e7be1ab7d8a383798db46830bec5"
+      },
+      {
+        "bytes": 452,
+        "path": "functional-fixed/controlled-caller.json",
+        "sha256": "566f73260e38bc87da4a9380a7a40b55f800adfd383fa3bffd6456b331dcb433"
+      },
+      {
+        "bytes": 155974,
+        "path": "functional-fixed/inference.json",
+        "sha256": "7e946a3566f57e7e0bcf79d658e574d32bfa44a6c8b5dbd6fc07fb5fab9fbbad"
+      },
+      {
+        "bytes": 301,
+        "path": "functional-fixed/negative-control.json",
+        "sha256": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad"
+      },
+      {
+        "bytes": 1485,
+        "path": "functional-fixed/profile.json",
+        "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+      },
+      {
+        "bytes": 41975,
+        "path": "functional-fixed/provenance.json",
+        "sha256": "577403cc8fe7eaa22e90a74bd5f8dda40cbfc422f7d9aba3dab1e3736a2cda07"
+      },
+      {
+        "bytes": 1201,
+        "path": "functional-fixed/runtime.json",
+        "sha256": "5e35c9494133ad2c171dcea9422413a4a539640d5b4f12892bc00722900f1c5d"
+      },
+      {
+        "bytes": 1205,
+        "path": "functional-fixed/settings.json",
+        "sha256": "58e58bc78af92eee7d4a27d151e346fa2097e90514a22dc4e76da5b59e04119f"
+      },
+      {
+        "bytes": 1760444,
+        "path": "functional-fixed/simulation.json",
+        "sha256": "09bbcd9a364214cebe68b670db8bf5d73635c16310c68f53fd18617025b2d2cd"
+      },
+      {
+        "bytes": 664844,
+        "path": "functional-fixed/user.wav",
+        "sha256": "46fad7a6af17784fc7a0c0667157260bc50a2a33947a6d0047dcabfd86bc65c4"
+      }
+    ],
+    "caller_mode": "fixed spoken request; generative caller not used",
+    "negative_reward": 0.0,
+    "not_a_domain_score": true,
+    "positive_reward": 1.0,
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b"
+  },
+  "corrected_complete_voice_attempt": {
+    "agent_tool_calls": [
+      {
+        "arguments": {
+          "phone_number": "555-123-2002"
+        },
+        "id": "514889FE-D8EE-4D57-9FE1-C8F963F71DA0",
+        "name": "get_customer_by_phone",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1001"
+        },
+        "id": "A0B9C6D5-AC6A-4168-A2BF-ADACEB52037B",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1002"
+        },
+        "id": "681F43E3-6CF1-4FBE-9E4C-90658A5F861D",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1003"
+        },
+        "id": "5A61846B-931C-44F1-A3FE-7F21E74E8727",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "P1002"
+        },
+        "id": "5817E9EB-11C4-49F6-ABB8-490EE0B74428",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {},
+        "id": "83FB657D-BA5F-48EE-97BB-037A1C9BE787",
+        "name": "run_speed_test",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {},
+        "id": "BE04B4CD-790F-48C1-A6BB-442B834A1A7A",
+        "name": "run_speed_test",
+        "requestor": "assistant"
+      }
+    ],
+    "agent_tool_errors": [
+      "Error: Tool 'run_speed_test' not found.",
+      "Error: Tool 'run_speed_test' not found."
+    ],
+    "artifacts": [
+      {
+        "bytes": 8968844,
+        "path": "telecom-fixed/agent.wav",
+        "sha256": "eb9d56ef707e2e1ec8b1beac12a3100a7818dd65518fb14599ea50922cce4f85"
+      },
+      {
+        "bytes": 2030715,
+        "path": "telecom-fixed/inference.json",
+        "sha256": "57aa378db4183a5473dc201e0b488d4c99f9b29df54883610052f6a1e7db3dbf"
+      },
+      {
+        "bytes": 1485,
+        "path": "telecom-fixed/profile.json",
+        "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+      },
+      {
+        "bytes": 41975,
+        "path": "telecom-fixed/provenance.json",
+        "sha256": "23f6367d83095d0da6881920db16429212a157402fd579bce33807c636609478"
+      },
+      {
+        "bytes": 1201,
+        "path": "telecom-fixed/runtime.json",
+        "sha256": "5e35c9494133ad2c171dcea9422413a4a539640d5b4f12892bc00722900f1c5d"
+      },
+      {
+        "bytes": 25092,
+        "path": "telecom-fixed/settings.json",
+        "sha256": "4f931fc5785b04f3a9e6a4979fa4481bbe890ebce353a9ad97e21e5739a16fc1"
+      },
+      {
+        "bytes": 30197605,
+        "path": "telecom-fixed/simulation.json",
+        "sha256": "236ef22317df221c72f07e7a6050418efd98948b70a51949086f336258594093"
+      },
+      {
+        "bytes": 8968844,
+        "path": "telecom-fixed/user.wav",
+        "sha256": "4bb00fe30b25c84fe6c8327bebc49bc1242090e59bf39c1cf152d155ca1858b0"
+      }
+    ],
+    "benchmark": {
+      "git_head": "e9abdbe5358000ef03632b28bfac2a7d2f4eedc3",
+      "sha256": "31210d2ed3f0a8a978b09cd0f7146674e784008c53bb64752a08967434e53f13"
+    },
+    "caller_tool_calls": [
+      {
+        "arguments": {},
+        "id": "E23FE54C-CD82-451F-B272-D0C1C0808F78",
+        "name": "run_speed_test",
+        "requestor": "user"
+      }
+    ],
+    "conversation_seconds": 560.5500000000001,
+    "new_native_chat_failure_files": 3,
+    "recognized_utterances": 9,
+    "reward": 0.0,
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
+    "scored": true,
+    "termination": "timeout",
+    "ticks": 11211
+  },
+  "corrected_exact_replay": {
+    "artifact": {
+      "bytes": 12355,
+      "path": "exact-replay-fixed.json",
+      "sha256": "518a80758e616ebf3f21d4ea93aeb09dc0878033bada3ac5de6920103e9801d2"
+    },
+    "only_request_id_changed": true,
+    "response": {
+      "content": "",
+      "generatedTokens": 23,
+      "toolCalls": [
+        {
+          "arguments": {
+            "id": "L1003"
+          },
+          "id": "D814ECEC-BFC6-4FB7-8E79-DFDCC299F6A3",
+          "name": "get_details_by_id"
+        }
+      ]
+    },
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
+    "valid_calls": 1
+  },
+  "corrected_timeout_counterfactual": {
+    "counterfactual_termination": "user_stop",
+    "diagnostic_only": true,
+    "official_reward_unchanged": 0.0,
+    "reward_without_timeout_gate": {
+      "action_checks": null,
+      "communicate_checks": null,
+      "db_check": {
+        "db_match": false,
+        "db_reward": 0.0
+      },
+      "env_assertions": [
+        {
+          "env_assertion": {
+            "arguments": {
+              "expected_status": true
+            },
+            "assert_value": true,
+            "env_type": "user",
+            "func_name": "assert_mobile_data_status",
+            "message": null
+          },
+          "met": false,
+          "reward": 0.0
+        },
+        {
+          "env_assertion": {
+            "arguments": {
+              "expected_desc": "excellent",
+              "expected_speed": 200
+            },
+            "assert_value": true,
+            "env_type": "user",
+            "func_name": "assert_internet_speed",
+            "message": null
+          },
+          "met": false,
+          "reward": 0.0
+        }
+      ],
+      "info": null,
+      "nl_assertions": null,
+      "reward": 0.0,
+      "reward_basis": [
+        "ENV_ASSERTION"
+      ],
+      "reward_breakdown": {
+        "ENV_ASSERTION": 0.0
+      }
+    },
+    "termination_only_changed": true
+  },
+  "correction": {
+    "e4b_public_codec_remains_strict": true,
+    "incomplete_calls_or_invalid_arguments_still_rejected": true,
+    "runtime_revision": "26c901ccbfa48b19f6370d3d276459055feb951f+source-sha256:32c526626d87498bfd2a1f62c4be446dd49ad91efc4357e42f41df453165601b",
+    "scope": "12B only: consume duplicate adjacent closing markers after a fully validated tool call; preserve function and arguments"
+  },
+  "diagnostic_only": true,
+  "guided_component_artifact": {
+    "bytes": 69933,
+    "path": "guided-component-diagnostics.json",
+    "sha256": "a7553e585678ce19cd2d4579fde1ff685b796ba34b22ab5f01ba12b458ed26e0"
+  },
+  "guided_component_checks": [
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "I don't want to speak to a human agent yet. I just need to know about the refund part.",
+      "experimental_guidance": "When the agent has explained that a requested action is unavailable and has addressed any required follow-up from your scenario, acknowledge that outcome and end the call with ###STOP###. Do not claim that a refused action was performed. Do not end while an action is only promised. Do not add new requests or repeat an already answered request.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-e4b-it",
+      "stops": false
+    },
+    {
+      "case": "caller_after_recorded_airline_refusal",
+      "content": "No, I don't want to talk to someone else. I just want to cancel the reservation. And I'm not canceling it unless I get a refund.",
+      "experimental_guidance": "When the agent has explained that a requested action is unavailable and has addressed any required follow-up from your scenario, acknowledge that outcome and end the call with ###STOP###. Do not claim that a refused action was performed. Do not end while an action is only promised. Do not add new requests or repeat an already answered request.",
+      "history": "Caller state reconstructed from saved ticks through the last delivered agent text; original in-flight caller request was not captured",
+      "model": "gemma4-12b-it",
+      "stops": false
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "experimental_guidance": "After an unsuccessful identifier lookup, do not repeat the same failed arguments or ask again when the caller has already confirmed them. Use available tools and earlier successful results to retrieve the canonical identifier. Do not invent identifiers or use information outside the conversation and tool results.",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-e4b-it"
+    },
+    {
+      "canonical_order_read": false,
+      "case": "retail_recovery_after_two_failed_lookups",
+      "experimental_guidance": "After an unsuccessful identifier lookup, do not repeat the same failed arguments or ask again when the caller has already confirmed them. Use available tools and earlier successful results to retrieve the canonical identifier. Do not invent identifiers or use information outside the conversation and tool results.",
+      "history": "Controlled reconstruction using observed ASR and lookup arguments; real local tool responses; no canonical order ID or reference action inserted into the model prompt",
+      "model": "gemma4-12b-it"
+    }
+  ],
+  "historical_scores_unchanged": true,
+  "instrumented_voice_attempt": {
+    "benchmark": {
+      "git_head": "bfc6b44427d1cb476c4ce4ded70c6a6ffb023853",
+      "sha256": "31210d2ed3f0a8a978b09cd0f7146674e784008c53bb64752a08967434e53f13"
+    },
+    "complexity": "control",
+    "conversation_seconds": 167.55,
+    "domain": "telecom",
+    "exact_wire_body_matches": true,
+    "max_seconds": 600.0,
+    "model_assets": {
+      "agent": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "fbc1c1cb48ed86ec98482b2d41f5a03d3991aba74b7c29a93d430761e6518a38",
+            "size": 5415
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "a8349d9bd64cc5841297fcb5002f0fdc4749c473c8f1b10ea337f9ce4ee7014e",
+            "size": 260
+          },
+          {
+            "path": "model-00001-of-00002.safetensors",
+            "sha256": "0d58feed0c98a69c07317b4481aeae5ab2785f12a496ea96ab24c4842808de78",
+            "size": 5351756584
+          },
+          {
+            "path": "model-00002-of-00002.safetensors",
+            "sha256": "5b00a1bcb596ce6e827b4cdea6ecf2a0f35bb01306eb87c1ea4b3bcde36c7755",
+            "size": 1389282927
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sha256": "9ac99e7a6cf3e4d40eb8df01644fe9c04036ace94f3389df35db9d9449758516",
+            "size": 135329
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "fc1384a911d2c9860ac07bc3ceafff20bff26695991744b7dbe5e1e4522bfa57",
+            "size": 2719
+          }
+        ],
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "3888ffa00a226c6fb8f20603fed45d466afde548565dfe6c936acd043f460ae1",
+            "size": 4929
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d4226bbe3117d2d253ba4609720ba82c6c4ce4627a9a6ae05387c78983ac03de",
+            "size": 208
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "e105100225815b521c6405c57ea23974530b868ddfea1e3ea9ec7ce1cf9fae38",
+            "size": 4198925877
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+            "size": 32169626
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "8155d42e19a25623e76fc0460ce24ddfd34a7c85b496456684249c68e5f93fc5",
+            "size": 2773
+          }
+        ],
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "files": [
+          {
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+            "size": 2480617
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389",
+            "size": 282843
+          }
+        ],
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "459e764d58cdc13f3db6878adfdf8a29b5fd467ad1f4ef2161137cc115339c81",
+            "size": 888
+          },
+          {
+            "path": "silero_vad.mlmodelc/analytics/coremldata.bin",
+            "sha256": "b777c3751d72b7430eac7f8544769a3d918faf77c15db184fec30e44c56007a3",
+            "size": 243
+          },
+          {
+            "path": "silero_vad.mlmodelc/coremldata.bin",
+            "sha256": "f6fcd92c3132c9c718e5f54e0e770a8c8075beaa50a5b212a6287273b4ddae67",
+            "size": 399
+          },
+          {
+            "path": "silero_vad.mlmodelc/metadata.json",
+            "sha256": "1b953eb3818e7092deedd96e976c05354f77beb2ddc2976fe416af17e47f62d2",
+            "size": 3005
+          },
+          {
+            "path": "silero_vad.mlmodelc/model.mil",
+            "sha256": "b0a1384c4a664697989d9eb9cfb166b4b85f151206aeefd1bfa391ef9e5ad08f",
+            "size": 18203
+          },
+          {
+            "path": "silero_vad.mlmodelc/weights/weight.bin",
+            "sha256": "83210545de90c65195e8d6db1b349b7e5c31f989f48d0a908a8dc0e2f586e5f9",
+            "size": 619136
+          }
+        ],
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "files": [
+          {
+            "path": "config.json",
+            "sha256": "a03ae7c0d11253b6a4ff66972d9d62e6a38c8aba91574cfdfbcce47b544d48fa",
+            "size": 5289
+          },
+          {
+            "path": "model.safetensors",
+            "sha256": "cb01f32246be7575d26a58a534b2fa130e2eaff045cc7d43503b550f0f9d5913",
+            "size": 4955255888
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sha256": "068594063e37662c02b21acf42ebb334ef6a74fb810e68a2368f88f08351de76",
+            "size": 1632
+          },
+          {
+            "path": "tokenizer.json",
+            "sha256": "f8984687e4a92a3503d521396d454b7d68e9fdaab2a0288eb3536c7c1aa4bc20",
+            "size": 3676772
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sha256": "e78a3ebb48a0b9437efd1823b6b726c823da89e49dd8bcc90c02419d9baa772b",
+            "size": 5059
+          }
+        ],
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "files": [
+          {
+            "path": "AudioEncoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "195e35e9fbaa218cd59eca69988a2165245e5bfccc4a5d9776847e8955d1625a",
+            "size": 243
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/coremldata.bin",
+            "sha256": "273d6cd004f95763e9d03e5d36622f11038819a81b9eafed64b1d95444e04f62",
+            "size": 348
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/metadata.json",
+            "sha256": "db0d80a1046e03e211928cd2918d5e5924947f4ecbcee5232b125f0f59757fbc",
+            "size": 1826
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mil",
+            "sha256": "3e7737df445ef8fc13238970e3e518c0c6455bcadb6371df2ede1f22dcb8a8e0",
+            "size": 581035
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/model.mlmodel",
+            "sha256": "bf0987c0d8c3fe180877b12ba5b4ac1d890e011f2103926e53186089feced575",
+            "size": 408667
+          },
+          {
+            "path": "AudioEncoder.mlmodelc/weights/weight.bin",
+            "sha256": "eb07bab32dcd62ce653b5b288bd6c27bdc5a538be309f242e33ed05e1cb53457",
+            "size": 1273974400
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/analytics/coremldata.bin",
+            "sha256": "091a361134891f94e613562771beea0d93a9aefbc6984ba86c60f856e07a508f",
+            "size": 243
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/coremldata.bin",
+            "sha256": "f3c5778c86d6fbc6a9817a56dbcac05a946a4d95c77f6db8355572f3be9e9a68",
+            "size": 329
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/metadata.json",
+            "sha256": "1a94f4dfaec25549cbb386fe59b68c67a7a5af4a1c672a5998e5a84b9111135b",
+            "size": 1850
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/model.mil",
+            "sha256": "17977ed2332430c6cc4c1da2516f2cd4deb662d65ae38d72725ab157f32d4949",
+            "size": 10187
+          },
+          {
+            "path": "MelSpectrogram.mlmodelc/weights/weight.bin",
+            "sha256": "97a66b915cd3fc97dcba6806d92381e1a56024b8f68c1a1cd370d4c92505fe87",
+            "size": 373376
+          },
+          {
+            "path": "TextDecoder.mlmodelc/analytics/coremldata.bin",
+            "sha256": "7c151c6259c279aa7922d60e82c7851bbad1df10018b1cebc566aa6c2aee5e0f",
+            "size": 243
+          },
+          {
+            "path": "TextDecoder.mlmodelc/coremldata.bin",
+            "sha256": "f41a7939b47f7cf127aa69dfd8c552a141dc773b936bf8621aeffcd201fb9e30",
+            "size": 637
+          },
+          {
+            "path": "TextDecoder.mlmodelc/metadata.json",
+            "sha256": "de900a968f7640e9775c28268e348a0bc6559a4a92defae07d91e7effa838246",
+            "size": 4770
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mil",
+            "sha256": "f8273cbf61aac4a43118a9090fc4d580678ea04abda473b4cb9dda2647d25c27",
+            "size": 1010477
+          },
+          {
+            "path": "TextDecoder.mlmodelc/model.mlmodel",
+            "sha256": "680d8dfb7c7d8f1f852071ac7bdc96e55c696d0b822e70861045efb426b0a27b",
+            "size": 745579
+          },
+          {
+            "path": "TextDecoder.mlmodelc/weights/weight.bin",
+            "sha256": "680f398925225a313c62da0221aa0a58c9f1bffac5c36f20c449a70a7c9b1e55",
+            "size": 1813201716
+          },
+          {
+            "path": "config.json",
+            "sha256": "798b69c08cf93b2b03d94bea6eb3eb25fd4712259712d8a62ed2483fdf818a9e",
+            "size": 1163
+          },
+          {
+            "path": "generation_config.json",
+            "sha256": "d24f9cca0f448609a71ae044b736023706382f45e9700e0dffb2559d10cf1fea",
+            "size": 2810
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer.json",
+            "path": "tokenizer.json",
+            "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca"
+          },
+          {
+            "copied_from": "/Users/ivan/Library/Caches/qwen3-speech/models/openai/whisper-large-v3/tokenizer_config.json",
+            "path": "tokenizer_config.json",
+            "sha256": "844b642c73a91359722f47b35705f7174686df33d252695d8572cf9ac03a6389"
+          }
+        ],
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "native_capture": {
+      "bytes": 214076,
+      "path": "native-failures/E0BADEC0-739C-4F64-A181-DAD2E3DDA096.json",
+      "sha256": "121c246c53bd072adc08d81dc24412221f05d45027a071c82b94b902d492089e"
+    },
+    "native_error": "malformed(\"orphan tool call terminator\")",
+    "profile": "soniqo-local-gemma12b-v1",
+    "raw_artifacts": [
+      {
+        "bytes": 10560269,
+        "path": "telecom/failed-run.json",
+        "sha256": "69c80916ec3ba1ecddc517b8c660815c3b683b0c394ade12a81b88a6b0ea60c9"
+      },
+      {
+        "bytes": 1485,
+        "path": "telecom/profile.json",
+        "sha256": "42c6680e63f7dd0a425d69c123c414b86386ccce1026de0b8940a61c6fc41b44"
+      },
+      {
+        "bytes": 41969,
+        "path": "telecom/provenance.json",
+        "sha256": "518b312a851811e49548b60c70d50aef36778b094abdf33577efb85a2f5d10e8"
+      },
+      {
+        "bytes": 1201,
+        "path": "telecom/runtime.json",
+        "sha256": "4e91f9078f43e05a495bcf810d0da4ee94d726d42b61a1f620b36369d2032938"
+      },
+      {
+        "bytes": 25092,
+        "path": "telecom/settings.json",
+        "sha256": "4f931fc5785b04f3a9e6a4979fa4481bbe890ebce353a9ad97e21e5739a16fc1"
+      }
+    ],
+    "reward": null,
+    "runtime_revision": "510615dce602213053d558cb5c555b7480fff413+source-sha256:ad88c40912745e7da1abf29d272d01d6de22e1671419c761e8d76034e1ac478b",
+    "scored": false,
+    "seed": 42,
+    "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+    "termination": "inference_error",
+    "ticks": 3351,
+    "valid_agent_calls": [
+      {
+        "arguments": {
+          "phone_number": "555-123-2002"
+        },
+        "id": "62D2BA20-BAEA-4B5F-9F5A-22CDE9B71DD8",
+        "name": "get_customer_by_phone",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1001"
+        },
+        "id": "EC00F1D1-E1FA-4349-9956-C2DFF89F17D7",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      },
+      {
+        "arguments": {
+          "id": "L1002"
+        },
+        "id": "5194F3EC-3115-4077-9AB2-FFEFD534F006",
+        "name": "get_details_by_id",
+        "requestor": "assistant"
+      }
+    ]
+  },
+  "limits": [
+    "The component caller history is reconstructed from saved delivered ticks, not an exact captured original caller request.",
+    "Retail recovery uses a controlled reconstruction and real local tools; its first reply is not a domain reward.",
+    "The captured Telecom HTTP request and model output are exact for this new instrumented attempt.",
+    "A successful parsed tool call alone does not demonstrate task completion."
+  ],
+  "reference": {
+    "counts_include_stop": true,
+    "raw_results": {
+      "bytes": 3570,
+      "path": "exact-reference-results.json",
+      "sha256": "261867f11c99eb7005f1b709de8bd0051e3c468140097be871db6385dddc419e"
+    },
+    "runtime": "mlx-lm 0.32.2",
+    "same_pinned_int4_weights": true,
+    "variants": [
+      {
+        "finish_reason": "stop",
+        "generated_tokens": 24,
+        "matches_captured_raw": true,
+        "prompt_tokens": 8112,
+        "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1003<|\"|>}<tool_call|><tool_call|>",
+        "reference_parsed_tools": {
+          "arguments": {
+            "id": "L1003"
+          },
+          "name": "get_details_by_id"
+        },
+        "reference_parser_error": null,
+        "variant": "swift_token_ids"
+      },
+      {
+        "finish_reason": "stop",
+        "generated_tokens": 24,
+        "matches_captured_raw": true,
+        "prompt_tokens": 8108,
+        "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1003<|\"|>}<tool_call|><tool_call|>",
+        "reference_parsed_tools": {
+          "arguments": {
+            "id": "L1003"
+          },
+          "name": "get_details_by_id"
+        },
+        "reference_parser_error": null,
+        "variant": "swift_prompt_reference_tokenizer"
+      },
+      {
+        "finish_reason": "stop",
+        "generated_tokens": 24,
+        "matches_captured_raw": true,
+        "prompt_tokens": 7862,
+        "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1003<|\"|>}<tool_call|><tool_call|>",
+        "reference_parsed_tools": {
+          "arguments": {
+            "id": "L1003"
+          },
+          "name": "get_details_by_id"
+        },
+        "reference_parser_error": null,
+        "variant": "checkpoint_template_no_thinking"
+      }
+    ]
+  }
+}

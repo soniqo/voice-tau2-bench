@@ -84,6 +84,59 @@ def test_twelve_b_profile_changes_only_the_agent():
         assert extended.roles[role] == original.roles[role]
 
 
+@pytest.mark.parametrize("capture", [False, True])
+def test_staging_failure_capture_is_explicit_and_records_absolute_directory(
+    monkeypatch, tmp_path, capture
+):
+    spec = importlib.util.spec_from_file_location(
+        "model_staging_capture",
+        repository_root() / "scripts/prepare_speech_swift_models.py",
+    )
+    staging = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(staging)
+    source = tmp_path / "source"
+    (source / "Sources").mkdir(parents=True)
+    (source / "Sources/local.swift").write_text("// fixture\n")
+
+    def stage(kind, root):
+        folder = root / kind
+        folder.mkdir(parents=True)
+        if kind == "tokenizer":
+            for name in ("tokenizer.json", "tokenizer_config.json"):
+                (folder / name).write_text("{}")
+        return folder, {"files": []}
+
+    monkeypatch.setattr(staging, "stage", stage)
+    monkeypatch.setattr(
+        staging.subprocess,
+        "check_output",
+        lambda command, **_: "a" * 40
+        if command == ["git", "rev-parse", "HEAD"]
+        else "Sources/local.swift\n",
+    )
+    output = tmp_path / "models.json"
+    arguments = [
+        "stage",
+        "--cache",
+        str(tmp_path / "cache"),
+        "--runtime-source",
+        str(source),
+        "--output",
+        str(output),
+    ]
+    if capture:
+        arguments += ["--failure-capture-directory", str(tmp_path / "failures")]
+    monkeypatch.setattr(sys, "argv", arguments)
+    staging.main()
+    manifest = json.loads(output.read_text())
+    if capture:
+        assert manifest["failureCaptureDirectory"] == str(
+            (tmp_path / "failures").resolve()
+        )
+    else:
+        assert "failureCaptureDirectory" not in manifest
+
+
 @pytest.mark.parametrize("status,expected", [(0, 0), (1, 1), (-9, 137)])
 def test_guard_propagates_native_startup_and_resource_failures(
     monkeypatch, tmp_path, status, expected

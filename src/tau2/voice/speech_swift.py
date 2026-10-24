@@ -96,10 +96,14 @@ class SpeechSwiftBackend:
         request_id = request_id or uuid.uuid4().hex
         started = time.perf_counter()
         success = False
+        failure = None
         with self._lock:
             self._active.add(request_id)
+        request = None
+        response = None
         try:
-            response = self.client.post(
+            request = self.client.build_request(
+                "POST",
                 "/v1/inference",
                 json={
                     "operation": operation,
@@ -108,10 +112,23 @@ class SpeechSwiftBackend:
                     **fields,
                 },
             )
+            response = self.client.send(request)
             response.raise_for_status()
             result = response.json()
             success = True
             return result
+        except Exception as error:
+            if operation == "chat" and request is not None:
+                failure = {
+                    "request_body": request.content.decode("utf-8"),
+                    "response_status": response.status_code
+                    if response is not None
+                    else None,
+                    "response_body": response.text if response is not None else None,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+            raise
         finally:
             with self._lock:
                 self._active.discard(request_id)
@@ -122,6 +139,7 @@ class SpeechSwiftBackend:
                         "request_id": request_id,
                         "wall_seconds": time.perf_counter() - started,
                         "success": success,
+                        **({"failure": failure} if failure is not None else {}),
                     }
                 )
 
