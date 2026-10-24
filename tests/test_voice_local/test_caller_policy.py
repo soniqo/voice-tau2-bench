@@ -326,8 +326,9 @@ def native_call(name="set_mobile_data", arguments=None):
     )
 
 
-def test_required_customer_action_uses_native_function_call_before_speaking():
-    backend = Backend(["CONTINUE", "TOOL", native_call()])
+@pytest.mark.parametrize("route", ["TOOL", "TOOL: run_speed_test", "TOOL."])
+def test_required_customer_action_uses_native_function_call_before_speaking(route):
+    backend = Backend(["CONTINUE", route, native_call()])
     caller = QualifiedCallerBackend(backend, "Restore internet.")
     tool = Tool(set_mobile_data)
     reply = caller.generate(
@@ -398,7 +399,7 @@ def test_invalid_native_customer_tool_never_gets_repaired_or_executed(reply):
     assert len(backend.calls) == 3
 
 
-@pytest.mark.parametrize("label", ["", "maybe", "TOOL because I think so"])
+@pytest.mark.parametrize("label", ["", "maybe", "TOOL/SPEAK"])
 def test_unknown_tool_route_remains_unscored(label):
     backend = Backend(["CONTINUE", label])
     caller = QualifiedCallerBackend(backend, "scenario")

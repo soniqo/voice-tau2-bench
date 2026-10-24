@@ -285,13 +285,17 @@ class QualifiedCallerBackend:
             max_tokens=16,
             call_name="caller_tool_route_v2",
         )
-        route = (response.content or "").strip().upper()
-        if response.is_tool_call() or route not in {"TOOL", "SPEAK"}:
+        parsed = re.match(
+            r"^\s*(TOOL|SPEAK)(?=$|[\s:.])", response.content or "", re.IGNORECASE
+        )
+        if response.is_tool_call() or parsed is None:
             raise CallerPolicyError(
                 f"Invalid customer TOOL/SPEAK route: {response.content!r}"
             )
+        route = parsed.group(1).upper()
         self.decisions[-1]["customer_tool_route"] = {
             "mode": route,
+            "response": response.content,
             "heard_context": heard[-1]["content"],
         }
         return route

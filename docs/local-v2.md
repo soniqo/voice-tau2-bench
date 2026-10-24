@@ -105,8 +105,9 @@ execute it. A prose response in TOOL mode gets one model reassessment with the
 same heard context. A second prose response leaves the trial unscored. Unknown
 tools, invalid arguments and inference errors fail immediately. The ordinary
 orchestrator executes validated tool calls; the controller never changes device
-state itself. SPEAK turns receive no tools and answer the latest agent question
-using actual customer tool results. Persona-specific clarification requirements
+state itself. The leading routing label is used; any following annotation is recorded and does
+not select a tool or change its arguments. SPEAK turns receive no tools and answer
+the latest agent question using actual customer tool results. Persona-specific clarification requirements
 still apply. Terminal decisions allow 384 tokens, routing allows 16, and normal
 caller generation uses its configured limit. No reference actions or private
 agent state enter these choices.
