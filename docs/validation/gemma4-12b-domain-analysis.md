@@ -103,8 +103,9 @@ The trial remains unscored, with its original failure artifacts retained.
 This is a different invalid-output condition. The text-preservation correction
 does not make the complete task reliable. The raw failed completion was not
 captured, so the parser error must not be presented as a verbatim generation.
-Further diagnosis needs exact failed request/completion capture and a comparison
-against the checkpoint template before changing parsing rules or model settings.
+The [subsequent exact-capture investigation](gemma4-12b-exact-capture.md) records
+the duplicated closing marker, same-weight checkpoint comparison, and a scoped
+12B parsing correction. The earlier attempt above remains unscored.
 
 ## Latency limits the useful conversation
 
