@@ -50,3 +50,7 @@ The earlier mock trial with the generative caller, before the prompt and tool-na
 Validation also passed 12 focused native unit tests, a real 12B tool/history/cancellation test, and eight native endpoint checks. An independent Whisper readback of the final 20 seconds of the saved agent WAV recognized the confirmation that Important Meeting was created for User_1.
 
 The [normal domain attempt](../results/gemma4-12b-local-600.json) used its own recorded runtime revision: airline 0/1, retail 0/1, and Telecom unscored after native HTTP 500. A reconstructed diagnostic request on the final binary logged a malformed tool-argument literal. This remains a limitation; the controlled success does not establish a domain benchmark score.
+
+See the [domain failure analysis](gemma4-12b-domain-analysis.md) for the timeout
+counterfactual, identifier recovery failure, protocol uncertainty, and latency
+measurements.

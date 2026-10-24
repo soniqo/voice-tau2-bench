@@ -1,0 +1,75 @@
+{
+  "agent_only_changed_to_12b": true,
+  "airline": {
+    "actual_termination": "timeout",
+    "counterfactual_termination": "user_stop",
+    "diagnostic_only": true,
+    "official_reward_unchanged": 0.0,
+    "reward_without_timeout_gate": {
+      "action_checks": null,
+      "communicate_checks": null,
+      "db_check": {
+        "db_match": true,
+        "db_reward": 1.0
+      },
+      "env_assertions": [],
+      "info": null,
+      "nl_assertions": null,
+      "reward": 1.0,
+      "reward_basis": [
+        "DB",
+        "COMMUNICATE"
+      ],
+      "reward_breakdown": {
+        "DB": 1.0
+      }
+    }
+  },
+  "caller_helpers_judges_remain": "Gemma 4 E4B INT4",
+  "notes": [
+    "Timeout grading runs before database and communication checks.",
+    "Model request wall times include shared inference-queue waits and must not be added as exclusive computation time.",
+    "Caller termination and protocol validity must be validated before interpreting the numbers as agent-only capability."
+  ],
+  "official_scores_unchanged": true,
+  "reference_template_differences": {
+    "native_includes_extra_pydantic_title_metadata": true,
+    "native_null": "null",
+    "native_serializes_tool_result_objects": true,
+    "raw_model_comparison_pending": true,
+    "reference_legacy_null": "None",
+    "reference_supports_legacy_objects_and_standard_strings": true
+  },
+  "retail": {
+    "available_recovery_tool": "get_user_details",
+    "canonical_order_id": "#W2378156",
+    "first_zip_asr": "1CN122",
+    "recovered_zip": "19122",
+    "requested_order_id": "W2378156",
+    "same_invalid_order_lookup_repeated": 2
+  },
+  "source": {
+    "benchmark_tested_commit": "a223955bda101da39fb45b3e4628bcccc628e410",
+    "original_report_sha256": "bce6cbedfc9fbd07a65131a43e058ae8bcdf5a20cded1f8439686efb2ce198ed",
+    "runtime_diagnostic_commit": "ce28f6fa63f8dafcf9f1bb3d7d70665ec9d31f79",
+    "runtime_original_tested_commit": "8991a89de0012d628721117867817f0c01558154"
+  },
+  "telecom": {
+    "company_read_calls": 15,
+    "context_limit": 262144,
+    "context_truncated": false,
+    "generated_token_budget": 1024,
+    "heard_user_utterances": 3,
+    "original_raw_failed_completion_saved": false,
+    "parser_error": "invalid literal",
+    "reconstructed_history_tokens": 10214
+  },
+  "tokenizer_comparison": {
+    "causal_effect_on_scores_not_demonstrated": true,
+    "differences": "six BOM/heading token differences and one emoji/variation-selector difference",
+    "numeric_identifier_tokens_match_in_saved_prompt": true,
+    "preexisting_encoder": true,
+    "reference_tokens": 10210,
+    "swift_tokens": 10214
+  }
+}
