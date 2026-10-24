@@ -43,6 +43,8 @@
 
 V2 の追加検証：**Gemma 4 12B IT (INT4) は航空分野の拒否対応診断 1 件で 1.0 を記録しました**（タスク `0`、シード `42`、発信者の待機時間 15 秒）。このタスクはデータベースが変更されないことを確認します。この条件での小売、通信、18 通話のホールドアウト試験は未実施です。[検証とパラメータ](docs/validation/native-prefill.md)。
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## ローカルで実行
 
 Python **3.12/3.13**、Apple Silicon、**macOS 15+** が必要です。タスクの前に[ローカルモデルサービス](docs/runtime-setup.md#serve)を起動してください。

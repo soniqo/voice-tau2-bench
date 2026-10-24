@@ -43,6 +43,8 @@
 
 V2 后续验证：**Gemma 4 12B IT (INT4) 在一个航空拒绝请求诊断任务中得分 1.0**（任务 `0`，种子 `42`，来电者等待 15 秒）。该任务检查数据库保持不变。此条件下尚未运行零售、电信及 18 次通话的留出试验。[验证与参数](docs/validation/native-prefill.md)。
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## 本地运行
 
 需要 Python **3.12/3.13**、Apple Silicon 和 **macOS 15+**。运行任务前启动[本地模型服务](docs/runtime-setup.md#serve)。

@@ -43,6 +43,8 @@ Die 12B-Stichprobe ist unvollständig: Beim Telekommunikationstest trat ein nati
 
 V2-Nachprüfung: **Gemma 4 12B IT (INT4) erzielte 1.0 in einem Flugreise-Diagnosefall mit Ablehnung** (Aufgabe `0`, Seed `42`, 15 Sekunden Wartezeit des Anrufers). Diese Aufgabe prüft, dass die Datenbank unverändert bleibt. Handel, Telekommunikation und der zurückgehaltene Pilot mit 18 Anrufen wurden unter dieser Bedingung noch nicht ausgeführt. [Validierung und Parameter](docs/validation/native-prefill.md).
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## Lokal ausführen
 
 Benötigt Python **3.12/3.13**, Apple Silicon und **macOS 15+**. Vor den Aufgaben den [lokalen Modelldienst](docs/runtime-setup.md#serve) starten.

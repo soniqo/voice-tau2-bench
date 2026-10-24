@@ -43,6 +43,8 @@ Mẫu 12B chưa hoàn tất: tác vụ viễn thông gặp lỗi suy luận nati
 
 Kiểm tra bổ sung V2: **Gemma 4 12B IT (INT4) đạt 1.0 trong một ca chẩn đoán từ chối yêu cầu thuộc lĩnh vực hàng không** (tác vụ `0`, seed `42`, người gọi chờ 15 giây). Tác vụ này kiểm tra cơ sở dữ liệu giữ nguyên. Bán lẻ, viễn thông và đợt thử nghiệm giữ riêng gồm 18 cuộc gọi chưa được chạy trong điều kiện này. [Xác minh và tham số](docs/validation/native-prefill.md).
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## Chạy cục bộ
 
 Dùng Python **3.12/3.13**, Apple Silicon và **macOS 15+**. Khởi động [dịch vụ mô hình cục bộ](docs/runtime-setup.md#serve) trước khi chạy tác vụ.

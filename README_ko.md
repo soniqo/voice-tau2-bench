@@ -43,6 +43,8 @@
 
 V2 후속 검증: **Gemma 4 12B IT (INT4)가 항공 거절 응대 진단 1건에서 1.0을 기록했습니다**(작업 `0`, 시드 `42`, 발신자 대기 15초). 이 작업은 데이터베이스가 변경되지 않는지 확인합니다. 이 조건에서 소매, 통신 및 18회 통화 홀드아웃 파일럿은 아직 실행하지 않았습니다. [검증 및 매개변수](docs/validation/native-prefill.md).
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## 로컬 실행
 
 Python **3.12/3.13**, Apple Silicon, **macOS 15+**가 필요합니다. 작업 실행 전에 [로컬 모델 서비스](docs/runtime-setup.md#serve)를 시작하세요.

@@ -43,6 +43,8 @@ La muestra de 12B está incompleta: telecomunicaciones tuvo un error de inferenc
 
 Seguimiento V2: **Gemma 4 12B IT (INT4) obtuvo 1.0 en un diagnóstico de rechazo de una solicitud aérea** (tarea `0`, semilla `42`, espera del cliente de 15 segundos). Esta tarea comprueba que la base de datos siga sin cambios. Comercio, telecomunicaciones y el piloto reservado de 18 llamadas siguen sin ejecutarse bajo esta condición. [Validación y parámetros](docs/validation/native-prefill.md).
 
+`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+
 ## Ejecución local
 
 Use Python **3.12/3.13**, Apple Silicon y **macOS 15+**. Inicie el [servicio local](docs/runtime-setup.md#serve) antes de ejecutar las tareas.
