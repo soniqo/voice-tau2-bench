@@ -97,6 +97,7 @@ class SpeechSwiftBackend:
         started = time.perf_counter()
         success = False
         failure = None
+        metadata = {}
         with self._lock:
             self._active.add(request_id)
         request = None
@@ -115,6 +116,11 @@ class SpeechSwiftBackend:
             response = self.client.send(request)
             response.raise_for_status()
             result = response.json()
+            if operation == "chat" and "cachedPrefixTokens" in result:
+                cached_tokens = result["cachedPrefixTokens"]
+                if type(cached_tokens) is not int or cached_tokens < 0:
+                    raise SpeechSwiftError("Invalid native cached prefix token count")
+                metadata["cached_prefix_tokens"] = cached_tokens
             success = True
             return result
         except Exception as error:
@@ -139,6 +145,7 @@ class SpeechSwiftBackend:
                         "request_id": request_id,
                         "wall_seconds": time.perf_counter() - started,
                         "success": success,
+                        **metadata,
                         **({"failure": failure} if failure is not None else {}),
                     }
                 )
@@ -218,7 +225,15 @@ class SpeechSwiftBackend:
             tool_calls=calls,
             cost=0.0,
             usage={"completion_tokens": result["generatedTokens"]},
-            raw_data={"runtime": "speech-swift", "call_name": call_name},
+            raw_data={
+                "runtime": "speech-swift",
+                "call_name": call_name,
+                **(
+                    {"cached_prefix_tokens": result["cachedPrefixTokens"]}
+                    if "cachedPrefixTokens" in result
+                    else {}
+                ),
+            },
             generation_time_seconds=time.perf_counter() - started,
         )
 

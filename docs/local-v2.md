@@ -149,6 +149,16 @@ decisions, and native failure attribution by request ID. Requested cancellations
 are separated from unexplained inference failures; captures from other trials in
 the same directory do not inflate the current trial's failure count.
 
+Native builds that expose `cachedPrefixTokens` also save `cached_prefix_tokens`
+in each chat inference event and assistant message. Zero means a cold prefill;
+an absent field means the runtime did not report this metric. The effective
+native prefix-cache budget is recorded in provenance. Reusing an unchanged
+system/tool prefix can reduce agent latency; its measured execution time still
+counts. Report the native revision, cache budget, and cold/warm request counts
+with timing results. Never prefill private task goals or reference answers.
+See [native cache validation](validation/native-prefill.md) for the measured
+speedup, completed checks, and the current full-service resource limit.
+
 Batch summaries show planned/completed trials, scored coverage, termination
 counts, and pass^k for tasks with all requested trials. A failed inference or
 invalid customer stops the batch, remains unscored, and saves the failed job and

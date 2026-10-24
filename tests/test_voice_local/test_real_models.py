@@ -109,6 +109,35 @@ def test_real_gemma_native_tool_call_and_result_history(runtime, model):
     assert "record" in result.content.lower()
 
 
+def test_real_native_prefix_reuse_is_reported_without_changing_the_reply(runtime):
+    model = runtime.capabilities().models.get("gemma4-12b-it")
+    if model is None or "system_prefix_cache" not in model.features:
+        pytest.skip("The native 12B runtime does not enable prefix-cache reporting")
+    budget = runtime.provenance()["configuration"][
+        "gemma4_12b_prefix_cache_budget_bytes"
+    ]
+    assert type(budget) is int and budget > 0
+    messages = [
+        SystemMessage(
+            role="system",
+            content=f"Session {uuid.uuid4().hex}. "
+            + "Reference notes describe routine scheduling policies. " * 100
+            + "Reply with the single word READY.",
+        ),
+        UserMessage(role="user", content="Please confirm you are ready."),
+    ]
+    cold = runtime.generate("gemma4-12b-it", messages, temperature=0, max_tokens=16)
+    warm = runtime.generate("gemma4-12b-it", messages, temperature=0, max_tokens=16)
+    assert cold.raw_data["cached_prefix_tokens"] == 0
+    assert warm.raw_data["cached_prefix_tokens"] >= 256
+    assert cold.content == warm.content
+    assert "READY" in warm.content
+    assert (
+        runtime.events[-1]["cached_prefix_tokens"]
+        == warm.raw_data["cached_prefix_tokens"]
+    )
+
+
 def test_real_fp16_speech_full_large_v3_and_stateful_vad(runtime):
     text = "Hello. Your appointment is confirmed for tomorrow morning."
     audio = runtime.synthesize(

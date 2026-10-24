@@ -60,6 +60,55 @@ def test_successful_requests_and_failed_audio_do_not_retain_request_bodies():
     backend.close()
 
 
+@pytest.mark.parametrize("cached_tokens", [None, 0, 8192])
+def test_optional_native_prefix_cache_counts_are_preserved(cached_tokens):
+    payload = {"content": "Ready", "generatedTokens": 1, "toolCalls": []}
+    if cached_tokens is not None:
+        payload["cachedPrefixTokens"] = cached_tokens
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080",
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
+    )
+    try:
+        reply = backend.generate(
+            "gemma4-12b-it", [UserMessage(role="user", content="Hello")]
+        )
+        event = backend.events[-1]
+        assert event["success"] is True
+        if cached_tokens is None:
+            assert "cached_prefix_tokens" not in event
+            assert "cached_prefix_tokens" not in reply.raw_data
+        else:
+            assert event["cached_prefix_tokens"] == cached_tokens
+            assert reply.raw_data["cached_prefix_tokens"] == cached_tokens
+    finally:
+        backend.close()
+
+
+@pytest.mark.parametrize("cached_tokens", [-1, True, 1.5, "8192", None])
+def test_invalid_native_prefix_cache_counts_fail_without_scoring(cached_tokens):
+    payload = {
+        "content": "Ready",
+        "generatedTokens": 1,
+        "toolCalls": [],
+        "cachedPrefixTokens": cached_tokens,
+    }
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080",
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
+    )
+    try:
+        with pytest.raises(SpeechSwiftError, match="cached prefix token count"):
+            backend.generate(
+                "gemma4-12b-it", [UserMessage(role="user", content="Hello")]
+            )
+        assert backend.events[-1]["success"] is False
+        assert backend.events[-1]["failure"]["response_status"] == 200
+        assert not backend._active
+    finally:
+        backend.close()
+
+
 def test_transport_failure_keeps_sent_chat_body_without_masking_exception():
     def server(request):
         raise httpx.ReadTimeout("native request timed out", request=request)
