@@ -8,6 +8,10 @@ Changing the caller policy and clock creates a separate experimental condition;
 v2 results must not be combined with v1 scores or presented as official τ-Voice
 leaderboard results.
 
+See [validation results and working parameters](validation/local-v2.md) for the
+passed spoken pipeline check, qualification results, and remaining airline
+latency limitation. The held-out pilot has not run.
+
 ## Models
 
 | Role | Model |
