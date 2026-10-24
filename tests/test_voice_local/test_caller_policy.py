@@ -297,10 +297,11 @@ def test_controller_action_returns_real_tool_call_without_claiming_execution():
         [
             assessment(
                 "CONTINUE",
-                instruction,
+                "Switch airplane mode off, please.",
                 customer_action={
                     "name": "toggle_airplane_mode",
                     "arguments": {},
+                    "instruction_id": 0,
                 },
                 usage={"completion_tokens": 31},
             )
@@ -310,7 +311,10 @@ def test_controller_action_returns_real_tool_call_without_claiming_execution():
     tool = Tool(toggle_airplane_mode)
     reply = caller.generate(
         "model",
-        [UserMessage(role="user", content=instruction)],
+        [
+            SystemMessage(role="system", content="caller reminder"),
+            UserMessage(role="user", content=instruction),
+        ],
         tools=[tool],
         call_name="user_streaming_response",
     )
@@ -323,47 +327,45 @@ def test_controller_action_returns_real_tool_call_without_claiming_execution():
     assert len(backend.calls) == 1
     assert tool(**call.arguments) == "Airplane Mode is now OFF."
     assert executions == ["executed"]
+    assert caller.decisions[-1]["customer_action_evidence"] == {
+        "message_id": 0,
+        "quote": instruction,
+    }
     assert "DECLARED_CUSTOMER_TOOLS" in backend.calls[0][0][0].content
 
 
 @pytest.mark.parametrize(
-    "decision,name,arguments,quote,error",
+    "decision,name,arguments,instruction_id,error",
     [
-        (
-            "COMPLETE",
-            "set_mobile_data",
-            {"enabled": True},
-            "Done.",
-            "terminal decision",
-        ),
-        ("CONTINUE", "agent_only_tool", {}, "Done.", "not declared"),
-        (
-            "CONTINUE",
-            "set_mobile_data",
-            {"enabled": True},
-            "Customer said this.",
-            "heard agent",
-        ),
-        ("CONTINUE", "set_mobile_data", {"enabled": "yes"}, "Done.", "valid boolean"),
-        ("CONTINUE", "set_mobile_data", {}, "Done.", "required"),
+        ("COMPLETE", "set_mobile_data", {"enabled": True}, 0, "terminal decision"),
+        ("CONTINUE", "agent_only_tool", {}, 0, "not declared"),
+        ("CONTINUE", "set_mobile_data", {"enabled": True}, 1, "heard agent"),
+        ("CONTINUE", "set_mobile_data", {"enabled": True}, 99, "heard agent"),
+        ("CONTINUE", "set_mobile_data", {"enabled": True}, True, "valid integer"),
+        ("CONTINUE", "set_mobile_data", {"enabled": "yes"}, 0, "valid boolean"),
+        ("CONTINUE", "set_mobile_data", {}, 0, "required"),
         (
             "CONTINUE",
             "set_mobile_data",
             {"enabled": True, "extra": 1},
-            "Done.",
+            0,
             "undeclared arguments",
         ),
     ],
 )
 def test_invalid_customer_action_is_unscored_without_repair(
-    decision, name, arguments, quote, error
+    decision, name, arguments, instruction_id, error
 ):
     backend = Backend(
         [
             assessment(
                 decision,
-                quote,
-                {"name": name, "arguments": arguments},
+                "Done.",
+                {
+                    "name": name,
+                    "arguments": arguments,
+                    "instruction_id": instruction_id,
+                },
             )
         ]
     )
@@ -371,10 +373,39 @@ def test_invalid_customer_action_is_unscored_without_repair(
     with pytest.raises(CallerPolicyError, match=error):
         caller.assess(
             "model",
-            [UserMessage(role="user", content="Done.")],
+            [
+                UserMessage(role="user", content="Done."),
+                AssistantMessage(role="assistant", content="Customer claim."),
+            ],
             tools=[Tool(set_mobile_data)],
         )
     assert len(backend.calls) == 1
+    assert not caller.decisions
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        ToolMessage(role="tool", id="device", requestor="user", content="Done."),
+        UserMessage(role="user", content=None),
+    ],
+)
+def test_customer_action_cannot_cite_a_tool_or_empty_message(source):
+    backend = Backend(
+        [
+            assessment(
+                "CONTINUE",
+                customer_action={
+                    "name": "set_mobile_data",
+                    "arguments": {"enabled": True},
+                    "instruction_id": 0,
+                },
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="heard agent instruction"):
+        caller.assess("model", [source], tools=[Tool(set_mobile_data)])
     assert not caller.decisions
 
 

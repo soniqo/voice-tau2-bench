@@ -97,6 +97,7 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
                 "customer_action": {
                     "name": "check_notifications",
                     "arguments": {},
+                    "instruction_id": 0,
                 },
             }
         ),
@@ -228,6 +229,7 @@ def test_qualification_executes_real_device_write_with_full_customer_toolset(
                         "customer_action": {
                             "name": "toggle_airplane_mode",
                             "arguments": {},
+                            "instruction_id": 0,
                         },
                     }
                 ),
@@ -268,7 +270,11 @@ def test_qualification_rejects_terminal_control_after_permitted_fixture_read(
         "reasoning": "Read needed",
         "agent_evidence": "Done.",
         "decision": "CONTINUE",
-        "customer_action": {"name": "check_notifications", "arguments": {}},
+        "customer_action": {
+            "name": "check_notifications",
+            "arguments": {},
+            "instruction_id": 0,
+        },
     }
     terminal = {
         "reasoning": "Invalid early completion",

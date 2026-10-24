@@ -38,9 +38,9 @@ completion confirmation. If no exact supporting service_agent quote exists,
 choose CONTINUE with null evidence; never return COMPLETE or REFUSED with null.
 CUSTOMER ACTIONS
 When CONTINUE, select the next declared customer tool needed to follow an
-outstanding service_agent instruction or answer their question. Put an exact quote
-of that instruction/question in agent_evidence. Copy it from one conversation
-record without rearranging words. Select only one tool with its actual arguments.
+outstanding service_agent instruction or answer their question. Cite the integer
+message_id of that heard service_agent record as instruction_id. Select only one
+tool with its actual arguments. Never cite a customer or customer_tool record.
 Respect the customer's scenario and persona. If they require clarification or
 reassurance before acting, use null so the customer can ask before doing the action.
 A customer saying "I turned it off" does not change a device setting. Only an
@@ -55,9 +55,9 @@ FORMAT
 Return JSON with these keys, in order:
 reasoning: a short factual explanation referring to service_agent statements;
 agent_evidence: an exact supporting quote from service_agent for a terminal
-decision or selected customer_action; null if continuing without a tool action;
+decision; null for CONTINUE;
 decision: CONTINUE, COMPLETE, or REFUSED;
-customer_action: null, or {"name": "declared tool name", "arguments": {}}.
+customer_action: null, or {"name": "declared tool name", "arguments": {}, "instruction_id": 0}.
 """
 
 CALLER_ADDENDUM = """You remain the CUSTOMER. Ask only for your own scenario goals.
@@ -65,8 +65,11 @@ Use your declared customer tools when the agent asks you to act on your device.
 Device changes require actual tool execution; never say a setting changed merely
 because you intended to change it. Report only the observed customer tool result.
 Never invent an agent tool or claim to have done the agent's work yourself.
-In your first substantive response, state the actual request and its known key
-details, including requested names or titles, rather than a vague topic.
+When the service agent greets you or asks how to help, state the actual request
+and its known key details, including requested names or titles.
+If the agent instead asks a specific question, answer it first. If the requested
+information is unknown, explicitly say you do not know; do not repeat your goal
+instead of answering. This takes priority over introducing your original request.
 Do not invent missing identifiers or personal information. Say you do not know it.
 When speaking identifiers, pronounce punctuation names (for example underscore or
 hash) so the agent can hear the exact characters. Tool arguments keep written form.
@@ -99,6 +102,7 @@ class CustomerAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1)
     arguments: dict
+    instruction_id: int = Field(ge=0, strict=True)
 
 
 class TerminalAssessment(BaseModel):
@@ -132,6 +136,7 @@ class QualifiedCallerBackend:
     def conversation(messages):
         return [
             {
+                "message_id": index,
                 "speaker": {
                     "user": "service_agent",
                     "assistant": "customer",
@@ -144,8 +149,11 @@ class QualifiedCallerBackend:
                 ],
                 "tool_call_id": getattr(message, "id", None),
             }
-            for message in messages
-            if not isinstance(message, SystemMessage)
+            for index, message in enumerate(
+                message
+                for message in messages
+                if not isinstance(message, SystemMessage)
+            )
         ]
 
     def assess(self, model, messages, tools=None):
@@ -199,8 +207,17 @@ class QualifiedCallerBackend:
                         )
                     if action.name not in declared:
                         raise ValueError("customer action tool is not declared")
-                    quote = " ".join((assessment.agent_evidence or "").split())
-                    if not quote or not any(quote in text for text in agent_statements):
+                    source = next(
+                        (
+                            row
+                            for row in payload["conversation"]
+                            if row["message_id"] == action.instruction_id
+                            and row["speaker"] == "service_agent"
+                            and (row["content"] or "").strip()
+                        ),
+                        None,
+                    )
+                    if source is None:
                         raise ValueError(
                             "customer action lacks a heard agent instruction"
                         )
@@ -234,6 +251,11 @@ class QualifiedCallerBackend:
                 "if work is pending or evidence is insufficient. Do not invent a quote."
             )
         record = assessment.model_dump()
+        if assessment.customer_action is not None:
+            record["customer_action_evidence"] = {
+                "message_id": source["message_id"],
+                "quote": source["content"],
+            }
         if rejected:
             record["rejected_assessments"] = rejected
             usage = {}

@@ -98,9 +98,12 @@ trial unscored. Malformed responses and inference errors propagate immediately.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
 For open calls, the controller also selects a pending customer tool action using
-the declared tool schemas and a quote of the service agent's instruction/question.
+the declared tool schemas and the heard message ID of the service agent's
+instruction/question. The runtime records that message's verbatim text as the
+action evidence; the model need not recopy or paraphrase it.
 Scenario and persona requirements for clarification still apply before acting.
-The selected name, arguments and quote must validate. The normal orchestrator
+The selected name, arguments and message reference must validate. References to
+customer/tool records, empty messages, or nonexistent IDs fail. The normal orchestrator
 executes that call; the controller never changes device state itself. A customer
 claim is not evidence that a setting changed. When no tool action is selected,
 the customer produces speech without tools; an unplanned tool response is an
