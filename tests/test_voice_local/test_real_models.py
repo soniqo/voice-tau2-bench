@@ -132,9 +132,10 @@ def test_real_native_prefix_reuse_is_reported_without_changing_the_reply(runtime
     assert warm.raw_data["cached_prefix_tokens"] >= 256
     assert cold.content == warm.content
     assert "READY" in warm.content
-    assert runtime.events[-1]["cached_prefix_tokens"] == warm.raw_data[
-        "cached_prefix_tokens"
-    ]
+    assert (
+        runtime.events[-1]["cached_prefix_tokens"]
+        == warm.raw_data["cached_prefix_tokens"]
+    )
 
 
 def test_real_fp16_speech_full_large_v3_and_stateful_vad(runtime):
