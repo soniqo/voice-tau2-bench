@@ -52,5 +52,6 @@ Validation also passed 12 focused native unit tests, a real 12B tool/history/can
 The [normal domain attempt](../results/gemma4-12b-local-600.json) used its own recorded runtime revision: airline 0/1, retail 0/1, and Telecom unscored after native HTTP 500. A reconstructed diagnostic request on the final binary logged a malformed tool-argument literal. This remains a limitation; the controlled success does not establish a domain benchmark score.
 
 See the [domain failure analysis](gemma4-12b-domain-analysis.md) for the timeout
-counterfactual, identifier recovery failure, protocol uncertainty, and latency
-measurements.
+counterfactual, identifier recovery failure, reproduced 12B tool-response
+serialization fix, and latency measurements. These diagnostics preserve the
+original domain scores and the historical functional-check provenance above.

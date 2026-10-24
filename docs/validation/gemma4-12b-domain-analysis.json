@@ -35,8 +35,8 @@
   "reference_template_differences": {
     "native_includes_extra_pydantic_title_metadata": true,
     "native_null": "null",
-    "native_serializes_tool_result_objects": true,
-    "raw_model_comparison_pending": true,
+    "native_serializes_tool_result_objects": "Original adapter; corrected for the 12B path only",
+    "raw_model_comparison_pending": false,
     "reference_legacy_null": "None",
     "reference_supports_legacy_objects_and_standard_strings": true
   },
@@ -60,8 +60,136 @@
     "context_truncated": false,
     "generated_token_budget": 1024,
     "heard_user_utterances": 3,
+    "native_correction": {
+      "existing_tool_history_cancellation_e2e_passed": true,
+      "log_sha256": {
+        "swift-existing-e2e.log": "484226beaff9d6958790130ba3bc5568977b1060bf1f931e23d19c125eb953f3",
+        "swift-prompt-unit.log": "e22516001b88cb50302428af34db4dfb560ca7d690f4700d997a4f53eea22084",
+        "swift-tool-history-e2e.log": "d1718d9629d8a34712423ebb7aea7b47b6bc53bba80a0e20a80910f349268c4d"
+      },
+      "parsed_tool": {
+        "arguments": {
+          "id": "L1002"
+        },
+        "name": "get_details_by_id"
+      },
+      "reconstructed_history_real_weight_e2e_passed": true,
+      "runtime_commit": "86f500577faa1a8c4c76b623063d65894dc70524",
+      "scope": "Gemma4UnifiedChat tool-result content remains text; public legacy codec behavior retained",
+      "task_completion_demonstrated": false,
+      "unit_tests_passed": 14
+    },
     "original_raw_failed_completion_saved": false,
     "parser_error": "invalid literal",
+    "reconstructed_history_comparison": {
+      "max_tokens": 1024,
+      "model_repository": "mlx-community/gemma-4-12B-it-4bit",
+      "model_revision": "73bcf09092aa277861d5a191b989b666f7f32e8f",
+      "original_failed_request_verbatim": false,
+      "output_budget_exhausted": false,
+      "prefill_batch_size": 256,
+      "raw_evidence_sha256": {
+        "ablation-results.json": "4fa3f6566bddc51a2efea673d9e987364c4029c67b1d4a490293071a2c144b4f",
+        "reference-results.json": "1a903cf9bb2f33739fc030ada24e7d3b8facb0015588845ee6d0565b30ac9d04"
+      },
+      "reference_runtime": "mlx-lm 0.32.2",
+      "reference_tokenizer_alone_fixed_literal": false,
+      "string_tool_results_alone_fixed_literal": true,
+      "temperature": 0,
+      "token_counts_include_stop": true,
+      "variants": [
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 21,
+          "prompt_sha256": "f0c21beb7b668100969775b6cc627cba771e871e2b83ebad48fb92d4e56a09cd",
+          "prompt_tokens": 10214,
+          "raw": "<|tool_call>call:get_details_by_id{id:L1002}<tool_call|>",
+          "reference_parsed_tools": null,
+          "reference_parser_error": "Expecting value: line 1 column 7 (char 6)",
+          "variant": "swift_token_ids"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 21,
+          "prompt_sha256": "536070b32d585c67469ccc6f8ef5f30f8c6446c9128fc5197fcc5342e64119a4",
+          "prompt_tokens": 10210,
+          "raw": "<|tool_call>call:get_details_by_id{id:L1002}<tool_call|>",
+          "reference_parsed_tools": null,
+          "reference_parser_error": "Expecting value: line 1 column 7 (char 6)",
+          "variant": "swift_prompt_reference_tokenizer"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 23,
+          "prompt_sha256": "769d5b264b882a3f721350bd8b13c4a8823647ce2a7a1022ab90cab0bf9b9762",
+          "prompt_tokens": 10171,
+          "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1002<|\"|>}<tool_call|>",
+          "reference_parsed_tools": {
+            "arguments": {
+              "id": "L1002"
+            },
+            "name": "get_details_by_id"
+          },
+          "reference_parser_error": null,
+          "variant": "checkpoint_template_no_thinking"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 21,
+          "prompt_sha256": "b4442589aae8d97968193b3116894c95ad3bc46f31e2334f6d23835c109f8ff3",
+          "prompt_tokens": 9964,
+          "raw": "<|tool_call>call:get_details_by_id{id:L1002}<tool_call|>",
+          "reference_parsed_tools": null,
+          "reference_parser_error": "Expecting value: line 1 column 7 (char 6)",
+          "variant": "canonical_schema_only"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 23,
+          "prompt_sha256": "0ee6bbd258c016476c30f489229f297d1ab1fcb52025aba7ef8d04125b16ecef",
+          "prompt_tokens": 9969,
+          "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1002<|\"|>}<tool_call|>",
+          "reference_parsed_tools": {
+            "arguments": {
+              "id": "L1002"
+            },
+            "name": "get_details_by_id"
+          },
+          "reference_parser_error": null,
+          "variant": "remove_schema_titles_only"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 23,
+          "prompt_sha256": "1bcfb2914f861dc4afc2e98f72563762810c77895d6719061b96902c0afe90b9",
+          "prompt_tokens": 10417,
+          "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1002<|\"|>}<tool_call|>",
+          "reference_parsed_tools": {
+            "arguments": {
+              "id": "L1002"
+            },
+            "name": "get_details_by_id"
+          },
+          "reference_parser_error": null,
+          "variant": "string_tool_results_only"
+        },
+        {
+          "finish_reason": "stop",
+          "generated_tokens": 23,
+          "prompt_sha256": "769d5b264b882a3f721350bd8b13c4a8823647ce2a7a1022ab90cab0bf9b9762",
+          "prompt_tokens": 10171,
+          "raw": "<|tool_call>call:get_details_by_id{id:<|\"|>L1002<|\"|>}<tool_call|>",
+          "reference_parsed_tools": {
+            "arguments": {
+              "id": "L1002"
+            },
+            "name": "get_details_by_id"
+          },
+          "reference_parser_error": null,
+          "variant": "canonical_schema_and_string_results"
+        }
+      ]
+    },
     "reconstructed_history_tokens": 10214
   },
   "tokenizer_comparison": {
