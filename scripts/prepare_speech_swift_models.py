@@ -131,6 +131,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--runtime-source", type=Path, required=True)
     parser.add_argument(
+        "--failure-capture-directory",
+        type=Path,
+        help="Opt in to private native chat failure records, including raw 12B output",
+    )
+    parser.add_argument(
         "--agent-model",
         choices=["gemma4-e4b-it", "gemma4-12b-it"],
         default="gemma4-e4b-it",
@@ -138,6 +143,10 @@ def main():
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
     config = {"assets": {}}
+    if args.failure_capture_directory is not None:
+        config["failureCaptureDirectory"] = str(
+            args.failure_capture_directory.resolve()
+        )
     for kind in ("gemma", "vox", "whisper", "vad", "tokenizer"):
         folder, provenance = stage(kind, args.cache)
         config[kind + "Directory"] = str(folder)

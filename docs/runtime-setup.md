@@ -27,6 +27,20 @@ Setup downloads model assets once and records their immutable revisions and cont
 
 Rebuild and regenerate the manifest together after native source changes. Keep the generated manifest and model caches local; their machine-specific directories are recorded in each run's provenance.
 
+To diagnose a native chat failure, add
+`--failure-capture-directory /absolute/path/to/private-failures` when staging.
+A matching speech-swift build then writes failed request bodies and, for
+completed 12B generations, the exact prompt, token IDs, raw completion, and stop
+reason before parsing. The directory is created privately; an existing directory
+must already deny group and other access. These opt-in records contain
+conversation/tool content and remain local.
+
+The benchmark also retains the exact sent JSON body, HTTP status/body, and error
+type for failed chat calls in `failed-run.json` under the inference events.
+Match the native and benchmark records by request ID. Successful request bodies
+and failed audio payloads are not retained by this failure-capture path. Errors
+still propagate and remain unscored; capture never retries or repairs them.
+
 ## Serve
 
 Keep this process running in its own terminal:

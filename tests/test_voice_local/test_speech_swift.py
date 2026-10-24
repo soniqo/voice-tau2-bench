@@ -16,6 +16,67 @@ from tau2.data_model.message import (
 from tau2.voice.speech_swift import SpeechSwiftBackend, SpeechSwiftError
 
 
+def test_failed_chat_keeps_exact_sent_body_and_error_response():
+    received = []
+
+    def server(request):
+        received.append(request.content)
+        return httpx.Response(500, text="native parser failure")
+
+    backend = SpeechSwiftBackend(
+        "http://127.0.0.1:8080", transport=httpx.MockTransport(server)
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        backend.generate(
+            "gemma4-12b-it",
+            [UserMessage(role="user", content="Read record #123: café")],
+            request_id="failed-chat",
+        )
+    event = backend.events[-1]
+    assert event["success"] is False
+    assert event["failure"]["request_body"].encode() == received[0]
+    assert event["failure"]["response_status"] == 500
+    assert event["failure"]["response_body"] == "native parser failure"
+    assert not backend._active
+    backend.close()
+
+
+def test_successful_requests_and_failed_audio_do_not_retain_request_bodies():
+    def server(request):
+        payload = json.loads(request.content)
+        if payload["operation"] == "chat":
+            return httpx.Response(
+                200, json={"content": "Ready", "generatedTokens": 1, "toolCalls": []}
+            )
+        return httpx.Response(500, text="unavailable")
+
+    backend = SpeechSwiftBackend(
+        "http://127.0.0.1:8080", transport=httpx.MockTransport(server)
+    )
+    backend.generate("gemma4-12b-it", [UserMessage(role="user", content="Hello")])
+    with pytest.raises(httpx.HTTPStatusError):
+        backend._request("transcribe", "whisper-large-v3", audioBase64="PRIVATE AUDIO")
+    assert all("failure" not in event for event in backend.events)
+    backend.close()
+
+
+def test_transport_failure_keeps_sent_chat_body_without_masking_exception():
+    def server(request):
+        raise httpx.ReadTimeout("native request timed out", request=request)
+
+    backend = SpeechSwiftBackend(
+        "http://127.0.0.1:8080", transport=httpx.MockTransport(server)
+    )
+    with pytest.raises(httpx.ReadTimeout):
+        backend.generate("gemma4-12b-it", [UserMessage(role="user", content="Hello")])
+    failure = backend.events[-1]["failure"]
+    assert json.loads(failure["request_body"])["messages"][0]["content"] == "Hello"
+    assert failure["response_status"] is None
+    assert failure["response_body"] is None
+    assert not backend._active
+    backend.close()
+
+
 @pytest.mark.parametrize(
     "url",
     [
