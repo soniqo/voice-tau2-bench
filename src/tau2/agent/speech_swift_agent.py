@@ -70,6 +70,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self._request_ids = {}
         self._request_lock = threading.Lock()
         self._pending_audio = []
+        self._hearing_epochs = set()
         self._need_reply = False
         self._awaiting_tools = set()
         self._transfer_pending = False
@@ -94,6 +95,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         self.metrics = {
             "interruptions": 0,
             "asr": [],
+            "chat": [],
             "cancellations": [],
             "text_alignment": "estimated_until_tts_complete",
         }
@@ -153,6 +155,8 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
     def _start_worker(self, history, audio=None, initial_text=None):
         epoch = self._epoch
         cancelled = self._cancelled = threading.Event()
+        if audio is not None:
+            self._hearing_epochs.add(epoch)
 
         def work():
             if audio is not None:
@@ -198,6 +202,17 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                         temperature=0,
                         max_tokens=1024,
                     ),
+                )
+                self.metrics["chat"].append(
+                    {
+                        "epoch": epoch,
+                        "completion_tokens": (reply.usage or {}).get(
+                            "completion_tokens"
+                        ),
+                        "text_characters": len(reply.content or ""),
+                        "text_words": len((reply.content or "").split()),
+                        "tool_calls": len(reply.tool_calls or []),
+                    }
                 )
                 if cancelled.is_set():
                     return
@@ -330,8 +345,10 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             except queue.Empty:
                 break
             if kind == "asr_error":
+                self._hearing_epochs.discard(epoch)
                 raise value
             if kind == "transcript":
+                self._hearing_epochs.discard(epoch)
                 text, elapsed = value
                 self.metrics["asr"].append({"text": text, "wall_seconds": elapsed})
                 logger.info("Local agent heard: {}", text)
@@ -362,6 +379,11 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             or self._work_timeline is None
             or self.clock.now + 1e-9 >= self._work_timeline.ready_at
         )
+        # Obsolete replies must not reserve their old simulated completion time.
+        # Physical work still has to finish, and preserved hearing must reach
+        # its own deadline before another response starts.
+        if self._cancelled.is_set() and not self._hearing_epochs:
+            work_ready = True
         if self._future is not None and self._future.done() and work_ready:
             try:
                 self._future.result()
@@ -470,6 +492,15 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
         return message.content == "###STOP###"
 
     def stop(self, participant_chunk=None, state=None, tool_results=None):
+        self.metrics["shutdown_state"] = {
+            "pending_audio": len(self._pending_audio),
+            "pending_hearing_epochs": sorted(self._hearing_epochs),
+            "future_done": self._future.done() if self._future is not None else None,
+            "reply_cancelled": self._cancelled.is_set(),
+            "ready_at": self._work_timeline.ready_at if self._work_timeline else None,
+            "simulation_now": self.clock.now if self.clock else None,
+            "remaining_audio_samples": len(self._output),
+        }
         self._cancelled.set()
         with self._request_lock:
             requests = list(self._request_ids)

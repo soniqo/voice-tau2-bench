@@ -242,6 +242,11 @@ def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
         data=audioop.ulaw2lin(audioop.lin2ulaw(pcm16(synthesized, 8000).data, 2), 2),
         format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=8000),
     )
+    detection_audio = pcm16(telephone, 16000).data
+    detection_audio = detection_audio[: len(detection_audio) // 1024 * 1024]
+    probabilities = runtime.vad(
+        detection_audio, uuid.uuid4().hex, reset=True, end_stream=True
+    )
     recognized = runtime.transcribe(
         telephone, RuntimeTranscriptionConfig(model="whisper-large-v3")
     ).transcript
@@ -259,6 +264,7 @@ def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
                 "tool_result": observed,
                 "spoken": reply.content,
                 "transcript": recognized,
+                "vad_probabilities": probabilities,
                 "device_grounding": reply.raw_data["device_grounding"],
                 "inference": runtime.events[start:],
                 "benchmark": benchmark_sources(),
@@ -269,6 +275,7 @@ def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
         + "\n"
     )
     text = re.sub(r"[^a-z ]", " ", recognized.lower())
+    assert sum(value >= 0.5 for value in probabilities) >= 4, probabilities
     if not enabled:
         assert re.search(r"\bdisabled\b", text), recognized
     elif not connected:

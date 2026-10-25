@@ -1,6 +1,6 @@
 import queue
 import threading
-from concurrent.futures import CancelledError
+from concurrent.futures import CancelledError, Future
 from types import SimpleNamespace
 
 import pytest
@@ -25,6 +25,103 @@ class Timer:
 def advance(clock, seconds):
     for _ in range(round(seconds / clock.tick_seconds)):
         clock.advance()
+
+
+def test_completed_cancelled_reply_does_not_hold_the_agent_to_its_old_deadline():
+    clock = SimulationClock()
+    agent = SpeechSwiftAgent([], "policy", backend=object(), clock=clock)
+    state = agent.get_init_state()
+    agent._work_timeline = clock.new_work()
+    agent._work_timeline.ready_at = 100
+    agent._future = Future()
+    agent._future.set_result(None)
+    agent._cancelled.set()
+    try:
+        agent._drain_events(state)
+        assert clock.now == 0
+        assert agent._future is None
+    finally:
+        agent.stop()
+
+
+def test_cancelled_reply_still_delivers_latency_gated_hearing_before_next_work():
+    clock = SimulationClock()
+    agent = SpeechSwiftAgent([], "policy", backend=object(), clock=clock)
+    state = agent.get_init_state()
+    agent._hearing_epochs = {0}
+    hearing = clock.new_work()
+    hearing.ready_at = 5
+    with clock.activate(hearing):
+        agent._events.put(("transcript", 0, ("Retain these heard words.", 5)))
+    obsolete = clock.new_work()
+    obsolete.ready_at = 100
+    with clock.activate(obsolete):
+        agent._events.put(("audio", 0, b"discard obsolete audio"))
+    agent._work_timeline = obsolete
+    agent._future = Future()
+    agent._future.set_result(None)
+    agent._cancelled.set()
+    agent._epoch = 1
+    try:
+        agent._drain_events(state)
+        assert agent._future is not None
+        assert not state.recognized_utterances
+        advance(clock, 5)
+        agent._drain_events(state)
+        assert state.recognized_utterances == ["Retain these heard words."]
+        assert agent._future is None and not agent._output
+    finally:
+        agent.stop()
+
+
+def test_uncancelled_completed_work_retains_its_measured_deadline():
+    clock = SimulationClock()
+    agent = SpeechSwiftAgent([], "policy", backend=object(), clock=clock)
+    state = agent.get_init_state()
+    agent._work_timeline = clock.new_work()
+    agent._work_timeline.ready_at = 5
+    agent._future = Future()
+    agent._future.set_result(None)
+    try:
+        agent._drain_events(state)
+        assert agent._future is not None
+        advance(clock, 5)
+        agent._drain_events(state)
+        assert agent._future is None
+    finally:
+        agent.stop()
+
+
+def test_worker_registers_hearing_until_the_transcript_is_delivered():
+    entered = threading.Event()
+    release = threading.Event()
+
+    class Backend:
+        def transcribe(self, *args, **kwargs):
+            entered.set()
+            assert release.wait(2)
+            return TranscriptionResult(transcript="Actual heard words.")
+
+        def generate(self, *args, **kwargs):
+            return AssistantMessage(
+                role="assistant",
+                tool_calls=[ToolCall(id="read", name="lookup", arguments={})],
+            )
+
+    agent = SpeechSwiftAgent([], "policy", backend=Backend())
+    state = agent.get_init_state()
+    try:
+        agent._start_worker(list(state.messages), audio=b"\x00" * 1024)
+        assert entered.wait(2)
+        assert agent._hearing_epochs == {0}
+        release.set()
+        agent._future.result(timeout=2)
+        agent._drain_events(state)
+        assert not agent._hearing_epochs
+        assert state.recognized_utterances == ["Actual heard words."]
+    finally:
+        release.set()
+        agent.stop()
 
 
 @pytest.mark.parametrize("caller_seconds", [0, 100, 1000])

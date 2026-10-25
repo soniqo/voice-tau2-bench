@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "scope": "Experimental caller implementation; functional checks are not domain scores.",
-  "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+  "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
   "device_grounding": true,
   "controller_policy": "device-observations-v1",
   "offline": {
-    "tests_passed": 576,
+    "tests_passed": 580,
     "actual_model_tests_deselected": 13,
     "lint": "passed",
     "frozen_inputs": 64,
@@ -16,7 +16,7 @@
     "passed": true,
     "checks": 43,
     "suite_sha256": "633ea95058d4132ab96faa09c55cdd9e319529a167ad7101d7fe65981f8244ad",
-    "report_sha256": "50707936f983978e21f9fbb509c720e440c0c2307ddf5c3af468d51460d78a9c",
+    "report_sha256": "1563f8df3f2434ee8728dd490170c2410f8e6e349ffeba6536bd2390415cc4e8",
     "cases": [
       {
         "id": "completed-action",
@@ -195,30 +195,30 @@
   "functional_voice_checks": [
     {
       "case": "vpn-enabled-False-connected-False",
-      "tool": "check_vpn_status",
       "tool_result": "VPN is turned OFF.",
       "spoken": "My VPN is disabled.",
       "transcript": "My VPN is disabled.",
-      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
-      "report_sha256": "8fbdf018226ebec375d9a2a2467c32152b7e4b4f8e899b00fbfa28c9628d671a"
+      "vad_speech_frames": 53,
+      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+      "report_sha256": "ae09d6552da90513fc2302cc4557fd8b853da8383a58f630374579593382efbd"
     },
     {
       "case": "vpn-enabled-True-connected-False",
-      "tool": "check_vpn_status",
       "tool_result": "VPN is turned ON in settings, but currently not connected.",
       "spoken": "My VPN is enabled in settings, but it is not connected.",
       "transcript": "MyVPN is enabled in settings, but it is not connected.",
-      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
-      "report_sha256": "357845e5b76c58a6ab0e13c15864ef8658bcac173ba81652d82e4c4eb86566c6"
+      "vad_speech_frames": 110,
+      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+      "report_sha256": "2d245e2661adbef1b7158da3becec3ecfc3c6747b1f14792c31e09f10922a35c"
     },
     {
       "case": "vpn-enabled-True-connected-True",
-      "tool": "check_vpn_status",
       "tool_result": "VPN is ON and connected (no specific details available).",
       "spoken": "My VPN is connected.",
       "transcript": "MyVPN is connected.",
-      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
-      "report_sha256": "f4233caeea9d0088d535e6e62c35f46c1afeefa118ad1bd967087ddf8f732ee1"
+      "vad_speech_frames": 52,
+      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+      "report_sha256": "988fb46df34d7c7e49358140d010b76b20058ee95b138f83b0ff86e76aee9236"
     }
   ],
   "native": {
@@ -230,7 +230,7 @@
     }
   },
   "spoken_diagnostic": {
-    "status": "pending_customer_action_audit",
+    "status": "pending_recheck_after_cancellation_fix",
     "domain": "telecom",
     "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
     "seed": 42,
@@ -243,5 +243,35 @@
     "planned_calls": 18,
     "status": "pending_spoken_diagnostic_audit",
     "complete": false
+  },
+  "prior_spoken_diagnostic": {
+    "benchmark_commit": "7a0ae02b836759b66d8c62ca506c448e3b2c457b",
+    "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+    "raw_reward": 0,
+    "termination": "timeout",
+    "audio_seconds": 352.8,
+    "wall_seconds": 1327.146145333012,
+    "status": "diagnostic_exposed_cancelled_work_deadline_defect",
+    "model_performance_qualified": false,
+    "native_inference_failures": 0,
+    "note": "Old completed speech work blocked subsequent turns until retired deadlines; raw timeout is not a clean model-performance result."
+  },
+  "controlled_spoken_pipeline": {
+    "functional_check_only": true,
+    "caller_mode": "controlled_spoken_input",
+    "reward": 1,
+    "db_match": true,
+    "wrong_write_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 66.45,
+    "wall_seconds": 75.67007429199293,
+    "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+    "diagnostics": {
+      "failed_requests_without_cancellation": [],
+      "native_chat_failures": [],
+      "unexpected_native_cancellations": []
+    },
+    "intentional_cancellations": 3,
+    "simulation_sha256": "e3a50da77e4e269fd4775f3644d6049ccb255707500e5aea5fdd5b2436043a47"
   }
 }

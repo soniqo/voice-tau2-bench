@@ -15,7 +15,7 @@ qualification and a separate result cohort.
 
 ## Verified checks
 
-- **576 offline tests** pass, including real fixture-device reads and mutations,
+- **580 offline tests** pass, including real fixture-device reads and mutations,
   opposite initial/desired states, no-op requests, stale observations, compound
   instructions, app permission arguments, APN reset timing and persona concerns.
 - All **64 frozen inputs / 278 tasks** verify. Both upstream replay rewards match,
@@ -26,7 +26,8 @@ qualification and a separate result cohort.
 - Three actual voice checks passed for VPN disabled, enabled-but-disconnected,
   and connected. Each executes the real customer read and sends the derived
   answer through VoxCPM2, 8 kHz telephone conversion and full Whisper Large-v3.
-  No chat model supplies the device fact in these checks.
+  No chat model supplies the device fact in these checks. Each clip also passes
+  the actual Silero VAD threshold used by the agent.
 
 The first voice attempt transcribed the raw uppercase `OFF` as `OF`. The spoken
 template now says “My VPN is disabled.” The audit retains the original tool
@@ -34,9 +35,31 @@ result. The connected/disconnected distinction is preserved; ASR output is never
 replaced or corrected with reference text. These are functional checks, not
 domain model scores.
 
+The complete controlled spoken agent pipeline also passes: the real database
+write scores **1.0** and the wrong-write replay scores **0.0**. It ends with
+`user_stop` after 66.45 simulated seconds / 75.67 wall seconds, with three
+intentional cancellations and no unexplained inference failures. This fixed
+caller functional check contributes no domain score.
+
 A fresh generative spoken telecom diagnostic is required before the held-out
 pilot. The pilot retains its nine declared tasks, two trials and seeds 70/71.
 Current results and limitations are recorded in [the validation summary](grounded-caller.json).
+
+## Interruption scheduling regression
+
+The first generative diagnostic timed out at 352.8 simulated seconds /
+1,327.15 wall seconds with a raw timeout reward of 0. The runner had a scheduling
+defect: physically completed replies that had been canceled by a barge-in still
+blocked new work until their old simulated deadlines. Recorded gaps included
+81.34, 89.94 and 113.19 seconds of completed stream work. No native inference
+failure occurred. This timeout is not a clean measure of agent capability.
+
+Completed canceled replies now release the worker after preserved ASR results
+reach their own deadlines. Running work still must finish physically, and
+uninterrupted replies retain measured latency. Two regression tests failed
+before this fix; they now pass, alongside controls for ordinary timing and
+hearing lifecycle. Actual execution remains in the accounting records. Response
+length and shutdown queue state are also recorded for diagnosing future stalls.
 
 ## Execution and evidence
 
