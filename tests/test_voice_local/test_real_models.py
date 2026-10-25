@@ -114,6 +114,88 @@ def test_real_gemma_native_tool_call_and_result_history(runtime, model):
     assert "record" in result.content.lower()
 
 
+@pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
+def test_real_tool_history_uses_changed_result_instead_of_a_previous_answer(
+    runtime, tmp_path, model
+):
+    """Counterfactual results prove that the native model sees current tool data."""
+    import json
+
+    from tau2.voice.provenance import benchmark_sources
+
+    tokens = ["session_" + uuid.uuid4().hex[:12] for _ in range(2)]
+    issued = iter(tokens)
+
+    def read_session_token() -> str:
+        """Read the current session token from the service."""
+        return json.dumps({"session_token": next(issued)})
+
+    tools = [Tool(read_session_token)]
+    messages = [
+        SystemMessage(
+            role="system",
+            content="Call read_session_token to retrieve the session token. Then repeat only the exact session_token from the tool result. Never invent it or reuse a previous value.",
+        ),
+        UserMessage(role="user", content="What is my current session token?"),
+    ]
+    start = len(runtime.events)
+    request = runtime.generate(
+        model,
+        messages,
+        tools=tools,
+        tool_choice="required",
+        temperature=0,
+        max_tokens=128,
+    )
+    assert request.tool_calls and request.tool_calls[0].name == "read_session_token"
+    assert request.tool_calls[0].arguments == {}
+    results, replies = [], []
+    for _ in tokens:
+        # Same request/history, separate actual service results: a cached earlier
+        # answer cannot satisfy both counterfactual requests.
+        observed = read_session_token()
+        results.append(observed)
+        replies.append(
+            runtime.generate(
+                model,
+                [
+                    *messages,
+                    request,
+                    ToolMessage(
+                        role="tool",
+                        id=request.tool_calls[0].id,
+                        requestor="assistant",
+                        content=observed,
+                    ),
+                ],
+                tools=tools,
+                temperature=0,
+                max_tokens=128,
+            )
+        )
+    root = Path(os.environ.get("TAU_VOICE_HISTORY_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    (root / (model + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "model": model,
+                "tool_results": results,
+                "responses": [r.model_dump(mode="json") for r in replies],
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    for index, reply in enumerate(replies):
+        assert not reply.is_tool_call(), reply
+        assert tokens[index] in (reply.content or ""), reply
+        assert tokens[1 - index] not in (reply.content or ""), reply
+
+
 def test_real_native_prefix_reuse_is_reported_without_changing_the_reply(runtime):
     model = runtime.capabilities().models.get("gemma4-12b-it")
     if model is None or "system_prefix_cache" not in model.features:

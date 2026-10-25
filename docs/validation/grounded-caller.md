@@ -15,15 +15,16 @@ qualification and a separate result cohort.
 
 ## Verified checks
 
-- **594 offline tests** pass, including real fixture-device reads and mutations,
+- **596 offline tests** pass, including real fixture-device reads and mutations,
   opposite initial/desired states, no-op requests, stale observations, compound
   instructions, app permission arguments, APN reset timing and persona concerns.
 - All **64 frozen inputs / 278 tasks** verify. Both upstream replay rewards match,
   and lint passes.
-- Fresh native caller/judge qualification passed **49/49** checks. It includes the
+- Fresh native caller/judge qualification passed **51/51** checks. It includes the
   longer VPN regression, three VPN states, spoken-result checks, read-before-write
   and no-op cases, stale observations after a write, unfinished speech turns and
-  affected-line questions.
+  affected-line questions, symptom descriptions and explicit checks before
+  describing a result.
 - Three actual voice checks passed for VPN disabled, enabled-but-disconnected,
   and connected. Each executes the real customer read and sends the derived
   answer through VoxCPM2, 8 kHz telephone conversion and full Whisper Large-v3.
@@ -32,6 +33,9 @@ qualification and a separate result cohort.
 - Two further actual speech checks preserve different caller-known phone numbers
   exactly through VoxCPM2, telephone conversion and Whisper. The controller uses
   the caller's supplied known information, without calling a model or device tool.
+- Two native result-history checks, one per Gemma model, each return two changed
+  opaque values supplied only by actual tool results. These verify basic result
+  transport; they do not establish long-context planning quality.
 
 The first voice attempt transcribed the raw uppercase `OFF` as `OF`. The spoken
 template now says “My VPN is disabled.” The audit retains the original tool
@@ -41,8 +45,8 @@ domain model scores.
 
 The complete controlled spoken agent pipeline also passes: the real database
 write scores **1.0** and the wrong-write replay scores **0.0**. It ends with
-`user_stop` after 45.65 simulated seconds / 50.58 wall seconds, with two
-intentional cancellations and no unexplained inference failures. This fixed
+`user_stop` after 30.65 simulated seconds / 34.16 wall seconds, with no
+cancellations or unexplained inference failures. This fixed
 caller functional check contributes no domain score.
 
 A fresh generative spoken telecom diagnostic is required before the held-out
@@ -79,6 +83,23 @@ phone…”, and can still answer a complete question while speech continues. Th
 configured silence check-in remains available. Singular/plural phone-number and
 affected-line questions use only the caller's known information; missing numbers
 are explicitly unknown. Five captured regression tests failed before this fix.
+
+## Symptom questions and silent tool timing
+
+The following diagnostic reached its 600-second call cap after 1,028.79 wall
+seconds, with a raw reward of 0. The agent completed 27 account/detail reads,
+mostly repeating the same line lookup. The customer completed a network-status
+read and a speed test; Whisper heard the actual speed-test failure as “No
+connection.” No device changes occurred and no unexplained inference failure
+was recorded. This still is not an accepted domain-performance score.
+
+Two further caller defects were confirmed. “Describe what happens when you try
+to use your data” incorrectly triggered a setting read, and silent agent tool
+calls carried a speech flag that reset the caller's silence timer. Symptom
+descriptions now defer to the conversation model while explicit checks still
+execute. Tool calls remain silent. Both regressions fail on the prior code and
+pass with the fixes; the expanded live qualification also checks the captured
+symptom question. A new spoken diagnostic must use this qualified revision.
 
 ## Execution and evidence
 
