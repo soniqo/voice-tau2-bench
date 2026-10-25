@@ -15,19 +15,23 @@ qualification and a separate result cohort.
 
 ## Verified checks
 
-- **580 offline tests** pass, including real fixture-device reads and mutations,
+- **594 offline tests** pass, including real fixture-device reads and mutations,
   opposite initial/desired states, no-op requests, stale observations, compound
   instructions, app permission arguments, APN reset timing and persona concerns.
 - All **64 frozen inputs / 278 tasks** verify. Both upstream replay rewards match,
   and lint passes.
-- Fresh native caller/judge qualification passed **43/43** checks. It includes the
+- Fresh native caller/judge qualification passed **49/49** checks. It includes the
   longer VPN regression, three VPN states, spoken-result checks, read-before-write
-  and no-op cases, and stale observations after a write.
+  and no-op cases, stale observations after a write, unfinished speech turns and
+  affected-line questions.
 - Three actual voice checks passed for VPN disabled, enabled-but-disconnected,
   and connected. Each executes the real customer read and sends the derived
   answer through VoxCPM2, 8 kHz telephone conversion and full Whisper Large-v3.
   No chat model supplies the device fact in these checks. Each clip also passes
   the actual Silero VAD threshold used by the agent.
+- Two further actual speech checks preserve different caller-known phone numbers
+  exactly through VoxCPM2, telephone conversion and Whisper. The controller uses
+  the caller's supplied known information, without calling a model or device tool.
 
 The first voice attempt transcribed the raw uppercase `OFF` as `OF`. The spoken
 template now says “My VPN is disabled.” The audit retains the original tool
@@ -37,7 +41,7 @@ domain model scores.
 
 The complete controlled spoken agent pipeline also passes: the real database
 write scores **1.0** and the wrong-write replay scores **0.0**. It ends with
-`user_stop` after 66.45 simulated seconds / 75.67 wall seconds, with three
+`user_stop` after 45.65 simulated seconds / 50.58 wall seconds, with two
 intentional cancellations and no unexplained inference failures. This fixed
 caller functional check contributes no domain score.
 
@@ -60,6 +64,21 @@ uninterrupted replies retain measured latency. Two regression tests failed
 before this fix; they now pass, alongside controls for ordinary timing and
 hearing lifecycle. Actual execution remains in the accounting records. Response
 length and shutdown queue state are also recorded for diagnosing future stalls.
+
+## Caller speech boundaries and contact questions
+
+The next diagnostic timed out at 315.65 simulated seconds / 1,240.53 wall
+seconds. The agent completed two account reads, but no customer device actions
+ran. No native inference failure occurred. The caller repeatedly interrupted
+question prefixes and later repeated its complaint instead of answering which
+phone number was affected. This is another caller defect, not a clean agent score.
+
+Speech-frame merging and role conversion now preserve the last frame's utterance
+boundary. The grounded caller waits on incomplete phrases, including “which
+phone…”, and can still answer a complete question while speech continues. The
+configured silence check-in remains available. Singular/plural phone-number and
+affected-line questions use only the caller's known information; missing numbers
+are explicitly unknown. Five captured regression tests failed before this fix.
 
 ## Execution and evidence
 

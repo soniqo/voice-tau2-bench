@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "scope": "Experimental caller implementation; functional checks are not domain scores.",
-  "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+  "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
   "device_grounding": true,
   "controller_policy": "device-observations-v1",
   "offline": {
-    "tests_passed": 580,
+    "tests_passed": 594,
     "actual_model_tests_deselected": 13,
     "lint": "passed",
     "frozen_inputs": 64,
@@ -14,9 +14,9 @@
   },
   "qualification": {
     "passed": true,
-    "checks": 43,
-    "suite_sha256": "633ea95058d4132ab96faa09c55cdd9e319529a167ad7101d7fe65981f8244ad",
-    "report_sha256": "1563f8df3f2434ee8728dd490170c2410f8e6e349ffeba6536bd2390415cc4e8",
+    "checks": 49,
+    "suite_sha256": "17d98487776bf28e29fc6defbae52c424e05351b4d2c08a8d25782a965e30e84",
+    "report_sha256": "a0cd688f78ea4b3b72ce507736edcd208207d836396ffd42eabb383569ccd273",
     "cases": [
       {
         "id": "completed-action",
@@ -167,6 +167,30 @@
         "passed": true
       },
       {
+        "id": "full-tools-incomplete-phone-turn",
+        "passed": true
+      },
+      {
+        "id": "full-tools-incomplete-greeting",
+        "passed": true
+      },
+      {
+        "id": "full-tools-known-phone-plural",
+        "passed": true
+      },
+      {
+        "id": "full-tools-known-affected-line",
+        "passed": true
+      },
+      {
+        "id": "full-tools-unknown-phone",
+        "passed": true
+      },
+      {
+        "id": "full-tools-complete-question-during-speech",
+        "passed": true
+      },
+      {
         "id": "fact-paraphrase",
         "passed": true
       },
@@ -195,30 +219,30 @@
   "functional_voice_checks": [
     {
       "case": "vpn-enabled-False-connected-False",
-      "tool_result": "VPN is turned OFF.",
       "spoken": "My VPN is disabled.",
       "transcript": "My VPN is disabled.",
       "vad_speech_frames": 53,
-      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
-      "report_sha256": "ae09d6552da90513fc2302cc4557fd8b853da8383a58f630374579593382efbd"
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "report_sha256": "643806eea96551ad9822d663a9a5c8a09de27db8f1885dd7595858bb3ed82505",
+      "tool_result": "VPN is turned OFF."
     },
     {
       "case": "vpn-enabled-True-connected-False",
-      "tool_result": "VPN is turned ON in settings, but currently not connected.",
       "spoken": "My VPN is enabled in settings, but it is not connected.",
       "transcript": "MyVPN is enabled in settings, but it is not connected.",
       "vad_speech_frames": 110,
-      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
-      "report_sha256": "2d245e2661adbef1b7158da3becec3ecfc3c6747b1f14792c31e09f10922a35c"
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "report_sha256": "a9d6b4c8ef0194cb88cc470d24a5cddcdc5bf53d7f3573a3563e1c0caa8c620f",
+      "tool_result": "VPN is turned ON in settings, but currently not connected."
     },
     {
       "case": "vpn-enabled-True-connected-True",
-      "tool_result": "VPN is ON and connected (no specific details available).",
       "spoken": "My VPN is connected.",
       "transcript": "MyVPN is connected.",
       "vad_speech_frames": 52,
-      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
-      "report_sha256": "988fb46df34d7c7e49358140d010b76b20058ee95b138f83b0ff86e76aee9236"
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "report_sha256": "535c89055f707f2b8b9259489a7262c74c3909db5fce8102b66710615808cb48",
+      "tool_result": "VPN is ON and connected (no specific details available)."
     }
   ],
   "native": {
@@ -230,7 +254,7 @@
     }
   },
   "spoken_diagnostic": {
-    "status": "pending_recheck_after_cancellation_fix",
+    "status": "pending_recheck_after_caller_turn_fix",
     "domain": "telecom",
     "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
     "seed": 42,
@@ -244,34 +268,72 @@
     "status": "pending_spoken_diagnostic_audit",
     "complete": false
   },
-  "prior_spoken_diagnostic": {
-    "benchmark_commit": "7a0ae02b836759b66d8c62ca506c448e3b2c457b",
-    "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
-    "raw_reward": 0,
-    "termination": "timeout",
-    "audio_seconds": 352.8,
-    "wall_seconds": 1327.146145333012,
-    "status": "diagnostic_exposed_cancelled_work_deadline_defect",
-    "model_performance_qualified": false,
-    "native_inference_failures": 0,
-    "note": "Old completed speech work blocked subsequent turns until retired deadlines; raw timeout is not a clean model-performance result."
-  },
   "controlled_spoken_pipeline": {
     "functional_check_only": true,
     "caller_mode": "controlled_spoken_input",
-    "reward": 1,
+    "reward": 1.0,
     "db_match": true,
     "wrong_write_reward": 0.0,
     "termination": "user_stop",
-    "audio_seconds": 66.45,
-    "wall_seconds": 75.67007429199293,
-    "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+    "audio_seconds": 45.650000000000006,
+    "wall_seconds": 50.58120020799106,
+    "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
     "diagnostics": {
       "failed_requests_without_cancellation": [],
       "native_chat_failures": [],
       "unexpected_native_cancellations": []
     },
-    "intentional_cancellations": 3,
-    "simulation_sha256": "e3a50da77e4e269fd4775f3644d6049ccb255707500e5aea5fdd5b2436043a47"
-  }
+    "intentional_cancellations": 2,
+    "simulation_sha256": "fcd7c903e2049dc2ff83d844eb3cff9ef638d26064277fe76257adb8b76128d1"
+  },
+  "known_phone_voice_checks": [
+    {
+      "case": "phone-555-123-2002",
+      "spoken": "My phone number is 555-123-2002.",
+      "transcript": "My phone number is 555-123-2002.",
+      "vad_speech_frames": 133,
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "report_sha256": "b79fbb3121c39b3b9a9bf37e134924b22e22d63ad3d61935685b682e480d09b5",
+      "number": "555-123-2002"
+    },
+    {
+      "case": "phone-555-123-9876",
+      "spoken": "My phone number is 555-123-9876.",
+      "transcript": "My phone number is 555-123-9876.",
+      "vad_speech_frames": 142,
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "report_sha256": "27339fe450eee4f80d75c513e7c4e564650adaed59de36a08efa2201bd379132",
+      "number": "555-123-9876"
+    }
+  ],
+  "prior_spoken_diagnostics": [
+    {
+      "benchmark_commit": "7a0ae02b836759b66d8c62ca506c448e3b2c457b",
+      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+      "raw_reward": 0,
+      "termination": "timeout",
+      "audio_seconds": 352.8,
+      "wall_seconds": 1327.146145333012,
+      "status": "diagnostic_exposed_cancelled_work_deadline_defect",
+      "model_performance_qualified": false,
+      "native_inference_failures": 0,
+      "note": "Old completed speech work blocked subsequent turns until retired deadlines; raw timeout is not a clean model-performance result."
+    },
+    {
+      "benchmark_commit": "a8f1fdeea08bc218def8f19b93357ee82c023122",
+      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+      "termination": "timeout",
+      "raw_timeout_reward": 0.0,
+      "audio_seconds": 315.65000000000003,
+      "wall_seconds": 1240.5298488750122,
+      "model_performance_qualified": false,
+      "status": "caller_exposed_incomplete_turn_and_contact_routing_defects",
+      "raw_runner_scored": true,
+      "successful_agent_tools": 2,
+      "successful_customer_tools": 0,
+      "native_inference_failures": 0,
+      "note": "Caller interrupted incomplete questions and mishandled known phone-number questions; raw timeout is not a clean model-performance result."
+    }
+  ],
+  "actual_model_tests_passed": 6
 }

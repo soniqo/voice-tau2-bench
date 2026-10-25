@@ -284,6 +284,80 @@ def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
         assert "connected" in text and "not connected" not in text, recognized
 
 
+@pytest.mark.parametrize("number", ["555-123-2002", "555-123-9876"])
+def test_real_known_phone_answer_survives_speech_and_telephony(
+    runtime, tmp_path, number
+):
+    """Caller-owned identifiers must survive the actual acoustic path."""
+    import json
+    import wave
+
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    caller = QualifiedCallerBackend(
+        runtime,
+        f"Known info:\nYour phone number is {number}.\nTask instructions:\nRestore your internet.",
+        device_grounding=True,
+    )
+    start = len(runtime.events)
+    reply = caller.generate(
+        "gemma4-e4b-it",
+        [UserMessage(role="user", content="Which of your phone numbers is affected?")],
+        tools=[],
+        call_name="user_streaming_response",
+    )
+    assert reply.content == f"My phone number is {number}." and not reply.is_tool_call()
+    assert not any(event["operation"] == "chat" for event in runtime.events[start:])
+    synthesized = runtime.synthesize(
+        reply.content,
+        RuntimeTTSConfig(
+            model_id="voxcpm2",
+            voice_id="A natural adult male voice speaking American English.",
+            seed=42,
+        ),
+    )
+    telephone = AudioData(
+        data=audioop.ulaw2lin(audioop.lin2ulaw(pcm16(synthesized, 8000).data, 2), 2),
+        format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=8000),
+    )
+    detection = pcm16(telephone, 16000).data
+    probabilities = runtime.vad(
+        detection[: len(detection) // 1024 * 1024],
+        uuid.uuid4().hex,
+        reset=True,
+        end_stream=True,
+    )
+    recognized = runtime.transcribe(
+        telephone, RuntimeTranscriptionConfig(model="whisper-large-v3")
+    ).transcript
+    root = Path(os.environ.get("TAU_VOICE_DEVICE_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    name = "phone-" + number
+    with wave.open(str(root / (name + ".wav")), "wb") as output:
+        output.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
+        output.writeframes(telephone.data)
+    (root / (name + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "number": number,
+                "spoken": reply.content,
+                "transcript": recognized,
+                "vad_probabilities": probabilities,
+                "device_grounding": reply.raw_data["device_grounding"],
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert sum(value >= 0.5 for value in probabilities) >= 4, probabilities
+    assert re.sub(r"\D", "", recognized) == re.sub(r"\D", "", number), recognized
+
+
 def test_real_streaming_tts_cancels_after_first_audio(runtime):
     request_id = uuid.uuid4().hex
     chunks = runtime.stream_speech(
