@@ -73,6 +73,7 @@
     "caller_policy": "terminal-v2",
     "require_qualification": true,
     "tool_guard": true,
+    "device_grounding": true,
     "caller_idle_seconds": 15
   }
 }

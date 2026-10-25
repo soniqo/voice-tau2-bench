@@ -11,7 +11,8 @@ leaderboard results.
 See [validation results and working parameters](validation/local-v2.md) for the
 spoken pipeline checks, qualification results, and known limits. The
 [native cache follow-up](validation/native-prefill.md) verifies the newer runtime.
-The held-out pilot has not run.
+The [device-controller follow-up](validation/grounded-caller.md) records current
+caller validation and held-out pilot progress.
 
 ## Models
 
@@ -68,22 +69,23 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 33 checks cover completed versus promised work, required follow-ups after a
+The 43 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Eleven checks use the full 30-tool telecom customer interface, including real
+Twenty-one checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
 requires reassurance before rebooting, and a data-saver status request after
 earlier troubleshooting steps and a VPN question split across streaming speech
 fragments, an unknown plan-usage question that belongs to the agent, and a VPN
-question after account discussion and a failed speed test. The longer voice
-diagnostic answered that last question without a device observation; the fixture
-records this unresolved regression. A historical 32-check pass does not qualify
-the expanded suite.
+question after account discussion and a failed speed test. Further checks cover
+opposite VPN states, spoken reports after real writes, reads before toggles,
+already-correct settings, stale observations after writes, ambiguous modes and
+agent promises that do not request customer actions. Historical 32/33-check
+reports do not qualify the expanded suite or changed caller condition.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
@@ -107,9 +109,31 @@ schema repair above. Every rejected response is retained, and no decision or
 evidence is filled in by the runtime.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
+The v2 profile explicitly enables `execution.device_grounding`. For telecom,
+`CustomerDeviceController` handles recognized requests before the model-driven
+TOOL/SPEAK path. It reads only heard agent speech and actual customer tool
+results. It returns declared calls for normal execution, reads unknown settings
+before toggling, and reports an already-correct setting without changing it.
+Every customer write invalidates cached device observations; successful results
+restore only facts they actually report. Rejected/failed calls and service-agent
+private results cannot become customer facts.
+
+Phone-status speech comes from those observations using deterministic rendering.
+VPN enabled-but-disconnected remains distinct from a disabled or connected VPN.
+The controller records source tool IDs, preserves requested action order, asks
+for missing/ambiguous parameters and pauses rebooting for explicit photo-safety
+concerns until the agent reassures the caller. It can only keep a pending device
+exchange open, never manufacture a successful terminal state or reward.
+
+Conversation, caller goals, account information, and business decisions still use
+the local caller model. This finite English device adapter is an explicit
+experimental caller condition; clarification for an unrecognized instruction is
+part of that condition. It does not read hidden device state or reference actions,
+repair the evaluated agent's arguments, or substitute gold speech. Historical v1
+profiles retain their original execution settings and do not enable it.
 Caller control reads heard turns: adjacent speech fragments from the same speaker
 are merged, while speaker changes and tool-call/result boundaries are preserved.
-For open calls with customer tools, a separate TOOL/SPEAK decision reads the
+For open calls outside the device controller, a separate TOOL/SPEAK decision reads the
 heard request, caller scenario/persona and actual tool history. TOOL requires a
 native customer function call before speech; saying the action happened does not
 execute it. The tool request repeats the actual latest heard agent statement

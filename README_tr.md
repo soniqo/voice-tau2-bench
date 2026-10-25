@@ -41,7 +41,7 @@ Bu küçük ve belirlenimci örneklem yerel arayan ve hakem kullanır. Tüm 278 
 
 12B örneklemi tamamlanmadı: telekom denemesi yerel çıkarım hatası verdi ve puanlanmadı. Kontrollü 12B ses testi: doğru veritabanı yazımı için **1.0**, yanlış yazımın yeniden değerlendirilmesi için **0.0**. [Doğrulanan parametreler](docs/validation/gemma4-12b-voice-e2e.md). Arayanın girdisi sabittir; bu test kıyaslama puanına katılmaz. Alan denemeleri üretken arayanı kullanır ve bağlantılı raporlar her çalışma zamanı sürümünü kaydeder.
 
-V2 tekrarları hâlâ tanılama amaçlıdır: bir havayolu ret vakası, veritabanı değişmeden kaldığı için **1.0** aldı; perakende zaman aşımına uğradı ve telekom arayan denetimi hatalarını ortaya çıkardı. **Ayrılan 18 aramalık pilot tamamlanmadı**. Bu denemeler modelin genel başarı oranını belirlemez. [Sonuçlar ve parametreler](docs/validation/caller-rerun.md).
+Yerel v2 artık telekom cihazı sorularını telefon araçlarının gerçek gözlemlerine dayanarak yanıtlıyor. Tanılama sonuçları ve ayrılan pilotun ilerlemesi, geçmiş v1 puanlarından ayrı raporlanıyor. [Güncel doğrulama ve parametreler](docs/validation/grounded-caller.md).
 
 `soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
 

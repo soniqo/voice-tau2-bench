@@ -6,7 +6,7 @@ import re
 from copy import deepcopy
 from pathlib import Path
 
-from tau2.data_model.message import AssistantMessage, ToolMessage, UserMessage
+from tau2.data_model.message import AssistantMessage, ToolCall, ToolMessage, UserMessage
 from tau2.data_model.persona import PersonaConfig
 from tau2.data_model.semantic_communication import (
     CommunicateScoring,
@@ -35,6 +35,7 @@ def qualification_identity(profile, provenance):
         ).hexdigest(),
         "benchmark_source_sha256": provenance["benchmark"]["sha256"],
         "caller_policy": profile.execution.caller_policy,
+        "device_grounding": profile.execution.device_grounding,
         "roles": {
             role: profile.roles[role].model_dump(mode="json")
             for role in ("caller", "listener", "judge")
@@ -95,6 +96,45 @@ def dismiss_notification(notification_id: str) -> str:
     return "dismissed"
 
 
+def fixture_history(history):
+    messages = []
+    for index, event in enumerate(history):
+        role, text, *metadata = event
+        if role != "tool":
+            messages.append(
+                (UserMessage if role == "user" else AssistantMessage)(
+                    role=role, content=text
+                )
+            )
+            continue
+        call_id = f"fixture-tool-{index}"
+        details = metadata[0] if metadata else {}
+        if "name" in details:
+            messages.append(
+                AssistantMessage(
+                    role="assistant",
+                    tool_calls=[
+                        ToolCall(
+                            id=call_id,
+                            name=details["name"],
+                            arguments=details.get("arguments", {}),
+                        )
+                    ],
+                )
+            )
+        messages.append(
+            ToolMessage(
+                role="tool",
+                content=text,
+                id=call_id,
+                requestor="user",
+                error=details.get("error", False),
+                execution_status=details.get("execution_status", "executed"),
+            )
+        )
+    return messages
+
+
 def qualify(backend, profile, provenance):
     if profile.execution.caller_policy != "terminal-v2":
         raise ValueError(
@@ -124,22 +164,13 @@ def qualify(backend, profile, provenance):
                     if expected.get("notification_tools")
                     else []
                 )
-            caller = QualifiedCallerBackend(backend, case["scenario"])
-            messages = [
-                (
-                    ToolMessage(
-                        role="tool",
-                        content=text,
-                        id=f"fixture-tool-{index}",
-                        requestor="user",
-                    )
-                    if role == "tool"
-                    else (UserMessage if role == "user" else AssistantMessage)(
-                        role=role, content=text
-                    )
-                )
-                for index, (role, text) in enumerate(case["history"])
-            ]
+            caller = QualifiedCallerBackend(
+                backend,
+                case["scenario"],
+                device_grounding=profile.execution.device_grounding
+                and case.get("toolset") == "telecom",
+            )
+            messages = fixture_history(case["history"])
             decision, _ = caller.assess(
                 profile.roles["caller"].model_id, messages, tools=tools
             )
@@ -201,9 +232,10 @@ def qualify(backend, profile, provenance):
                             else json.dumps(observed),
                         )
                         row["fixture_tool_result"] = result.model_dump(mode="json")
+                        history = [*history, response, result]
                         response = caller.generate(
                             profile.roles["caller"].model_id,
-                            [*history, response, result],
+                            history,
                             tools=tools,
                             temperature=0,
                             max_tokens=1024,
@@ -225,17 +257,45 @@ def qualify(backend, profile, provenance):
                         and calls[0].name == expected["tool"]
                         and calls[0].arguments == expected["arguments"]
                     )
-                    if row["passed"] and "device_after" in expected:
+                    if row["passed"] and (
+                        "device_after" in expected or "spoken_result" in expected
+                    ):
                         selected = next(
                             tool for tool in tools if tool.name == calls[0].name
                         )
                         row["fixture_tool_result"] = selected(**calls[0].arguments)
-                        device = fixture_environment.user_tools.db.device
-                        row["device_after"] = {
-                            key: getattr(device, key)
-                            for key in expected["device_after"]
-                        }
-                        row["passed"] &= row["device_after"] == expected["device_after"]
+                        if "device_after" in expected:
+                            device = fixture_environment.user_tools.db.device
+                            row["device_after"] = {
+                                key: getattr(device, key)
+                                for key in expected["device_after"]
+                            }
+                            row["passed"] &= (
+                                row["device_after"] == expected["device_after"]
+                            )
+                        if "spoken_result" in expected:
+                            report = caller.generate(
+                                profile.roles["caller"].model_id,
+                                [
+                                    *history,
+                                    response,
+                                    ToolMessage(
+                                        role="tool",
+                                        requestor="user",
+                                        id=calls[0].id,
+                                        content=row["fixture_tool_result"],
+                                    ),
+                                ],
+                                tools=tools,
+                                temperature=0,
+                                max_tokens=1024,
+                                call_name="user_streaming_response",
+                            )
+                            row["spoken_response"] = report.model_dump(mode="json")
+                            row["passed"] &= (
+                                not report.is_tool_call()
+                                and report.content == expected["spoken_result"]
+                            )
                 elif "device_unchanged" in expected:
                     device = fixture_environment.user_tools.db.device
                     row["device_after"] = {

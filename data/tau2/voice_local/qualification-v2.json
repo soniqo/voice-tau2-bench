@@ -659,6 +659,255 @@
           "vpn_connected": false
         }
       }
+    },
+    {
+      "id": "grounded-vpn-enabled-false-connected-false",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": false,
+        "vpn_connected": false,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is disabled."
+      }
+    },
+    {
+      "id": "grounded-vpn-enabled-true-connected-false",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": false,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is enabled in settings, but it is not connected."
+      }
+    },
+    {
+      "id": "grounded-vpn-enabled-true-connected-true",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": true,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": true
+        },
+        "spoken_result": "My VPN is connected."
+      }
+    },
+    {
+      "id": "grounded-write-and-report-airplane_mode",
+      "scenario": "Follow the agent instructions using actual customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "tool",
+          "Airplane Mode: ON"
+        ],
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        },
+        "spoken_result": "Airplane Mode is now OFF"
+      }
+    },
+    {
+      "id": "grounded-write-and-report-roaming_enabled",
+      "scenario": "Follow the agent instructions using actual customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "tool",
+          "Data Roaming Enabled: No"
+        ],
+        [
+          "user",
+          "Please turn data roaming on."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        },
+        "spoken_result": "Data Roaming is now ON"
+      }
+    },
+    {
+      "id": "grounded-observe-before-toggle",
+      "scenario": "Follow the agent instructions; device state is unknown before checking.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        },
+        "spoken_result": "Airplane Mode is now OFF"
+      }
+    },
+    {
+      "id": "grounded-observe-already-correct",
+      "scenario": "Follow the agent instructions; device state is unknown before checking.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "device_unchanged": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "grounded-vpn-stale-after-airplane-write",
+      "scenario": "Answer device questions only using current actual tool observations.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": false
+      },
+      "history": [
+        [
+          "tool",
+          "VPN is ON and connected (no specific details available).",
+          {
+            "name": "check_vpn_status"
+          }
+        ],
+        [
+          "tool",
+          "Airplane Mode is now ON.",
+          {
+            "name": "toggle_airplane_mode"
+          }
+        ],
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is enabled in settings, but it is not connected."
+      }
+    },
+    {
+      "id": "grounded-agent-promise-not-customer-request",
+      "scenario": "Wait while the agent does its own account lookup. Do not perform unrequested device actions.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "user",
+          "I'll check your data roaming status now. One moment."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "device_unchanged": {
+          "roaming_enabled": false
+        }
+      }
+    },
+    {
+      "id": "grounded-unknown-mode-needs-clarification",
+      "scenario": "Ask for the exact setting when the requested device change is ambiguous.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Please change your network mode."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "clarify"
+        ]
+      }
     }
   ],
   "judge": [

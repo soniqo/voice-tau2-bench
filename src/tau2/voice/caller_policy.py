@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from tau2.data_model.message import AssistantMessage, SystemMessage, UserMessage
 from tau2.user.user_simulator_base import STOP
 from tau2.utils.response import extract_json_from_llm_response
+from tau2.voice.device_controller import CustomerDeviceController
 
 TERMINAL_PROMPT = """TASK
 You are an independent conversation evaluator. Do not play either person.
@@ -118,10 +119,13 @@ QUESTION_ONLY_EVIDENCE = re.compile(
 
 
 class QualifiedCallerBackend:
-    def __init__(self, backend, scenario):
+    def __init__(self, backend, scenario, *, device_grounding=False):
         self.backend = backend
         self.scenario = scenario
         self.decisions = []
+        self.device_controller = (
+            CustomerDeviceController(scenario) if device_grounding else None
+        )
 
     def __getattr__(self, name):
         return getattr(self.backend, name)
@@ -131,6 +135,8 @@ class QualifiedCallerBackend:
         turns = []
         for message in messages:
             if isinstance(message, SystemMessage):
+                continue
+            if message.role == "tool" and message.requestor != "user":
                 continue
             row = {
                 "speaker": {
@@ -145,6 +151,10 @@ class QualifiedCallerBackend:
                 ],
                 "tool_call_id": getattr(message, "id", None),
             }
+            if message.role == "tool":
+                row.update(
+                    error=message.error, execution_status=message.execution_status
+                )
             # Voice history stores heard text in frame-sized fragments. Merge
             # adjacent speech while preserving speaker and tool boundaries.
             if (
@@ -370,6 +380,28 @@ class QualifiedCallerBackend:
     def generate(self, model, messages, *, call_name=None, **kwargs):
         if call_name != "user_streaming_response":
             return self.backend.generate(model, messages, call_name=call_name, **kwargs)
+        if self.device_controller is not None:
+            response = self.device_controller.respond(
+                self.conversation(messages),
+                kwargs.get("tools") or [],
+                "\n\n".join(
+                    message.content or ""
+                    for message in messages
+                    if isinstance(message, SystemMessage)
+                ),
+            )
+            if response is not None:
+                if response.is_tool_call():
+                    self.validate_customer_calls(response, kwargs.get("tools") or [])
+                self.decisions.append(
+                    {
+                        "decision": "CONTINUE",
+                        "reasoning": "Handle the pending heard device request using actual customer tool observations.",
+                        "agent_evidence": None,
+                        **response.raw_data,
+                    }
+                )
+                return response
         decision, assessment = self.assess(model, messages)
         if decision != "CONTINUE":
             return AssistantMessage(

@@ -159,7 +159,10 @@ def run_local_task(
         caller_backend = lane.for_role("caller") if lane else backend
         if profile.execution.caller_policy == "terminal-v2":
             caller_backend = QualifiedCallerBackend(
-                caller_backend, str(task.user_scenario)
+                caller_backend,
+                str(task.user_scenario),
+                device_grounding=profile.execution.device_grounding
+                and domain == "telecom",
             )
         agent = SpeechSwiftAgent(
             environment.get_tools(),
@@ -238,6 +241,7 @@ def run_local_task(
                     "wall_timeout_seconds": wall_timeout,
                     "clock_mode": profile.execution.mode,
                     "caller_idle_seconds": profile.execution.caller_idle_seconds,
+                    "device_grounding": profile.execution.device_grounding,
                     "qualification": qualification,
                     "complexity": complexity,
                     "tick_seconds": 0.05,

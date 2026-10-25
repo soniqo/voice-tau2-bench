@@ -41,7 +41,7 @@ Ce petit échantillon déterministe utilise un appelant et un juge locaux. Il ne
 
 L’échantillon 12B est incomplet : le test télécom a rencontré une erreur d’inférence native et reste non noté. Test vocal contrôlé avec 12B : **1.0** pour l’écriture correcte en base et **0.0** lors de la réévaluation d’une écriture erronée. [Paramètres validés](docs/validation/gemma4-12b-voice-e2e.md). La demande de l’appelant est fixe et ce test ne contribue pas au score du benchmark. Les essais par domaine utilisent l’appelant génératif ; les rapports liés indiquent chaque révision du runtime.
 
-Les reprises V2 restent diagnostiques : un refus dans le domaine aérien a obtenu **1.0** pour une base inchangée ; le commerce a dépassé le délai et les télécommunications ont révélé des défauts de contrôle de l’appelant. Le **pilote réservé de 18 appels est incomplet**. Ces essais ne permettent pas d’établir un taux de réussite global du modèle. [Résultats et paramètres](docs/validation/caller-rerun.md).
+La version locale v2 répond désormais aux questions sur l’appareil télécom à partir des observations réelles des outils du téléphone. Ses diagnostics et l’avancement du pilote réservé sont présentés séparément des scores historiques v1. [Validation et paramètres actuels](docs/validation/grounded-caller.md).
 
 `soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
 

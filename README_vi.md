@@ -41,7 +41,7 @@ Mẫu nhỏ xác định này dùng người gọi và giám khảo cục bộ. 
 
 Mẫu 12B chưa hoàn tất: tác vụ viễn thông gặp lỗi suy luận native nên chưa được chấm điểm. Kiểm tra giọng nói 12B có kiểm soát: **1.0** cho lần ghi cơ sở dữ liệu đúng và **0.0** khi chấm lại một lần ghi sai. [Tham số đã kiểm chứng](docs/validation/gemma4-12b-voice-e2e.md). Đầu vào người gọi được cố định; kiểm tra này không tính vào điểm đánh giá. Các lần chạy theo miền dùng người gọi sinh văn bản và báo cáo liên kết ghi lại từng phiên bản runtime.
 
-Các lần chạy lại V2 vẫn mang tính chẩn đoán: một ca từ chối hàng không đạt **1.0** vì cơ sở dữ liệu không đổi; bán lẻ hết thời gian và viễn thông phát hiện lỗi điều khiển người gọi. **Đợt thử nghiệm giữ riêng gồm 18 cuộc gọi chưa hoàn tất**. Các lần chạy này chưa xác định được tỷ lệ vượt qua tổng thể của mô hình. [Kết quả và tham số](docs/validation/caller-rerun.md).
+v2 cục bộ hiện trả lời các câu hỏi về thiết bị viễn thông từ kết quả quan sát thực tế của công cụ điện thoại. Kết quả chẩn đoán và tiến độ thử nghiệm giữ riêng được báo cáo tách biệt với điểm v1 trước đây. [Xác minh và tham số hiện tại](docs/validation/grounded-caller.md).
 
 `soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
 

@@ -15,6 +15,7 @@ class ExecutionSettings(BaseModel):
     caller_policy: Literal["upstream", "terminal-v2"] = "upstream"
     require_qualification: bool = False
     tool_guard: bool = False
+    device_grounding: bool = False
     caller_idle_seconds: float = Field(default=5, ge=1, allow_inf_nan=False)
 
 

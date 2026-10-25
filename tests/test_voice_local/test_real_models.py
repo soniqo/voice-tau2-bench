@@ -12,7 +12,12 @@ import numpy as np
 import pytest
 from jiwer import wer
 
-from tau2.data_model.audio import AudioEncoding, AudioFormat, audio_bytes_to_string
+from tau2.data_model.audio import (
+    AudioData,
+    AudioEncoding,
+    AudioFormat,
+    audio_bytes_to_string,
+)
 from tau2.data_model.message import (
     AssistantMessage,
     SystemMessage,
@@ -161,6 +166,115 @@ def test_real_fp16_speech_full_large_v3_and_stateful_vad(runtime):
     probabilities = runtime.vad(framed, uuid.uuid4().hex, reset=True)
     assert len(probabilities) == len(framed) // 1024
     assert max(probabilities) > 0.5
+
+
+@pytest.mark.parametrize(
+    "enabled,connected", [(False, False), (True, False), (True, True)]
+)
+def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
+    runtime, tmp_path, enabled, connected
+):
+    """Actual device result -> VoxCPM2 -> telephone audio -> full Whisper.
+
+    A functional voice check; no domain score and no caller model may supply facts.
+    """
+    import json
+    import wave
+
+    from tau2.domains.telecom.environment import get_environment
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    environment = get_environment()
+    current = environment.user_tools.db.device
+    environment.user_tools.db.device = type(current).model_validate(
+        {
+            **current.model_dump(),
+            "vpn_enabled_setting": enabled,
+            "vpn_connected": connected,
+            "vpn_details": None,
+        }
+    )
+    tools = environment.get_user_tools()
+    caller = QualifiedCallerBackend(
+        runtime, "Follow the agent's device-check instructions.", device_grounding=True
+    )
+    history = [UserMessage(role="user", content="Are you currently using a VPN?")]
+    start = len(runtime.events)
+    request = caller.generate(
+        "gemma4-e4b-it", history, tools=tools, call_name="user_streaming_response"
+    )
+    assert (
+        len(request.tool_calls) == 1
+        and request.tool_calls[0].name == "check_vpn_status"
+    )
+    call = request.tool_calls[0]
+    observed = next(tool for tool in tools if tool.name == call.name)(**call.arguments)
+    reply = caller.generate(
+        "gemma4-e4b-it",
+        [
+            *history,
+            request,
+            ToolMessage(role="tool", requestor="user", id=call.id, content=observed),
+        ],
+        tools=tools,
+        call_name="user_streaming_response",
+    )
+    expected = (
+        "My VPN is connected."
+        if connected
+        else "My VPN is enabled in settings, but it is not connected."
+        if enabled
+        else "My VPN is disabled."
+    )
+    assert reply.content == expected
+    assert reply.raw_data["device_grounding"]["observations"][0]["text"] == observed
+    assert not any(event["operation"] == "chat" for event in runtime.events[start:])
+    synthesized = runtime.synthesize(
+        reply.content,
+        RuntimeTTSConfig(
+            model_id="voxcpm2",
+            voice_id="A natural adult male voice speaking American English.",
+            seed=42,
+        ),
+    )
+    telephone = AudioData(
+        data=audioop.ulaw2lin(audioop.lin2ulaw(pcm16(synthesized, 8000).data, 2), 2),
+        format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=8000),
+    )
+    recognized = runtime.transcribe(
+        telephone, RuntimeTranscriptionConfig(model="whisper-large-v3")
+    ).transcript
+    root = Path(os.environ.get("TAU_VOICE_DEVICE_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    name = f"vpn-enabled-{enabled}-connected-{connected}"
+    with wave.open(str(root / (name + ".wav")), "wb") as output:
+        output.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
+        output.writeframes(telephone.data)
+    (root / (name + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "tool": call.name,
+                "tool_result": observed,
+                "spoken": reply.content,
+                "transcript": recognized,
+                "device_grounding": reply.raw_data["device_grounding"],
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    text = re.sub(r"[^a-z ]", " ", recognized.lower())
+    if not enabled:
+        assert re.search(r"\bdisabled\b", text), recognized
+    elif not connected:
+        assert "enabled" in text and "not connected" in text, recognized
+    else:
+        assert "connected" in text and "not connected" not in text, recognized
 
 
 def test_real_streaming_tts_cancels_after_first_audio(runtime):

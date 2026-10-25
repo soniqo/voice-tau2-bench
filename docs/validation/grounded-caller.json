@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "scope": "Experimental caller implementation; functional checks are not domain scores.",
+  "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
+  "device_grounding": true,
+  "controller_policy": "device-observations-v1",
+  "offline": {
+    "tests_passed": 573,
+    "actual_model_tests_deselected": 13,
+    "lint": "passed",
+    "frozen_inputs": 64,
+    "tasks": 278,
+    "upstream_replays": 2
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 43,
+    "suite_sha256": "633ea95058d4132ab96faa09c55cdd9e319529a167ad7101d7fe65981f8244ad",
+    "report_sha256": "0ade9a6c566e92a18a0be82adaeddd3c53bd7f8f84bacd1363b53153a6a32aa7",
+    "cases": [
+      {
+        "id": "completed-action",
+        "passed": true
+      },
+      {
+        "id": "promised-action",
+        "passed": true
+      },
+      {
+        "id": "resolved-refusal",
+        "passed": true
+      },
+      {
+        "id": "refusal-before-follow-up",
+        "passed": true
+      },
+      {
+        "id": "agent-goodbye-with-pending-work",
+        "passed": true
+      },
+      {
+        "id": "partially-answered",
+        "passed": true
+      },
+      {
+        "id": "all-questions-answered",
+        "passed": true
+      },
+      {
+        "id": "caller-device-action",
+        "passed": true
+      },
+      {
+        "id": "caller-speed-test",
+        "passed": true
+      },
+      {
+        "id": "unknown-account",
+        "passed": true
+      },
+      {
+        "id": "customer-claim-is-not-agent-confirmation",
+        "passed": true
+      },
+      {
+        "id": "disclose-actual-goal",
+        "passed": true
+      },
+      {
+        "id": "customer-must-not-do-agent-work",
+        "passed": true
+      },
+      {
+        "id": "device-setting-is-not-connectivity",
+        "passed": true
+      },
+      {
+        "id": "partially-completed-actions",
+        "passed": true
+      },
+      {
+        "id": "verified-connectivity-completion",
+        "passed": true
+      },
+      {
+        "id": "full-tools-airplane-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-roaming-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-claimed-action-without-execution",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-repeat-after-device-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-unsolicited-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-already-off",
+        "passed": true
+      },
+      {
+        "id": "full-tools-persona-needs-reassurance",
+        "passed": true
+      },
+      {
+        "id": "full-tools-later-troubleshooting-read",
+        "passed": true
+      },
+      {
+        "id": "full-tools-streaming-vpn-question",
+        "passed": true
+      },
+      {
+        "id": "full-tools-unknown-plan-usage",
+        "passed": true
+      },
+      {
+        "id": "full-tools-vpn-after-account-and-speed-test",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-false-connected-false",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-true-connected-false",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-true-connected-true",
+        "passed": true
+      },
+      {
+        "id": "grounded-write-and-report-airplane_mode",
+        "passed": true
+      },
+      {
+        "id": "grounded-write-and-report-roaming_enabled",
+        "passed": true
+      },
+      {
+        "id": "grounded-observe-before-toggle",
+        "passed": true
+      },
+      {
+        "id": "grounded-observe-already-correct",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-stale-after-airplane-write",
+        "passed": true
+      },
+      {
+        "id": "grounded-agent-promise-not-customer-request",
+        "passed": true
+      },
+      {
+        "id": "grounded-unknown-mode-needs-clarification",
+        "passed": true
+      },
+      {
+        "id": "fact-paraphrase",
+        "passed": true
+      },
+      {
+        "id": "fact-wrong-amount",
+        "passed": true
+      },
+      {
+        "id": "fact-negation",
+        "passed": true
+      },
+      {
+        "id": "fact-promise",
+        "passed": true
+      },
+      {
+        "id": "fact-partial",
+        "passed": true
+      },
+      {
+        "id": "fact-caller-only",
+        "passed": true
+      }
+    ]
+  },
+  "functional_voice_checks": [
+    {
+      "case": "vpn-enabled-False-connected-False",
+      "tool": "check_vpn_status",
+      "tool_result": "VPN is turned OFF.",
+      "spoken": "My VPN is disabled.",
+      "transcript": "My VPN is disabled.",
+      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
+      "report_sha256": "58518d742ffd1f4ea4b4cbaec585e854142cec99259f813895bc65302414b57f"
+    },
+    {
+      "case": "vpn-enabled-True-connected-False",
+      "tool": "check_vpn_status",
+      "tool_result": "VPN is turned ON in settings, but currently not connected.",
+      "spoken": "My VPN is enabled in settings, but it is not connected.",
+      "transcript": "MyVPN is enabled in settings, but it is not connected.",
+      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
+      "report_sha256": "8bfb54e79164e7ddaabc2860c6a809d858692a74a7aa643fb2826d794864ddef"
+    },
+    {
+      "case": "vpn-enabled-True-connected-True",
+      "tool": "check_vpn_status",
+      "tool_result": "VPN is ON and connected (no specific details available).",
+      "spoken": "My VPN is connected.",
+      "transcript": "MyVPN is connected.",
+      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
+      "report_sha256": "2be067bba4a7f890f045ca77721ba94f4ac77e6e4ecc1e96efb32cabb6f18455"
+    }
+  ],
+  "native": {
+    "revision": "03e525fc7a42d71dafa5777dfe59264689c2b7cf+source-sha256:c8e7b9077752b9eea56ddbdbb4752db83ab2cf1a65d9d57a9dc555fcbf7f0caa",
+    "binary_sha256": "cc538f99363f066888436e953a64042421b40806ffcdd6e5dfa5f7e4e577dbbb",
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "spoken_diagnostic": {
+    "status": "pending_customer_action_audit",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+    "seed": 42,
+    "max_seconds": 600,
+    "wall_timeout": 1200,
+    "caller_idle_seconds": 15,
+    "scored": false
+  },
+  "heldout_pilot": {
+    "planned_calls": 18,
+    "status": "pending_spoken_diagnostic_audit",
+    "complete": false
+  }
+}

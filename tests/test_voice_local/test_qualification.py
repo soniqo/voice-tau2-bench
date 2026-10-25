@@ -50,7 +50,7 @@ def test_v2_requires_passing_matching_qualification(certificate):
 
 
 @pytest.mark.parametrize(
-    "change", ["failed", "missing", "duplicate", "model", "assets"]
+    "change", ["failed", "missing", "duplicate", "model", "assets", "device_grounding"]
 )
 def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, change):
     profile, provenance, report, path = certificate
@@ -62,6 +62,8 @@ def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, c
         report["cases"][0] = report["cases"][1]
     elif change == "model":
         profile.roles["caller"].model_id = "different caller"
+    elif change == "device_grounding":
+        profile.execution.device_grounding = False
     else:
         provenance["native"]["configuration"]["assets"]["pinned"] = "changed"
     path.write_text(json.dumps(report))
@@ -104,7 +106,7 @@ def single_case(monkeypatch, case):
     )
 
 
-def test_long_conversation_vpn_answer_without_observation_fails_qualification(
+def test_long_conversation_vpn_answer_is_replaced_with_an_actual_device_read(
     monkeypatch,
 ):
     case = next(
@@ -125,12 +127,13 @@ def test_long_conversation_vpn_answer_without_observation_fails_qualification(
             )
 
     report = qualification.qualify(CapturedReplies(), profile, provenance())
-    assert report["passed"] is False
+    assert report["passed"] is True
     row = report["cases"][0]
     assert row["actual_action"] == "continue"
-    assert row["final_action"] == "speak"
-    assert row["response"]["content"] == "No, I'm not using a VPN."
-    assert row["passed"] is False
+    assert row["final_action"] == "tool"
+    assert row["response"]["content"] is None
+    assert row["response"]["tool_calls"][0]["name"] == "check_vpn_status"
+    assert row["passed"] is True
 
 
 def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
@@ -208,6 +211,7 @@ def test_qualification_executes_real_device_write_with_full_customer_toolset(
         "reply": {
             "tool": "toggle_airplane_mode",
             "arguments": {},
+            "permitted_read": "check_network_status",
             "device_after": {"airplane_mode": False},
         },
     }

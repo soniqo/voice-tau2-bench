@@ -1497,6 +1497,9 @@ class VoiceStreamingUserSimulator(
                             id=msg.id,
                             role=msg.role,
                             content=msg.content,
+                            requestor=msg.requestor,
+                            error=msg.error,
+                            execution_status=msg.execution_status,
                         )
                     )
             elif isinstance(msg, SystemMessage):
