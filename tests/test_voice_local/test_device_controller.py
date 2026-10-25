@@ -467,10 +467,9 @@ def test_photo_concern_is_resolved_by_agent_reassurance_before_reboot():
     assert calls == ["reboot_device"]
 
 
-def test_phone_number_and_unknown_account_usage_stay_with_conversation_model():
+def test_unknown_account_usage_stays_with_conversation_model():
     controller = CustomerDeviceController("My phone number is 555-123-2002.")
     for question in [
-        "What is your phone number?",
         "Have you reached your plan's data limit?",
         "Have you received a payment request?",
     ]:
@@ -495,3 +494,180 @@ def test_role_flip_preserves_tool_failure_and_execution_status():
     flipped = caller._flip_roles_for_llm([original])[0]
     assert flipped.error and flipped.execution_status == "rejected"
     assert flipped.requestor == "user" and flipped.id == original.id
+
+
+def test_role_flip_preserves_incomplete_agent_speech_boundary():
+    from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
+
+    caller = object.__new__(VoiceStreamingUserSimulator)
+    partial = AssistantMessage(
+        role="assistant",
+        content="Which phone ",
+        is_final_chunk=False,
+        utterance_ids=["agent-turn"],
+        chunk_id=3,
+    )
+    flipped = caller._flip_roles_for_llm([partial])[0]
+    assert flipped.is_final_chunk is False
+    assert flipped.utterance_ids == ["agent-turn"]
+    assert flipped.chunk_id == 3
+
+
+def test_partial_phone_question_waits_without_inventing_a_device_request():
+    env, caller = setup(scenario="My phone number is 555-123-2002.")
+    history = [
+        UserMessage(
+            role="user",
+            content="Could you please tell me which phone ",
+            is_final_chunk=False,
+        )
+    ]
+    reply = generate(caller, env, history)
+    assert not reply.is_tool_call() and not (reply.content or "").strip()
+    assert reply.raw_data["device_grounding"]["action"] == "wait_for_agent_turn"
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Which phone number is experiencing the data issues?",
+        "Which of your phone numbers is experiencing this issue?",
+        "Which of your lines is experiencing the data issues?",
+    ],
+)
+def test_known_phone_question_does_not_turn_into_a_device_status_check(question):
+    env, caller = setup(
+        scenario="Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nFollow the agent instructions."
+    )
+    reply = generate(caller, env, [UserMessage(role="user", content=question)])
+    assert (
+        not reply.is_tool_call() and reply.content == "My phone number is 555-123-2002."
+    )
+    assert reply.raw_data["device_grounding"]["action"] == "known_phone"
+
+
+def test_merged_speech_retains_the_last_chunk_boundary_through_role_flipping():
+    from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
+
+    chunks = [
+        AssistantMessage(
+            role="assistant",
+            content="Which phone ",
+            is_final_chunk=False,
+            utterance_ids=["turn"],
+            chunk_id=0,
+        ),
+        AssistantMessage(
+            role="assistant",
+            content="number",
+            is_final_chunk=False,
+            utterance_ids=["turn"],
+            chunk_id=1,
+        ),
+    ]
+    caller = object.__new__(VoiceStreamingUserSimulator)
+    merged = AssistantMessage.merge_chunks(chunks)
+    flipped = caller._flip_roles_for_llm([merged])[0]
+    assert flipped.content == "Which phone number"
+    assert flipped.is_final_chunk is False and flipped.chunk_id is None
+    chunks.append(
+        AssistantMessage(
+            role="assistant",
+            content="? ",
+            is_final_chunk=True,
+            utterance_ids=["turn"],
+            chunk_id=2,
+        )
+    )
+    final = caller._flip_roles_for_llm([AssistantMessage.merge_chunks(chunks)])[0]
+    assert final.is_final_chunk is True and final.chunk_id is None
+
+
+def test_complete_question_during_speech_can_still_trigger_a_device_check():
+    env, caller = setup()
+    reply = generate(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user",
+                content="Is airplane mode on? While you check,",
+                is_final_chunk=False,
+            )
+        ],
+    )
+    assert reply.tool_calls[0].name == "check_network_status"
+
+
+@pytest.mark.parametrize(
+    "silence,expected", [(0, ""), (14.95, ""), (15, "Are you still there?")]
+)
+def test_incomplete_turn_waits_but_retains_the_silence_check_in(silence, expected):
+    env, caller = setup()
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(
+                role="user",
+                content="Could you please tell me which phone ",
+                is_final_chunk=False,
+            )
+        ],
+        tools=env.get_user_tools(),
+        call_name="user_streaming_response",
+        agent_silence_seconds=silence,
+        caller_idle_seconds=15,
+    )
+    assert reply.content == expected and not reply.is_tool_call()
+
+
+def test_waiting_after_an_answer_does_not_repeat_the_phone_number():
+    env, caller = setup(scenario="My phone number is 555-123-9876.")
+    history = [
+        UserMessage(role="user", content="What is your phone number?"),
+        AssistantMessage(role="assistant", content="My phone number is 555-123-9876."),
+    ]
+    reply = caller.generate(
+        "model",
+        history,
+        tools=env.get_user_tools(),
+        call_name="user_streaming_response",
+        agent_silence_seconds=15,
+    )
+    assert reply.content == "Are you still there?" and not reply.is_tool_call()
+
+
+def test_phone_answer_uses_only_known_info_and_admits_missing_information():
+    env, caller = setup(
+        scenario="Known info:\nYou don't know your phone number.\nTask instructions:\nAsk the agent to call 555-000-9999 after fixing your internet."
+    )
+    reply = generate(
+        caller,
+        env,
+        [UserMessage(role="user", content="Which phone number is affected?")],
+    )
+    assert reply.content == "I don't know that phone number."
+    assert not reply.is_tool_call()
+
+
+def test_listener_waits_for_a_question_without_querying_a_model():
+    from types import SimpleNamespace
+
+    from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
+
+    caller = object.__new__(VoiceStreamingUserSimulator)
+    caller.wait_for_complete_agent_turns = True
+    state = SimpleNamespace(
+        is_talking=False,
+        input_ongoing_speech_duration=lambda: 1,
+        input_from_environment=lambda: False,
+        input_turn_taking_buffer=[
+            AssistantMessage(
+                role="assistant",
+                content="Hello, thank you for calling. Could you",
+                is_final_chunk=False,
+            )
+        ],
+    )
+    action = caller._compute_turn_taking_action(state)
+    assert action.action == "wait"

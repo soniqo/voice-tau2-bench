@@ -908,6 +908,110 @@
           "clarify"
         ]
       }
+    },
+    {
+      "id": "full-tools-incomplete-phone-turn",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you please tell me which phone ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "full-tools-incomplete-greeting",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hello, thank you for calling. Could you ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "full-tools-known-phone-plural",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which of your phone numbers is experiencing this issue?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-known-affected-line",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which of your lines is experiencing the data issues?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-unknown-phone",
+      "scenario": "Known info:\nYou do not know your phone number.\nTask instructions:\nRestore your internet.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which phone number is affected?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "full-tools-complete-question-during-speech",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Is airplane mode on? While you check,",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_network_status",
+        "arguments": {}
+      }
     }
   ],
   "judge": [

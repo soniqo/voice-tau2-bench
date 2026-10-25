@@ -115,6 +115,11 @@ DEVICE_HINT = re.compile(
     r"mobile data|data saver|signal|sim card|reboot|restart|mms|permissions?)\b",
     re.I,
 )
+PHONE_QUESTION = re.compile(
+    r"\b(?:phone|mobile|telephone|contact) numbers?\b|"
+    r"\bwhich\b.{0,35}\blines?\b.{0,60}\b(?:issue|problem|affect|experienc)",
+    re.I,
+)
 REQUEST = re.compile(
     r"\b(?:(?:could|can|would|will) you|please|let's|asking (?:if|whether)|you (?:need to|should|must))\b|^(?:is|are|what|which|does|do|have|did|can|check|"
     r"turn|switch|enable|disable|connect|disconnect|run|try|reboot|restart|reset|set|reseat|grant|allow)\b",
@@ -253,7 +258,7 @@ def requested_steps(text):
         ) and not re.search(r"\b(?:could|can|would|will) you\b", clause, re.I):
             continue
         if re.search(
-            r"\b(?:phone number|account number|data limit|data plan|plan usage|data usage|billing)\b",
+            r"\b(?:phone numbers?|account numbers?|data limit|data plan|plan usage|data usage|billing)\b",
             clause,
             re.I,
         ) and not re.search(r"\b(?:vpn|airplane|data saver|wi[- ]?fi)\b", clause, re.I):
@@ -455,7 +460,15 @@ class CustomerDeviceController:
     def __init__(self, scenario):
         self.scenario = scenario
 
-    def respond(self, conversation, tools, system_text=""):
+    def respond(
+        self,
+        conversation,
+        tools,
+        system_text="",
+        *,
+        agent_silence_seconds=None,
+        caller_idle_seconds=15,
+    ):
         heard = [
             (i, row["content"])
             for i, row in enumerate(conversation)
@@ -464,6 +477,46 @@ class CustomerDeviceController:
         if not heard:
             return None
         position, statement = heard[-1]
+        context = {"policy": "device-observations-v1", "heard_request": statement}
+        # Only heard words and caller-owned timing control this wait. A complete
+        # question permits a response during speech; a prefix is not a request.
+        last = conversation[-1]
+        partial = (
+            not conversation[position].get("is_final_chunk", True)
+            and "?" not in statement
+        )
+        if last["speaker"] != "customer_tool" and (
+            partial
+            or (
+                last["speaker"] == "customer"
+                and not last.get("tool_calls")
+                and agent_silence_seconds is not None
+            )
+        ):
+            if (
+                agent_silence_seconds is not None
+                and agent_silence_seconds >= caller_idle_seconds
+            ):
+                return self.speak("Are you still there?", context, "silence_check_in")
+            return self.speak("", context, "wait_for_agent_turn")
+        if PHONE_QUESTION.search(statement) and REQUEST.search(statement):
+            known = self.scenario
+            if match := re.search(
+                r"Known info:\s*(.*?)(?:Task instructions:|$)", known, re.I | re.S
+            ):
+                known = match.group(1)
+            number = re.search(
+                r"\b(?:phone number|my number)\s*(?:is\s*|:\s*)?(\+?\d[\d ()-]{6,}\d)",
+                known,
+                re.I,
+            )
+            return self.speak(
+                f"My phone number is {number.group(1).strip()}."
+                if number
+                else "I don't know that phone number.",
+                {**context, "source": "caller_scenario.known_info"},
+                "known_phone" if number else "unknown_phone",
+            )
         steps, ambiguous = requested_steps(statement)
         if (
             not steps

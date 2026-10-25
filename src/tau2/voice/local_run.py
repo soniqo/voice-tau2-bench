@@ -206,6 +206,8 @@ def run_local_task(
             if sampled.backchannel_min_threshold
             else None,
             interruption_check_interval=40,
+            wait_for_complete_agent_turns=profile.execution.device_grounding
+            and domain == "telecom",
         )
         orchestrator_type = LocalV2Orchestrator if clock else FullDuplexOrchestrator
         orchestrator = orchestrator_type(

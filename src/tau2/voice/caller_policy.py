@@ -150,6 +150,7 @@ class QualifiedCallerBackend:
                     for call in getattr(message, "tool_calls", None) or []
                 ],
                 "tool_call_id": getattr(message, "id", None),
+                "is_final_chunk": getattr(message, "is_final_chunk", True),
             }
             if message.role == "tool":
                 row.update(
@@ -169,6 +170,7 @@ class QualifiedCallerBackend:
                     for part in (turns[-1]["content"] or "", row["content"] or "")
                     if part.strip()
                 )
+                turns[-1]["is_final_chunk"] = row["is_final_chunk"]
             else:
                 turns.append(row)
         return turns
@@ -389,6 +391,8 @@ class QualifiedCallerBackend:
                     for message in messages
                     if isinstance(message, SystemMessage)
                 ),
+                agent_silence_seconds=kwargs.pop("agent_silence_seconds", None),
+                caller_idle_seconds=kwargs.pop("caller_idle_seconds", 15),
             )
             if response is not None:
                 if response.is_tool_call():

@@ -106,6 +106,26 @@ def single_case(monkeypatch, case):
     )
 
 
+def test_qualification_replays_incomplete_speech_without_speaking(monkeypatch):
+    case = {
+        "id": "partial-turn",
+        "scenario": "Restore my internet.",
+        "toolset": "telecom",
+        "history": [["user", "Which phone ", {"is_final_chunk": False}]],
+        "decision": "CONTINUE",
+        "reply": {"no_speech": True},
+    }
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            assert kwargs["call_name"].startswith("caller_terminal_v2")
+            return terminal()
+
+    row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
+    assert row["passed"] is True and row["final_action"] == "wait"
+
+
 def test_long_conversation_vpn_answer_is_replaced_with_an_actual_device_read(
     monkeypatch,
 ):

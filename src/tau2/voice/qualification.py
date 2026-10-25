@@ -101,9 +101,16 @@ def fixture_history(history):
     for index, event in enumerate(history):
         role, text, *metadata = event
         if role != "tool":
+            speech_metadata = metadata[0] if metadata else {}
             messages.append(
                 (UserMessage if role == "user" else AssistantMessage)(
-                    role=role, content=text
+                    role=role,
+                    content=text,
+                    **{
+                        key: speech_metadata[key]
+                        for key in ("is_final_chunk", "utterance_ids", "chunk_id")
+                        if key in speech_metadata
+                    },
                 )
             )
             continue
@@ -248,6 +255,8 @@ def qualify(backend, profile, provenance):
                     else "tool"
                     if response.is_tool_call()
                     else "speak"
+                    if (response.content or "").strip()
+                    else "wait"
                 )
                 row["passed"] &= row["final_action"] != "stop"
                 if "tool" in expected:
@@ -296,6 +305,8 @@ def qualify(backend, profile, provenance):
                                 not report.is_tool_call()
                                 and report.content == expected["spoken_result"]
                             )
+                elif expected.get("no_speech"):
+                    row["passed"] &= row["final_action"] == "wait"
                 elif "device_unchanged" in expected:
                     device = fixture_environment.user_tools.db.device
                     row["device_after"] = {
