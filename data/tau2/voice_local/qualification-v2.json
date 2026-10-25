@@ -1012,6 +1012,39 @@
         "tool": "check_network_status",
         "arguments": {}
       }
+    },
+    {
+      "id": "full-tools-describe-reported-symptoms",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I'm here. I've located your account. I see that your line is active and roaming is enabled. Could you please describe what happens when you try to use your data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "slow"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-check-before-describing",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Please check whether mobile data is enabled and describe what happens."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_network_status",
+        "arguments": {}
+      }
     }
   ],
   "judge": [

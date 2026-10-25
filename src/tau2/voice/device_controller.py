@@ -253,6 +253,16 @@ def requested_steps(text):
     for clause in clauses(text):
         if not REQUEST.search(clause):
             continue
+        # Describing the reported problem is conversational. A topic word such
+        # as "data" does not turn that question into a new settings inspection.
+        if (
+            re.search(r"\bdescribe\b", clause, re.I)
+            and re.search(r"\b(?:problem|issue|symptoms|what happens)\b", clause, re.I)
+            and not re.search(
+                r"\b(?:check|test|turn|set|reset|enable|disable)\b", clause, re.I
+            )
+        ):
+            continue
         if re.search(
             r"\b(?:would you like me|shall i|can i|i'll|i will|let me)\b", clause, re.I
         ) and not re.search(r"\b(?:could|can|would|will) you\b", clause, re.I):

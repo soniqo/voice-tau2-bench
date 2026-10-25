@@ -499,3 +499,22 @@ def test_caller_discards_a_reply_superseded_before_it_was_spoken():
     assert caller._generation is None
     assert caller.stale_generation_count == 1
     assert len(state.input_turn_taking_buffer) == 2
+
+
+def test_private_agent_tool_call_is_silent_for_caller_turn_taking():
+    from tau2.data_model.message import ToolCall
+
+    agent = SpeechSwiftAgent([], "policy", backend=object())
+    state = agent.get_init_state()
+    reply = AssistantMessage(
+        role="assistant",
+        tool_calls=[
+            ToolCall(id="lookup", name="get_details_by_id", arguments={"id": "L1002"})
+        ],
+    )
+    agent._events.put(("tools", agent._epoch, reply))
+    delivered = agent._drain_events(state)
+    assert delivered.tool_calls == reply.tool_calls
+    assert delivered.contains_speech is False
+    assert state.messages[-1].contains_speech is False
+    agent.stop()

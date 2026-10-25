@@ -69,12 +69,12 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 49 checks cover completed versus promised work, required follow-ups after a
+The 51 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Twenty-seven checks use the full 30-tool telecom customer interface, including real
+Twenty-nine checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
@@ -86,7 +86,9 @@ opposite VPN states, spoken reports after real writes, reads before toggles,
 already-correct settings, stale observations after writes, ambiguous modes and
 agent promises that do not request customer actions. Six further checks cover
 unfinished greetings/questions, known and unknown phone numbers, affected-line
-questions and responding to a complete question while speech continues. Historical 32/33/43-check
+questions and responding to a complete question while speech continues. Two more
+distinguish describing an already-reported symptom from explicitly checking a
+device setting before describing it. Historical 32/33/43/49-check
 reports do not qualify the expanded suite or changed caller condition.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
@@ -133,6 +135,9 @@ a complete question can still prompt a response during agent speech. After the
 configured idle interval it can ask whether the agent is still there. Phone-number
 questions use only the number explicitly supplied in the caller's known information;
 an unknown number is reported as unknown, without a device check.
+Agent tool calls remain silent and do not reset the caller's speech timer.
+Describing the original reported symptoms stays with the conversation model;
+an explicit device check still requires the actual customer tool result.
 
 Other conversation, caller goals, account information, and business decisions still use
 the local caller model. This finite English device adapter is an explicit

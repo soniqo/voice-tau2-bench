@@ -369,6 +369,7 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             elif kind == "speech_done":
                 self._speech_done = True
             elif kind == "tools":
+                value = value.model_copy(update={"contains_speech": False})
                 state.messages.append(value)
                 tool_message = value
                 self._transfer_pending = any(

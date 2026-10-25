@@ -76,15 +76,18 @@ TOOL_ROUTE_PROMPT = """You decide how the CUSTOMER should respond next in a phon
 Return only TOOL or SPEAK. Do not play the service agent.
 Read the latest heard request and apply these rules in order:
 1. SPEAK if the persona requires clarification or reassurance before acting.
-2. SPEAK if an actual customer_tool observation already answers the question or
+2. SPEAK when asked to describe the original reported problem and the scenario
+   already supplies its symptoms. That is not a new settings check. Original
+   symptoms do not establish current connectivity after a device change.
+3. SPEAK if an actual customer_tool observation already answers the question or
    shows the requested setting is already correct. A toggle reverses a setting;
    repeating an already satisfied instruction must not toggle it back.
-3. TOOL if answering the agent's question requires an unobserved device fact
+4. TOOL if answering the agent's question requires an unobserved device fact
    that a declared customer read tool can check. A question is a request to check
    when the customer does not yet have the device observation.
-4. TOOL if the agent requested a pending device action or test that a declared
+5. TOOL if the agent requested a pending device action or test that a declared
    customer tool can perform. A customer claim is not proof of tool execution.
-5. Otherwise SPEAK: introduce the goal after a greeting, answer from known
+6. Otherwise SPEAK: introduce the goal after a greeting, answer from known
    scenario facts or actual tool results, or admit missing information.
 Only customer_tool records establish device observations. First-person
 service_agent statements describe the other person, not the customer's device.

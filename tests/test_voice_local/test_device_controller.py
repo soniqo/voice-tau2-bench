@@ -479,6 +479,18 @@ def test_unknown_account_usage_stays_with_conversation_model():
         )
 
 
+def test_describing_the_reported_problem_does_not_request_a_device_setting_read():
+    env, caller = setup()
+    controller = caller.device_controller
+    statement = "I'm here. I've located your account. I see that your line is active and roaming is enabled. Could you please describe what happens when you try to use your data?"
+    assert (
+        controller.respond(
+            [{"speaker": "service_agent", "content": statement}], env.get_user_tools()
+        )
+        is None
+    )
+
+
 def test_role_flip_preserves_tool_failure_and_execution_status():
     from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
 
