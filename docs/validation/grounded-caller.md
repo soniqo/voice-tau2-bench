@@ -15,7 +15,7 @@ qualification and a separate result cohort.
 
 ## Verified checks
 
-- **573 offline tests** pass, including real fixture-device reads and mutations,
+- **576 offline tests** pass, including real fixture-device reads and mutations,
   opposite initial/desired states, no-op requests, stale observations, compound
   instructions, app permission arguments, APN reset timing and persona concerns.
 - All **64 frozen inputs / 278 tasks** verify. Both upstream replay rewards match,
@@ -51,7 +51,8 @@ read. An observed ON state permits the toggle; an observed OFF state produces
 an unchanged-state report. Every customer write invalidates earlier observations.
 Results of rejected or failed calls are not accepted as status evidence.
 
-Requests involving multiple steps retain their order. Checking VPN after an
+Requests involving multiple steps retain their order. Vague follow-ups repeat the
+previous actual speed/MMS check when known, or request clarification. Checking VPN after an
 airplane-mode change performs a new read. Parameters for app permissions, APN
 names and network modes come from the heard instruction. Unsupported or
 ambiguous instructions get clarification. An agent saying it will perform its

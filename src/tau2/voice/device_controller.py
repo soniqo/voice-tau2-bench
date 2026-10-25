@@ -465,6 +465,39 @@ class CustomerDeviceController:
             return None
         position, statement = heard[-1]
         steps, ambiguous = requested_steps(statement)
+        if (
+            not steps
+            and not ambiguous
+            and re.search(
+                r"\b(?:does|is)\s+(?:it|that)\s+(?:work|working|better|fixed)\b|"
+                r"\b(?:try|test|check)\s+(?:it|that|again)\b|\bhow fast\b",
+                statement,
+                re.I,
+            )
+            and not re.search(
+                r"\b(?:payment|account|bill|order|booking)\b", statement, re.I
+            )
+        ):
+            previous_test = next(
+                (
+                    call["name"]
+                    for row in reversed(conversation)
+                    if row["speaker"] == "customer"
+                    for call in reversed(row.get("tool_calls", []))
+                    if call["name"] in {"run_speed_test", "can_send_mms"}
+                ),
+                None,
+            )
+            if previous_test:
+                steps = [
+                    Step(
+                        "mms" if previous_test == "can_send_mms" else "speed",
+                        previous_test,
+                        fresh=True,
+                    )
+                ]
+            elif any(row["speaker"] == "customer_tool" for row in conversation):
+                ambiguous = True
         if not steps and not ambiguous:
             if DEVICE_HINT.search(statement) and re.search(
                 r"\b(?:i'll|i will|let me)\b", statement, re.I

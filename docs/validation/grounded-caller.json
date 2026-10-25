@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "scope": "Experimental caller implementation; functional checks are not domain scores.",
-  "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
+  "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
   "device_grounding": true,
   "controller_policy": "device-observations-v1",
   "offline": {
-    "tests_passed": 573,
+    "tests_passed": 576,
     "actual_model_tests_deselected": 13,
     "lint": "passed",
     "frozen_inputs": 64,
@@ -16,7 +16,7 @@
     "passed": true,
     "checks": 43,
     "suite_sha256": "633ea95058d4132ab96faa09c55cdd9e319529a167ad7101d7fe65981f8244ad",
-    "report_sha256": "0ade9a6c566e92a18a0be82adaeddd3c53bd7f8f84bacd1363b53153a6a32aa7",
+    "report_sha256": "50707936f983978e21f9fbb509c720e440c0c2307ddf5c3af468d51460d78a9c",
     "cases": [
       {
         "id": "completed-action",
@@ -199,8 +199,8 @@
       "tool_result": "VPN is turned OFF.",
       "spoken": "My VPN is disabled.",
       "transcript": "My VPN is disabled.",
-      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
-      "report_sha256": "58518d742ffd1f4ea4b4cbaec585e854142cec99259f813895bc65302414b57f"
+      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+      "report_sha256": "8fbdf018226ebec375d9a2a2467c32152b7e4b4f8e899b00fbfa28c9628d671a"
     },
     {
       "case": "vpn-enabled-True-connected-False",
@@ -208,8 +208,8 @@
       "tool_result": "VPN is turned ON in settings, but currently not connected.",
       "spoken": "My VPN is enabled in settings, but it is not connected.",
       "transcript": "MyVPN is enabled in settings, but it is not connected.",
-      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
-      "report_sha256": "8bfb54e79164e7ddaabc2860c6a809d858692a74a7aa643fb2826d794864ddef"
+      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+      "report_sha256": "357845e5b76c58a6ab0e13c15864ef8658bcac173ba81652d82e4c4eb86566c6"
     },
     {
       "case": "vpn-enabled-True-connected-True",
@@ -217,8 +217,8 @@
       "tool_result": "VPN is ON and connected (no specific details available).",
       "spoken": "My VPN is connected.",
       "transcript": "MyVPN is connected.",
-      "source_sha256": "35823fafcdf29c7c841be360e01e7c6ed6b1e3860271f71f96e436263193e322",
-      "report_sha256": "2be067bba4a7f890f045ca77721ba94f4ac77e6e4ecc1e96efb32cabb6f18455"
+      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+      "report_sha256": "f4233caeea9d0088d535e6e62c35f46c1afeefa118ad1bd967087ddf8f732ee1"
     }
   ],
   "native": {

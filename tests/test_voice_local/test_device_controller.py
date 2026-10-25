@@ -343,6 +343,33 @@ def test_fresh_test_request_does_not_reuse_an_earlier_speed_result():
     assert calls == ["run_speed_test"]
 
 
+@pytest.mark.parametrize(
+    "tool,instruction",
+    [
+        ("run_speed_test", "Please run a speed test."),
+        ("can_send_mms", "Can you send an MMS message?"),
+    ],
+)
+def test_vague_followup_repeats_the_actual_previous_functional_check(tool, instruction):
+    env, caller = setup()
+    history = [UserMessage(role="user", content=instruction)]
+    report, calls = complete(caller, env, history)
+    assert calls == [tool]
+    history.extend([report, UserMessage(role="user", content="Does it work now?")])
+    _, calls = complete(caller, env, history)
+    assert calls == [tool]
+
+
+def test_vague_followup_without_known_test_requires_clarification():
+    env, caller = setup()
+    history = [UserMessage(role="user", content="Please check your network status.")]
+    report, _ = complete(caller, env, history)
+    history.extend([report, UserMessage(role="user", content="Does it work now?")])
+    reply = generate(caller, env, history)
+    assert not reply.is_tool_call()
+    assert reply.raw_data["device_grounding"]["action"] == "clarify"
+
+
 def test_exact_network_mode_is_taken_only_from_the_heard_request():
     env, caller = setup({"network_mode_preference": "2g_only"})
     history = [
