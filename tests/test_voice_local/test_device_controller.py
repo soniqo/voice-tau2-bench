@@ -298,19 +298,29 @@ def test_write_and_read_in_one_request_does_not_change_the_setting_only_being_ch
     assert "disconnect_vpn" not in calls
 
 
-def test_coordinated_device_checks_report_both_actual_observations():
+@pytest.mark.parametrize(
+    "question,second_tool,second_fact",
+    [
+        (
+            "Please check your mobile data and network mode.",
+            "check_network_mode_preference",
+            "Network Mode Preference",
+        ),
+        (
+            "Please check your mobile data and speed test.",
+            "run_speed_test",
+            "Speed Test Result",
+        ),
+    ],
+)
+def test_coordinated_device_checks_report_both_actual_observations(
+    question, second_tool, second_fact
+):
     env, caller = setup()
-    history = [
-        UserMessage(
-            role="user", content="Please check your mobile data and network mode."
-        )
-    ]
+    history = [UserMessage(role="user", content=question)]
     reply, calls = complete(caller, env, history)
-    assert calls == ["check_network_status", "check_network_mode_preference"]
-    assert (
-        "Mobile Data Enabled" in reply.content
-        and "Network Mode Preference" in reply.content
-    )
+    assert calls == ["check_network_status", second_tool]
+    assert "Mobile Data Enabled" in reply.content and second_fact in reply.content
 
 
 @pytest.mark.parametrize(
@@ -479,16 +489,108 @@ def test_unknown_account_usage_stays_with_conversation_model():
         )
 
 
-def test_describing_the_reported_problem_does_not_request_a_device_setting_read():
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "I'm here. I've located your account. I see that your line is active and roaming is enabled. Could you please describe what happens when you try to use your data?",
+        "I see that your line is roaming enabled. Could you please tell me more about the issue you are experiencing with your mobile data?",
+    ],
+)
+def test_describing_the_reported_problem_does_not_request_a_device_setting_read(
+    statement,
+):
     env, caller = setup()
     controller = caller.device_controller
-    statement = "I'm here. I've located your account. I see that your line is active and roaming is enabled. Could you please describe what happens when you try to use your data?"
     assert (
         controller.respond(
             [{"speaker": "service_agent", "content": statement}], env.get_user_tools()
         )
         is None
     )
+
+
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("Is your mobile data working now?", "run_speed_test"),
+        ("Could you run a speed test on your mobile data?", "run_speed_test"),
+        ("Can you send MMS over mobile data now?", "can_send_mms"),
+        ("Could you try your data again?", "run_speed_test"),
+        ("Is your internet connection working now?", "run_speed_test"),
+    ],
+)
+def test_functional_questions_test_service_rather_than_reading_enabled_setting(
+    question, expected
+):
+    env, caller = setup({"airplane_mode": True, "data_enabled": True})
+    history = [UserMessage(role="user", content=question)]
+    reply = generate(caller, env, history)
+    assert reply.tool_calls[0].name == expected
+    execute(env, history, reply)
+    report = generate(caller, env, history)
+    assert "No Connection" in report.content or "cannot" in report.content.lower()
+    assert env.user_tools.db.device.airplane_mode is True
+
+
+def test_enabling_data_for_mms_still_changes_the_requested_setting():
+    env, caller = setup({"data_enabled": False})
+    reply, calls = complete(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user", content="Please enable mobile data so I can send MMS."
+            )
+        ],
+    )
+    assert calls == ["check_network_status", "toggle_data"]
+    assert env.user_tools.db.device.data_enabled is True
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Could you please tell me where you are using your mobile data?",
+        "I will run a speed test on the account, could you please tell me where you are using your mobile data?",
+    ],
+)
+def test_location_question_with_data_topic_stays_with_conversation(question):
+    env, caller = setup(scenario="I am using my mobile data in France.")
+    assert (
+        caller.device_controller.respond(
+            [
+                {
+                    "speaker": "service_agent",
+                    "content": question,
+                }
+            ],
+            env.get_user_tools(),
+        )
+        is None
+    )
+
+
+def test_negated_functional_test_never_runs():
+    env, caller = setup()
+    reply = generate(
+        caller,
+        env,
+        [UserMessage(role="user", content="Please don't run a speed test.")],
+    )
+    assert not reply.is_tool_call()
+    assert reply.raw_data["device_grounding"]["action"] == "clarify"
+
+
+def test_new_explicit_speed_test_request_does_not_reuse_an_old_result():
+    env, caller = setup({"airplane_mode": True})
+    history = [UserMessage(role="user", content="Please run a speed test.")]
+    report, calls = complete(caller, env, history)
+    assert calls == ["run_speed_test"]
+    history.extend(
+        [report, UserMessage(role="user", content="Please run a speed test.")]
+    )
+    reply = generate(caller, env, history)
+    assert reply.tool_calls and reply.tool_calls[0].name == "run_speed_test"
 
 
 def test_role_flip_preserves_tool_failure_and_execution_status():
@@ -545,6 +647,7 @@ def test_partial_phone_question_waits_without_inventing_a_device_request():
         "Which phone number is experiencing the data issues?",
         "Which of your phone numbers is experiencing this issue?",
         "Which of your lines is experiencing the data issues?",
+        "Which line are you using for your data in France?",
     ],
 )
 def test_known_phone_question_does_not_turn_into_a_device_status_check(question):

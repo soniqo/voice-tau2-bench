@@ -76,9 +76,9 @@ TOOL_ROUTE_PROMPT = """You decide how the CUSTOMER should respond next in a phon
 Return only TOOL or SPEAK. Do not play the service agent.
 Read the latest heard request and apply these rules in order:
 1. SPEAK if the persona requires clarification or reassurance before acting.
-2. SPEAK when asked to describe the original reported problem and the scenario
-   already supplies its symptoms. That is not a new settings check. Original
-   symptoms do not establish current connectivity after a device change.
+2. SPEAK when asked for identifiers, location or original problem symptoms that
+   the scenario already supplies, without requesting a device inspection or new
+   test. Original symptoms do not establish connectivity after a device change.
 3. SPEAK if an actual customer_tool observation already answers the question or
    shows the requested setting is already correct. A toggle reverses a setting;
    repeating an already satisfied instruction must not toggle it back.

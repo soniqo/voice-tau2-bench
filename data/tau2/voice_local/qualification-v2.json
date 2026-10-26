@@ -1045,6 +1045,110 @@
         "tool": "check_network_status",
         "arguments": {}
       }
+    },
+    {
+      "id": "full-tools-working-is-not-enabled",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Is your mobile data working now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-speed-test-over-mobile-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you run a speed test on your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-mms-over-mobile-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Can you send MMS over mobile data now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "can_send_mms",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-which-line-using-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I am still here. I see your account is active. Which line are you using for your data in France?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-more-about-reported-symptoms",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I see that your line is roaming enabled. Could you please tell me more about the issue you are experiencing with your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "slow"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-location-is-not-a-setting",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you please tell me where you are using your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "France"
+        ]
+      }
     }
   ],
   "judge": [

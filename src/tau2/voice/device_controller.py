@@ -87,6 +87,8 @@ SETTINGS = (
     ),
 )
 
+DATA_TOPIC = next(setting.topic for setting in SETTINGS if setting.name == "data")
+
 READS = {
     "speed": (
         r"\b(?:speed test|download speed|internet speed|connection speed)\b",
@@ -117,7 +119,7 @@ DEVICE_HINT = re.compile(
 )
 PHONE_QUESTION = re.compile(
     r"\b(?:phone|mobile|telephone|contact) numbers?\b|"
-    r"\bwhich\b.{0,35}\blines?\b.{0,60}\b(?:issue|problem|affect|experienc)",
+    r"\bwhich\b.{0,35}\blines?\b.{0,60}\b(?:issue|problem|affect|experienc|using)",
     re.I,
 )
 REQUEST = re.compile(
@@ -253,10 +255,19 @@ def requested_steps(text):
     for clause in clauses(text):
         if not REQUEST.search(clause):
             continue
+        cue = re.search(r"\b(?:(?:could|can|would|will) you|please)\b", clause, re.I)
+        if cue:
+            prefix = clause[: cue.start()]
+            if not (
+                REQUEST.search(prefix)
+                or ACTION.search(prefix)
+                or NEGATED_ACTION.search(prefix)
+            ):
+                clause = clause[cue.start() :]
         # Describing the reported problem is conversational. A topic word such
         # as "data" does not turn that question into a new settings inspection.
         if (
-            re.search(r"\bdescribe\b", clause, re.I)
+            re.search(r"\b(?:describe|tell me more|explain)\b", clause, re.I)
             and re.search(r"\b(?:problem|issue|symptoms|what happens)\b", clause, re.I)
             and not re.search(
                 r"\b(?:check|test|turn|set|reset|enable|disable)\b", clause, re.I
@@ -273,7 +284,11 @@ def requested_steps(text):
             re.I,
         ) and not re.search(r"\b(?:vpn|airplane|data saver|wi[- ]?fi)\b", clause, re.I):
             continue
-        if NEGATED_ACTION.search(clause) and ACTION.search(clause):
+        if (NEGATED_ACTION.search(clause) and ACTION.search(clause)) or re.search(
+            r"\b(?:don't|do not|never|avoid)\s+(?:run|running|perform|performing|try|trying|check|checking|test|testing|measure|measuring)\b",
+            clause,
+            re.I,
+        ):
             ambiguous = True
             continue
         if re.search(r"\b(?:know how|explain how|understand how)\b", clause, re.I):
@@ -332,6 +347,41 @@ def requested_steps(text):
         fresh = bool(
             re.search(r"\b(?:again|recheck|another|new test|once more)\b", clause, re.I)
         )
+        if (
+            re.search(READS["speed"][0], clause, re.I)
+            and re.search(r"\b(?:run|perform|try|check|measure|test)\b", clause, re.I)
+            and not CONFIRMATION.search(clause)
+        ):
+            fresh = True
+        # Test the service when asked whether it works. An enabled radio is
+        # not evidence of internet connectivity or successful MMS delivery.
+        if re.search(DATA_TOPIC + r"|\binternet\b", clause, re.I) and not ACTION.search(
+            clause
+        ):
+            if re.search(READS["mms"][0], clause, re.I) and re.search(
+                r"\b(?:send|sending|work|working|try|test)\b", clause, re.I
+            ):
+                steps.append(Step("mms", "can_send_mms", fresh=True))
+                continue
+            speed = re.search(READS["speed"][0], clause, re.I)
+            coordinated_speed = speed and re.search(
+                r"(?:\band|,)\s+(?:(?:your|the)\s+)?$", clause[: speed.start()], re.I
+            )
+            working = re.search(r"\bwork(?:ing)?\b", clause, re.I)
+            try_service = re.search(
+                r"\b(?:try|test)\b", clause, re.I
+            ) and not re.search(r"\b(?:on|off|enabled|disabled)\b", clause, re.I)
+            if not coordinated_speed and (speed or working or try_service):
+                steps.append(Step("speed", "run_speed_test", fresh=True))
+                continue
+            if not re.search(
+                r"\b(?:on|off|enabled|disabled|settings?|status|check|inspect|verify)\b|\blook at\b",
+                clause,
+                re.I,
+            ):
+                # A topic mention in a symptom, location or line-selection
+                # question does not request a Boolean setting observation.
+                continue
         found = [
             (match.start(), setting)
             for setting in SETTINGS
@@ -562,8 +612,12 @@ class CustomerDeviceController:
             elif any(row["speaker"] == "customer_tool" for row in conversation):
                 ambiguous = True
         if not steps and not ambiguous:
-            if DEVICE_HINT.search(statement) and re.search(
-                r"\b(?:i'll|i will|let me)\b", statement, re.I
+            if (
+                DEVICE_HINT.search(statement)
+                and re.search(r"\b(?:i'll|i will|let me)\b", statement, re.I)
+                and not re.search(
+                    r"\?|\b(?:could|can|would|will) you\b", statement, re.I
+                )
             ):
                 return self.speak(
                     "Okay, I'll wait for your update.",
