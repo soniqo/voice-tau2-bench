@@ -16,9 +16,9 @@ fresh qualification and a separate result cohort.
 
 ## Verified checks
 
-- **629 offline tests**, lint, all **64 frozen inputs / 278 tasks**, and both
+- **635 offline tests**, lint, all **64 frozen inputs / 278 tasks**, and both
   upstream replay rewards pass.
-- Source-matched live caller/judge qualification passed **66/66** with no errors.
+- Source-matched live caller/judge qualification passed **68/68** with no errors.
   Cases cover real phone reads/writes, opposite states, no-op toggles, stale
   observations, missing parameters, persona concerns, complete/incomplete speech,
   agent offers, and service-working/data-speed versus enabled-setting questions.
@@ -29,7 +29,7 @@ fresh qualification and a separate result cohort.
   transport, not long-context planning quality.
 - The controlled spoken pipeline performs a real write and scores **1.0** with
   matching database state. A wrong-write replay scores **0.0**. It ends with
-  `user_stop` at **30.1 simulated / 33.64 wall seconds**, with no cancellations
+  `user_stop` at **39.9 simulated / 44.80 wall seconds**, with no cancellations
   or unexplained inference failures. This functional check contributes no domain
   model score.
 
@@ -55,6 +55,9 @@ conversational. Recognized requests with ambiguous or missing parameters receive
 clarification; other conversation remains model-driven under the finite English
 adapter.
 
+Current 2G/3G/4G/5G questions read the actual connection rather than the configured
+network preference. A broad phone hint cannot override that specific read.
+
 Device dispatch, known-number answers, follow-ups and tool availability use the
 same action owner. A customer reporting request such as “let me know” stays
 distinct from an offer to perform the agent’s own work. An agent's own offer
@@ -73,7 +76,7 @@ Qualification fails on reply-generation/evaluation exceptions and rejects
 error-bearing reports. The saved passing reports were also audited; none contained
 recorded errors. A failing 59/60 qualification correctly exposed downstream tool
 selection overriding an agent-offer deferral. The structural SPEAK restriction
-and current 66-case report address that failure. A separate 65/66 failure caught
+and current 68-case report address that failure. A separate 65/66 failure caught
 a VPN question whose explanatory mention of connection speed overrode its topic;
 the scoped connectivity rule and an offline regression cover that case.
 
@@ -85,7 +88,9 @@ source identities remain in the [validation record](grounded-caller.json) and
 [earlier caller audit](caller-rerun.md); they are excluded from accepted agent
 performance results.
 
-A fresh generative telecom audit is required before the declared pilot. The pilot
-retains its nine tasks, two trials and seeds 70/71. Functional checks and passing
+The next generative telecom audit uses the published v2 budget: 2,400 simulated
+seconds and a 7,200-second wall limit. Earlier 600-second debugging runs remain
+separate. The pilot starts after this audit and retains its nine tasks, two trials
+and seeds 70/71. Functional checks and passing
 qualification establish a preflight floor, not domain accuracy or perfect caller
 reliability. No new aggregate model score is claimed yet.

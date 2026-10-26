@@ -392,12 +392,41 @@ def test_exact_network_mode_is_taken_only_from_the_heard_request():
     assert env.user_tools.db.device.network_mode_preference.value == "4g_5g_preferred"
 
 
-def test_cellular_technology_question_reads_connection_not_network_preference():
-    env, caller = setup()
-    history = [UserMessage(role="user", content="Are you connected to 5G?")]
+@pytest.mark.parametrize("airplane_mode", [False, True])
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Are you connected to 5G?",
+        "I see. Since your data is enabled and your plan limit has not been reached, could you please check if your phone is currently using a 2G or 3G network?",
+        "Please check your network settings to see if your phone is connected to a 2G or 3G network.",
+    ],
+)
+def test_cellular_technology_question_reads_connection_not_network_preference(
+    question, airplane_mode
+):
+    env, caller = setup(
+        {"airplane_mode": airplane_mode, "network_mode_preference": "2g_only"}
+    )
+    env.user_tools.simulate_network_search()
+    history = [UserMessage(role="user", content=question)]
     response, calls = complete(caller, env, history)
     assert calls == ["check_network_status"]
-    assert "Cellular Network Type" in response.content
+    assert (
+        "Cellular Network Type: " + ("none" if airplane_mode else "2G")
+        in response.content
+    )
+    assert env.user_tools.db.device.network_mode_preference.value == "2g_only"
+    assert env.user_tools.db.device.airplane_mode is airplane_mode
+
+
+def test_unspecified_technology_change_is_not_treated_as_a_connection_read():
+    env, caller = setup()
+    response = generate(
+        caller,
+        env,
+        [UserMessage(role="user", content="Please disable 5G on your phone.")],
+    )
+    assert not response.is_tool_call() and "clarify" in response.content.lower()
 
 
 def test_permissions_are_granted_only_for_the_app_and_permissions_actually_named():

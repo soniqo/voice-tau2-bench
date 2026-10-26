@@ -528,10 +528,14 @@ def requested_steps(text):
                     fresh=fresh or topic in {"speed", "mms"},
                 )
             )
-        if not matched and DEVICE_HINT.search(clause):
-            ambiguous = True
-        elif not matched and re.search(r"\b(?:[2345]g|lte)\b", clause, re.I):
+        if (
+            not matched
+            and re.search(r"\b(?:[2345]g|lte)\b", clause, re.I)
+            and not ACTION.search(clause)
+        ):
             steps.append(Step("network", "check_network_status"))
+        elif not matched and DEVICE_HINT.search(clause):
+            ambiguous = True
     return steps, ambiguous
 
 

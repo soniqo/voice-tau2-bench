@@ -1377,6 +1377,60 @@
         "arguments": {},
         "spoken_result": "Speed test failed: No Connection."
       }
+    },
+    {
+      "id": "full-tools-current-phone-network-technology",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true,
+        "network_mode_preference": "2g_only",
+        "network_connection_status": "no_service",
+        "network_technology_connected": "none",
+        "network_signal_strength": "none"
+      },
+      "history": [
+        [
+          "user",
+          "I see. Since your data is enabled and your plan limit has not been reached, could you please check if your phone is currently using a 2G or 3G network?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "must_contain": [
+          "Airplane Mode: ON",
+          "Cellular Network Type: none"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-current-phone-network-settings",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true,
+        "network_mode_preference": "2g_only",
+        "network_connection_status": "no_service",
+        "network_technology_connected": "none",
+        "network_signal_strength": "none"
+      },
+      "history": [
+        [
+          "user",
+          "Please check your network settings to see if your phone is connected to a 2G or 3G network."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "must_contain": [
+          "Airplane Mode: ON",
+          "Cellular Network Type: none"
+        ]
+      }
     }
   ],
   "judge": [
