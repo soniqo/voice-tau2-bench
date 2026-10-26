@@ -75,6 +75,9 @@ Call completion is managed separately. Do not output STOP or invent a tool.
 TOOL_ROUTE_PROMPT = """You decide how the CUSTOMER should respond next in a phone call.
 Return only TOOL or SPEAK. Do not play the service agent.
 Read the latest heard request and apply these rules in order:
+First SPEAK when the service agent offers to perform their own action or asks
+for your consent, without asking YOU to inspect or act on your device. An agent
+saying "Would you like me to check that?" is not a customer tool request.
 1. SPEAK if the persona requires clarification or reassurance before acting.
 2. SPEAK when asked for identifiers, location or original problem symptoms that
    the scenario already supplies, without requesting a device inspection or new

@@ -50,7 +50,8 @@ def test_v2_requires_passing_matching_qualification(certificate):
 
 
 @pytest.mark.parametrize(
-    "change", ["failed", "missing", "duplicate", "model", "assets", "device_grounding"]
+    "change",
+    ["failed", "missing", "duplicate", "model", "assets", "device_grounding", "error"],
 )
 def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, change):
     profile, provenance, report, path = certificate
@@ -64,6 +65,8 @@ def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, c
         profile.roles["caller"].model_id = "different caller"
     elif change == "device_grounding":
         profile.execution.device_grounding = False
+    elif change == "error":
+        report["cases"][0]["error"] = "Caller reply generation failed"
     else:
         provenance["native"]["configuration"]["assets"]["pinned"] = "changed"
     path.write_text(json.dumps(report))
@@ -124,6 +127,45 @@ def test_qualification_replays_incomplete_speech_without_speaking(monkeypatch):
 
     row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
     assert row["passed"] is True and row["final_action"] == "wait"
+
+
+@pytest.mark.parametrize(
+    "reply,passed",
+    [
+        (AssistantMessage(role="assistant", content="Yes, please."), True),
+        (AssistantMessage(role="assistant", content=""), False),
+        (
+            AssistantMessage(
+                role="assistant",
+                tool_calls=[
+                    ToolCall(id="unexpected", name="check_vpn_status", arguments={})
+                ],
+            ),
+            False,
+        ),
+    ],
+)
+def test_qualification_requires_speech_for_an_agent_offer(monkeypatch, reply, passed):
+    case = {
+        "id": "agent-offer",
+        "scenario": "Restore my internet.",
+        "toolset": "telecom",
+        "history": [["user", "Would you like me to check that?"]],
+        "decision": "CONTINUE",
+        "reply": {"must_speak": True},
+    }
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="SPEAK")
+            return reply
+
+    row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
+    assert row["passed"] is passed
 
 
 def test_long_conversation_vpn_answer_is_replaced_with_an_actual_device_read(

@@ -65,7 +65,7 @@ def require_qualification(path: Path | None, profile, provenance):
         or report.get("passed") is not True
         or len(rows) != len(expected_ids)
         or {row.get("id") for row in rows} != expected_ids
-        or not all(row.get("passed") is True for row in rows)
+        or not all(row.get("passed") is True and not row.get("error") for row in rows)
     ):
         raise ValueError(
             "Caller/judge qualification failed or no longer matches these sources, models and policy"
@@ -307,6 +307,8 @@ def qualify(backend, profile, provenance):
                             )
                 elif expected.get("no_speech"):
                     row["passed"] &= row["final_action"] == "wait"
+                elif expected.get("must_speak"):
+                    row["passed"] &= row["final_action"] == "speak"
                 elif "device_unchanged" in expected:
                     device = fixture_environment.user_tools.db.device
                     row["device_after"] = {
@@ -337,6 +339,7 @@ def qualify(backend, profile, provenance):
                         for word in expected["must_contain"]
                     )
         except Exception as error:
+            row["passed"] = False
             row["error"] = f"{type(error).__name__}: {error}"
         rows.append(row)
     scoring = CommunicateScoring(
@@ -371,6 +374,7 @@ def qualify(backend, profile, provenance):
                     passed=check.met == case["met"],
                 )
             except Exception as error:
+                row["passed"] = False
                 row["error"] = f"{type(error).__name__}: {error}"
             rows.append(row)
     return {

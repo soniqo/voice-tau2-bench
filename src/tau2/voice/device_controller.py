@@ -138,6 +138,13 @@ CONFIRMATION = re.compile(
 NEGATED_ACTION = re.compile(
     r"\b(?:don't|do not|never|not yet|wait before|avoid)\b", re.I
 )
+CUSTOMER_REQUEST = re.compile(
+    r"\b(?:could|can|would|will) you\b(?!\s+(?:like|want)\s+me\b)", re.I
+)
+AGENT_ACTION = re.compile(
+    r"\b(?:would you like me|do you want me|shall i|can i|could i|may i|i'll|i will|let me)\b",
+    re.I,
+)
 
 
 @dataclass(frozen=True)
@@ -248,14 +255,12 @@ def clauses(text):
     )
 
 
-def requested_steps(text):
-    steps = []
-    ambiguous = False
-    previous = None
+def customer_request_clauses(text):
+    """Use the same action owner for tools, identity answers and follow-ups."""
     for clause in clauses(text):
         if not REQUEST.search(clause):
             continue
-        cue = re.search(r"\b(?:(?:could|can|would|will) you|please)\b", clause, re.I)
+        cue = CUSTOMER_REQUEST.search(clause) or re.search(r"\bplease\b", clause, re.I)
         if cue:
             prefix = clause[: cue.start()]
             if not (
@@ -264,6 +269,16 @@ def requested_steps(text):
                 or NEGATED_ACTION.search(prefix)
             ):
                 clause = clause[cue.start() :]
+        if AGENT_ACTION.search(clause) and not CUSTOMER_REQUEST.search(clause):
+            continue
+        yield clause
+
+
+def requested_steps(text):
+    steps = []
+    ambiguous = False
+    previous = None
+    for clause in customer_request_clauses(text):
         # Describing the reported problem is conversational. A topic word such
         # as "data" does not turn that question into a new settings inspection.
         if (
@@ -273,10 +288,6 @@ def requested_steps(text):
                 r"\b(?:check|test|turn|set|reset|enable|disable)\b", clause, re.I
             )
         ):
-            continue
-        if re.search(
-            r"\b(?:would you like me|shall i|can i|i'll|i will|let me)\b", clause, re.I
-        ) and not re.search(r"\b(?:could|can|would|will) you\b", clause, re.I):
             continue
         if re.search(
             r"\b(?:phone numbers?|account numbers?|data limit|data plan|plan usage|data usage|billing)\b",
@@ -559,7 +570,9 @@ class CustomerDeviceController:
             ):
                 return self.speak("Are you still there?", context, "silence_check_in")
             return self.speak("", context, "wait_for_agent_turn")
-        if PHONE_QUESTION.search(statement) and REQUEST.search(statement):
+        requests = list(customer_request_clauses(statement))
+        latest_request = requests[-1] if requests else ""
+        if any(PHONE_QUESTION.search(request) for request in requests):
             known = self.scenario
             if match := re.search(
                 r"Known info:\s*(.*?)(?:Task instructions:|$)", known, re.I | re.S
@@ -584,7 +597,7 @@ class CustomerDeviceController:
             and re.search(
                 r"\b(?:does|is)\s+(?:it|that)\s+(?:work|working|better|fixed)\b|"
                 r"\b(?:try|test|check)\s+(?:it|that|again)\b|\bhow fast\b",
-                statement,
+                latest_request,
                 re.I,
             )
             and not re.search(

@@ -69,12 +69,12 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 57 checks cover completed versus promised work, required follow-ups after a
+The 60 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, customer device tools, unknown identifiers, and
 positive/negative semantic facts. They also check customer/agent role separation,
 goal disclosure, customer claims that lack agent confirmation, partial action
 completion, and device observations that do not establish working connectivity.
-Thirty-five checks use the full 30-tool telecom customer interface, including real
+Thirty-eight checks use the full 30-tool telecom customer interface, including real
 airplane-mode and roaming writes in fresh fixture devices, a claimed action that
 never ran, avoiding a repeated toggle after a successful action, an already-off
 setting, an opening greeting that requests no device action, and a persona that
@@ -90,11 +90,15 @@ questions and responding to a complete question while speech continues. Two more
 distinguish describing an already-reported symptom from explicitly checking a
 device setting before describing it. Six further checks cover line selection,
 alternate symptom wording, location questions and internet/MMS tests over mobile
-data. Historical 32/33/43/49/51-check
+data. Three further cases distinguish an agent offer or promise after a failed
+speed test from a request for the customer to repeat that test. Historical
+32/33/43/49/51/57-check
 reports do not qualify the expanded suite or changed caller condition.
 These fixtures are outside the frozen task
 frame. Passing checks is a preflight requirement, not evidence of domain accuracy
 or complete customer reliability.
+Reply-generation and evaluation exceptions fail qualification even after a valid
+terminal assessment. Error-bearing reports cannot enable a benchmark run.
 
 A model-driven customer controller reads only the customer's scenario and the
 heard dialogue. It decides whether to continue, finish completed work, or finish
@@ -145,6 +149,10 @@ a Boolean setting read. Internet-working questions and speed tests use the speed
 test; MMS capability questions use the MMS test. A distinct request to run a speed
 test performs a new test. Negated test requests require clarification and execute
 no tool. Explicit setting changes retain their read-before-write behavior.
+Tool dispatch, known-number replies and vague follow-ups share the same check of
+who was asked to act. Agent offers such as “Would you like me to check that?”
+stay conversational and cannot become a customer recheck. Follow-ups inspect the
+latest customer request, excluding an agent's own promised work in its preamble.
 
 Other conversation, caller goals, account information, and business decisions still use
 the local caller model. This finite English device adapter is an explicit

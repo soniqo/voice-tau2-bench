@@ -593,6 +593,56 @@ def test_new_explicit_speed_test_request_does_not_reuse_an_old_result():
     assert reply.tool_calls and reply.tool_calls[0].name == "run_speed_test"
 
 
+@pytest.mark.parametrize(
+    "offer",
+    [
+        "Since the speed test shows no connection, I can check if your data is being restricted. Would you like me to check that?",
+        "The speed test failed. Can I check that for you?",
+    ],
+)
+def test_agent_offer_after_a_device_test_defers_to_conversation(offer):
+    env, caller = setup({"airplane_mode": True})
+    history = [UserMessage(role="user", content="Please run a speed test.")]
+    report, calls = complete(caller, env, history)
+    assert calls == ["run_speed_test"]
+    history.extend([report, UserMessage(role="user", content=offer)])
+    assert (
+        caller.device_controller.respond(
+            caller.conversation(history), env.get_user_tools()
+        )
+        is None
+    )
+
+
+def test_agent_promise_after_a_test_defers_without_a_customer_recheck():
+    env, caller = setup({"airplane_mode": True})
+    history = [UserMessage(role="user", content="Please run a speed test.")]
+    report, _ = complete(caller, env, history)
+    history.extend([report, UserMessage(role="user", content="I will check that now.")])
+    assert (
+        caller.device_controller.respond(
+            caller.conversation(history), env.get_user_tools()
+        )
+        is None
+    )
+
+
+def test_agent_callback_offer_is_not_a_request_for_the_phone_number():
+    env, caller = setup(scenario="My phone number is 555-123-2002.")
+    assert (
+        caller.device_controller.respond(
+            [
+                {
+                    "speaker": "service_agent",
+                    "content": "Would you like me to call your phone number?",
+                }
+            ],
+            env.get_user_tools(),
+        )
+        is None
+    )
+
+
 def test_role_flip_preserves_tool_failure_and_execution_status():
     from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
 

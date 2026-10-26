@@ -1149,6 +1149,108 @@
           "France"
         ]
       }
+    },
+    {
+      "id": "full-tools-agent-offer-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "I apologize for the confusion. Since the speed test shows no connection, I can check if your data is being restricted. Would you like me to check that?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
+    },
+    {
+      "id": "full-tools-agent-can-i-check-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "The speed test failed. Can I check that for you?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
+    },
+    {
+      "id": "full-tools-agent-promise-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "I will check that now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
     }
   ],
   "judge": [
