@@ -1,4 +1,6 @@
 import json
+import re
+from collections import Counter
 
 from tau2.config import DEFAULT_LLM_NL_ASSERTIONS, DEFAULT_LLM_NL_ASSERTIONS_ARGS
 from tau2.data_model.message import Message, SystemMessage, Tick, UserMessage
@@ -72,6 +74,8 @@ class NLAssertionsEvaluator(EvaluatorBase[Message]):
             - metExpectation: Boolean indicating if the assertion was met
             - reasoning: Explanation for the evaluation
         """
+        if not nl_assertions:
+            return []
         trajectory_str = "\n".join(
             [f"{message.role}: {message.content}" for message in trajectory]
         )
@@ -120,14 +124,50 @@ class NLAssertionsEvaluator(EvaluatorBase[Message]):
             call_name="nl_assertions_eval",
             **DEFAULT_LLM_NL_ASSERTIONS_ARGS,
         )
-        result_data = json.loads(assistant_message.content)
+
+        def invalid(reason):
+            return ValueError(
+                f"Invalid NL assertion judge response ({reason}): {assistant_message.content!r}"
+            )
+
+        if assistant_message.is_tool_call() or not isinstance(
+            assistant_message.content, str
+        ):
+            raise invalid("expected JSON text, not a tool call")
+        content = assistant_message.content.strip()
+        fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", content, re.I | re.S)
+        if fenced:
+            content = fenced[1]
+        try:
+            result_data = json.loads(content)
+        except json.JSONDecodeError as error:
+            raise invalid("expected one JSON object") from error
+        if not isinstance(result_data, dict) or not isinstance(
+            result_data.get("results"), list
+        ):
+            raise invalid("missing results array")
+        results = result_data["results"]
+        for result in results:
+            if (
+                not isinstance(result, dict)
+                or not isinstance(result.get("expectedOutcome"), str)
+                or type(result.get("metExpectation")) is not bool
+                or not isinstance(result.get("reasoning"), str)
+            ):
+                raise invalid(
+                    "each result needs the requested outcome, a Boolean, and reasoning"
+                )
+        if Counter(result["expectedOutcome"] for result in results) != Counter(
+            nl_assertions
+        ):
+            raise invalid("missing, extra, or duplicated assertion results")
         return [
             NLAssertionCheck(
                 nl_assertion=result["expectedOutcome"],
                 met=result["metExpectation"],
                 justification=result["reasoning"],
             )
-            for result in result_data.get("results", [])
+            for result in results
         ]
 
 

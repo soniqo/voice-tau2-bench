@@ -9,6 +9,91 @@ from tau2.voice.baseline import repository_root
 from tau2.voice.runtime_profile import load_profile
 
 
+@pytest.mark.parametrize("met", [False, True])
+def test_qualification_runs_the_actual_nl_assertion_judge(
+    monkeypatch, certificate, met
+):
+    profile, provenance, _, _ = certificate
+    calls = []
+    expected = "The refund is $42.50."
+    monkeypatch.setattr(
+        qualification,
+        "qualification_suite",
+        lambda: {
+            "suite": "nl-fixture",
+            "caller": [],
+            "judge": [
+                {
+                    "id": "nl-case",
+                    "kind": "nl_assertion",
+                    "expected": expected,
+                    "said": expected,
+                    "met": met,
+                }
+            ],
+        },
+    )
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            calls.append((model, kwargs))
+            assert kwargs["call_name"] == "nl_assertions_eval"
+            return AssistantMessage(
+                role="assistant",
+                content=json.dumps(
+                    {
+                        "results": [
+                            {
+                                "expectedOutcome": expected,
+                                "metExpectation": met,
+                                "reasoning": "fixture",
+                            }
+                        ]
+                    }
+                ),
+            )
+
+    report = qualification.qualify(Backend(), profile, provenance)
+    assert report["passed"] and report["cases"][0]["actual"] is met
+    assert len(calls) == 1 and calls[0][0] == profile.roles["judge"].model_id
+
+
+@pytest.mark.parametrize("bad_kind", [True, False])
+def test_judge_kind_or_model_mismatch_fails_before_inference(
+    monkeypatch, certificate, bad_kind
+):
+    profile, provenance, _, _ = certificate
+    if not bad_kind:
+        profile.roles["judge"].model_id = "gemma4-12b-it"
+    monkeypatch.setattr(
+        qualification,
+        "qualification_suite",
+        lambda: {
+            "suite": "nl-fixture",
+            "caller": [],
+            "judge": [
+                {
+                    "id": "nl-case",
+                    "kind": "unknown" if bad_kind else "nl_assertion",
+                    "expected": "The refund is $42.50.",
+                    "said": "The refund is $42.50.",
+                    "met": True,
+                }
+            ],
+        },
+    )
+
+    class Backend:
+        def generate(self, *args, **kwargs):
+            raise AssertionError(
+                "Mismatched judge configuration must fail before inference"
+            )
+
+    report = qualification.qualify(Backend(), profile, provenance)
+    assert not report["passed"]
+    assert report["cases"][0]["error"].startswith("ValueError:")
+
+
 @pytest.fixture
 def certificate(tmp_path):
     profile = load_profile(
