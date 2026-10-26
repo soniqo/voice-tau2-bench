@@ -1569,6 +1569,39 @@
           "roaming_enabled": true
         }
       }
+    },
+    {
+      "id": "full-tools-status-icons-not-setting-labels",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "tool",
+          "Mobile Data Enabled: Yes",
+          {
+            "name": "check_network_status",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Mobile Data Enabled: Yes"
+        ],
+        [
+          "user",
+          "Since your data is enabled and you haven't reached your limit, I can check your network status. Could you please tell me if you are seeing any specific icons like \"No Signal\" or \"Data Disabled\" in your status bar?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_status_bar",
+        "arguments": {},
+        "spoken_result": "My status bar shows Airplane Mode, battery 80 percent."
+      }
     }
   ],
   "judge": [

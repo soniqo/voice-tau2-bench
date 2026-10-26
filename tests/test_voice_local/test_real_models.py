@@ -474,6 +474,115 @@ def test_real_goal_speed_measurement_survives_voice(runtime, tmp_path, data_enab
         assert re.search(r"\bno\s+connection\b", recognized, re.I), recognized
 
 
+@pytest.mark.parametrize("airplane_mode", [False, True])
+def test_real_status_bar_icons_survive_voice(runtime, tmp_path, airplane_mode):
+    import json
+    import wave
+
+    from tau2.domains.telecom.environment import get_environment
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    env = get_environment()
+    env.user_tools.db.device.airplane_mode = airplane_mode
+    env.user_tools.simulate_network_search()
+    caller = QualifiedCallerBackend(
+        runtime, "Restore my mobile internet.", device_grounding=True
+    )
+    tools = env.get_user_tools()
+    history = [
+        UserMessage(
+            role="user",
+            content='Could you please tell me if you are seeing any specific icons like "No Signal" or "Data Disabled" in your status bar?',
+        )
+    ]
+    start = len(runtime.events)
+    request = caller.generate(
+        "gemma4-e4b-it", history, tools=tools, call_name="user_streaming_response"
+    )
+    assert (
+        len(request.tool_calls) == 1
+        and request.tool_calls[0].name == "check_status_bar"
+    )
+    call = request.tool_calls[0]
+    observed = next(t for t in tools if t.name == call.name)(**call.arguments)
+    history.extend(
+        [
+            request,
+            ToolMessage(role="tool", requestor="user", id=call.id, content=observed),
+        ]
+    )
+    reply = caller.generate(
+        "gemma4-e4b-it", history, tools=tools, call_name="user_streaming_response"
+    )
+    from tau2.voice.device_controller import CustomerDeviceController
+
+    assert (
+        not reply.is_tool_call()
+        and reply.content == CustomerDeviceController.status_speech(observed)
+    )
+    assert reply.raw_data["device_grounding"]["observations"][0]["text"] == observed
+    assert env.user_tools.db.device.airplane_mode is airplane_mode
+    assert not any(e["operation"] == "chat" for e in runtime.events[start:])
+    speech = runtime.synthesize(
+        reply.content,
+        RuntimeTTSConfig(
+            model_id="voxcpm2",
+            voice_id="A natural adult male voice speaking American English.",
+            seed=42,
+        ),
+    )
+    telephone = AudioData(
+        data=audioop.ulaw2lin(audioop.lin2ulaw(pcm16(speech, 8000).data, 2), 2),
+        format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=8000),
+    )
+    detection = pcm16(telephone, 16000).data
+    probabilities = runtime.vad(
+        detection[: len(detection) // 1024 * 1024],
+        uuid.uuid4().hex,
+        reset=True,
+        end_stream=True,
+    )
+    recognized = runtime.transcribe(
+        telephone, RuntimeTranscriptionConfig(model="whisper-large-v3")
+    ).transcript
+    root = Path(os.environ.get("TAU_VOICE_DEVICE_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    name = f"status-airplane-{airplane_mode}"
+    with wave.open(str(root / (name + ".wav")), "wb") as output:
+        output.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
+        output.writeframes(telephone.data)
+    (root / (name + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "airplane_mode": airplane_mode,
+                "tool": call.name,
+                "tool_result": observed,
+                "spoken": reply.content,
+                "transcript": recognized,
+                "vad_probabilities": probabilities,
+                "device_grounding": reply.raw_data["device_grounding"],
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert sum(p >= 0.5 for p in probabilities) >= 4
+    assert bool(re.search(r"\bairplane\b", recognized, re.I)) is airplane_mode, (
+        recognized
+    )
+    assert "battery" in recognized.lower(), recognized
+    assert re.search(r"\b(?:80|eighty)\b", recognized, re.I), recognized
+    if not airplane_mode:
+        assert re.search(r"\bdata(?:\s+is)?\s+enabled\b", recognized, re.I), recognized
+        assert "excellent" in recognized.lower(), recognized
+        assert re.search(r"\b(?:5|five)\s*g\b", recognized, re.I), recognized
+
+
 @pytest.mark.parametrize("number", ["555-123-2002", "555-123-9876"])
 def test_real_known_phone_answer_survives_speech_and_telephony(
     runtime, tmp_path, number

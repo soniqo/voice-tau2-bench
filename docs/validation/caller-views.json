@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "scope": "Experimental local v2 caller; functional controls are not domain scores.",
+  "source_sha256": "978d5109154b07743af8b63a70a59d7e168580945195bd0f0db2adb5a7641889",
+  "offline": {
+    "passed": 704,
+    "local_models_deselected": 21,
+    "lint": "passed",
+    "frozen_inputs": 64,
+    "tasks": 278,
+    "upstream_replays": 2
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 75,
+    "full_telecom_toolset_cases": 51,
+    "errors": 0,
+    "suite_sha256": "43827d57e3a480f40b7051d9fbefe1536e24970d0b1752faec4418048dbaefe0",
+    "report_sha256": "325a9e0bf1d6bfeb05140fb7071efb9d6208783d8d263903226999a9ec393383"
+  },
+  "native_checks": {
+    "passed": 12,
+    "status_bar_voice_states": 2,
+    "vpn_voice_states": 3,
+    "known_phone_voice_checks": 2,
+    "goal_speed_voice_checks": 2,
+    "counterfactual_tool_history_models": 2,
+    "report_sha256": {
+      "voice-grounding-status-speech/goal-speed-data-False.json": "fd34dc70d32f13ce8d27c08bf4bd21e01ceccfe4f85cdeb07dfd8896980fc654",
+      "voice-grounding-status-speech/goal-speed-data-True.json": "19f446688d1937695874ba792bc93486f7da23e6ecafed4f6eaa04e715a0a781",
+      "voice-grounding-status-speech/phone-555-123-2002.json": "0bbdb563537d929da9efee488eb796f36bc920c0d13f928d31dd27cbaf6ea874",
+      "voice-grounding-status-speech/phone-555-123-9876.json": "85a11089c01c051b2e02b50465feaa3d6494a6bd58afc07f6fb3a4afa27952e0",
+      "voice-grounding-status-speech/status-airplane-False.json": "2ac48882cd793a723a530ed23df98890762b8522a9949f01c577719d00af1361",
+      "voice-grounding-status-speech/status-airplane-True.json": "f0368b57e50e7d99a6165587b9a77bd89bfb7be860de9a3e679cc357690ac157",
+      "voice-grounding-status-speech/vpn-enabled-False-connected-False.json": "c6a60a90ff0337f521e1c5e8a2ee6b89c38c85096123b3770d39ea8c6578bfb3",
+      "voice-grounding-status-speech/vpn-enabled-True-connected-False.json": "d39fbdc2ae0d65e95d87f326af811a8db8927a86d5fbae79d76f68989163c41d",
+      "voice-grounding-status-speech/vpn-enabled-True-connected-True.json": "13bca9f29a1e5cd0e093f0ddaac022b4a3cfbfd80b9ffdf0bc551cc53913d0df",
+      "native-tool-history-status-speech/gemma4-12b-it.json": "ea379d46a76489e5f7e224e651d5a88c8a208ccd8db0f32c3c8ca6d9bc624eab",
+      "native-tool-history-status-speech/gemma4-e4b-it.json": "f5ee6b1f198824f9437fc5f8942bdd9336f13e18ecfc29e8ae0bbeeafca25c11"
+    }
+  },
+  "controlled_spoken_pipeline": {
+    "reward": 1.0,
+    "db_match": true,
+    "wrong_write_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 31.700000000000003,
+    "wall_seconds": 35.18469416699372,
+    "simulation_sha256": "44490b6d1d307a07d59132c3a049c76afe848d06c7894a20e60ecf62a4a539da"
+  },
+  "prior_spoken_diagnostic": {
+    "source_sha256": "fa45514a1d468e30f16a28b61b28d418312e4f4e5819bcc40442e1e44aede806",
+    "benchmark_commit": "79febe51d562246fb037721baac6cad9b6dbfbcd",
+    "scored": false,
+    "error_type": "KeyboardInterrupt",
+    "audio_seconds": 586.5,
+    "ticks": 11730,
+    "failed_run_sha256": "64fd600e8a474ed4c311e9df69de2556c4eeeee6ba6fd17228f83179606cdbe0",
+    "status": "operator_interrupted_caller_read_target_failure",
+    "agent_request": "Since your data is enabled and you haven't reached your limit, I can check your network status. Could you please tell me if you are seeing any specific icons like \"No Signal\" or \"Data Disabled\" in your status bar?",
+    "caller_response": "Mobile Data Enabled: Yes",
+    "expected_tool": "check_status_bar",
+    "cause": "An example status label containing Data shadowed the requested status-bar view and reused a cached Boolean setting observation.",
+    "model_performance_qualified": false
+  },
+  "prior_qualification_fixture_error": {
+    "passed": false,
+    "checks": 75,
+    "failed_checks": 1,
+    "source_sha256": "2c5dcb6ac5c6a4d28c1f2fb36c44b7cef51ad93e65b915e32a5026a9fc364bb6",
+    "report_sha256": "e15e4932536857c3eaf14ec4df24acaf7673dff5e29123386b094d79f848c130",
+    "cause": "The new fixture used a partial expected phrase where the suite requires the complete spoken result. The caller selected and reported the correct view. The fixture was corrected; this report is retained."
+  },
+  "prior_status_speech": {
+    "source_sha256": "2c5dcb6ac5c6a4d28c1f2fb36c44b7cef51ad93e65b915e32a5026a9fc364bb6",
+    "raw": "Status Bar: \ud83d\udcf6\u2074 Excellent | 5G | \ud83d\udcf1 Data Enabled | \ud83d\udd0b 80%",
+    "transcript": "Status bar, excellent, 5G to Chevrolet Staten enabled, WhatsApp and 80%.",
+    "airplane_polarity_check_passed": true,
+    "full_label_fidelity": false,
+    "cause": "Emoji-rich status text garbled other labels. Current speech renders actual labels in plain words and tests their fidelity."
+  },
+  "execution_condition": {
+    "shared_workstation": true,
+    "exclusive_latency_claim": false,
+    "native_memory_limit_gib": 24,
+    "hardware": "Apple M5 Pro, 48 GiB unified memory"
+  },
+  "spoken_audit": {
+    "status": "pending_new_source_audit",
+    "scored": false
+  },
+  "pilot": {
+    "planned_calls": 18,
+    "task_plan_sha256": "321f2eb330b2b74dbbdd0c77e7acc7f787e62f1434cceba39d3ee27a01f244a6",
+    "trials": 2,
+    "seeds": [
+      70,
+      71
+    ],
+    "status": "not_started",
+    "complete": false
+  }
+}
