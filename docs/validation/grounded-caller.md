@@ -16,12 +16,12 @@ fresh qualification and a separate result cohort.
 
 ## Verified checks
 
-- **623 offline tests**, lint, all **64 frozen inputs / 278 tasks**, and both
+- **625 offline tests**, lint, all **64 frozen inputs / 278 tasks**, and both
   upstream replay rewards pass.
-- Source-matched live caller/judge qualification passed **62/62** with no errors.
+- Source-matched live caller/judge qualification passed **64/64** with no errors.
   Cases cover real phone reads/writes, opposite states, no-op toggles, stale
   observations, missing parameters, persona concerns, complete/incomplete speech,
-  agent offers, and service-working versus enabled-setting questions.
+  agent offers, and service-working/data-speed versus enabled-setting questions.
 - **Eight actual-model checks** passed: three VPN states and two exact phone
   numbers through VoxCPM2, 8 kHz telephone conversion, Silero VAD and full Whisper;
   two counterfactual tool-result checks, one per Gemma model; and the controlled
@@ -29,7 +29,7 @@ fresh qualification and a separate result cohort.
   transport, not long-context planning quality.
 - The controlled spoken pipeline performs a real write and scores **1.0** with
   matching database state. A wrong-write replay scores **0.0**. It ends with
-  `user_stop` at **48.1 simulated / 56.82 wall seconds**, with no cancellations
+  `user_stop` at **46.1 simulated / 54.57 wall seconds**, with no cancellations
   or unexplained inference failures. This functional check contributes no domain
   model score.
 
@@ -49,8 +49,8 @@ invalidate old observations. Failed/rejected results cannot establish facts.
 Requests preserve recognized step order and require heard parameters. Explicit
 photo concerns pause rebooting until reassurance. Functional internet/MMS questions
 run the corresponding service test. Known numbers use caller-known information;
-location and original symptoms stay conversational. Unrecognized or ambiguous
-instructions receive clarification under the finite English adapter.
+location and original symptoms stay conversational. Recognized requests with ambiguous or missing parameters receive clarification;
+other conversation remains model-driven under the finite English adapter.
 
 Device dispatch, known-number answers, follow-ups and tool availability use the
 same action owner. An agent's own offer restricts the caller to SPEAK; the local
@@ -68,13 +68,14 @@ Qualification fails on reply-generation/evaluation exceptions and rejects
 error-bearing reports. The saved passing reports were also audited; none contained
 recorded errors. A failing 59/60 qualification correctly exposed downstream tool
 selection overriding an agent-offer deferral. The structural SPEAK restriction
-and current 62-case report address that failure.
+and current 64-case report address that failure.
 
 ## Development runs and pilot
 
 Development calls exposed unsupported device claims, obsolete cancelled-work
 deadlines, incomplete-question replies, generic data-topic misrouting and agent
-offers that incorrectly repeated customer tests. Their raw rewards and separate
+offers that incorrectly repeated customer tests, and slow-data questions that
+reported an enabled setting instead of measuring performance. Their raw rewards and separate
 source identities remain in the [validation record](grounded-caller.json) and
 [earlier caller audit](caller-rerun.md); they are excluded from accepted agent
 performance results.

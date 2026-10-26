@@ -517,6 +517,8 @@ def test_describing_the_reported_problem_does_not_request_a_device_setting_read(
         ("Can you send MMS over mobile data now?", "can_send_mms"),
         ("Could you try your data again?", "run_speed_test"),
         ("Is your internet connection working now?", "run_speed_test"),
+        ("Could you please check if your data speed is still slow?", "run_speed_test"),
+        ("Is your mobile data still slow?", "run_speed_test"),
     ],
 )
 def test_functional_questions_test_service_rather_than_reading_enabled_setting(

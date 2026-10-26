@@ -91,7 +91,7 @@ DATA_TOPIC = next(setting.topic for setting in SETTINGS if setting.name == "data
 
 READS = {
     "speed": (
-        r"\b(?:speed test|download speed|internet speed|connection speed)\b",
+        r"\b(?:speed test|(?:download|upload|internet|connection|data|network) speed)\b",
         "run_speed_test",
     ),
     "status": (
@@ -383,10 +383,13 @@ def requested_steps(text):
                 r"(?:\band|,)\s+(?:(?:your|the)\s+)?$", clause[: speed.start()], re.I
             )
             working = re.search(r"\bwork(?:ing)?\b", clause, re.I)
+            performance = re.search(r"\b(?:slow(?:er)?|fast(?:er)?)\b", clause, re.I)
             try_service = re.search(
                 r"\b(?:try|test)\b", clause, re.I
             ) and not re.search(r"\b(?:on|off|enabled|disabled)\b", clause, re.I)
-            if not coordinated_speed and (speed or working or try_service):
+            if not coordinated_speed and (
+                speed or working or performance or try_service
+            ):
                 steps.append(Step("speed", "run_speed_test", fresh=True))
                 continue
             if not re.search(

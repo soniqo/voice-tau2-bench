@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "scope": "Experimental caller implementation; functional checks are not domain scores.",
-  "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
+  "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
   "device_grounding": true,
   "controller_policy": "device-observations-v1",
   "offline": {
-    "tests_passed": 623,
+    "tests_passed": 625,
     "actual_model_tests_deselected": 17,
     "lint": "passed",
     "frozen_inputs": 64,
@@ -14,9 +14,9 @@
   },
   "qualification": {
     "passed": true,
-    "checks": 62,
-    "suite_sha256": "bbe3e387d45e3a128ddad350c6902c7f943c4e0ed9dd4a43039e78b43a2b2ea8",
-    "report_sha256": "0ea63d8c9938df3cd5dd926cffa977b68ad6dd5802a689c9824562c07e77e512",
+    "checks": 64,
+    "suite_sha256": "63346bc313125abd7a6c19f74043d58dc203dd3464226eacdbc4b846cdeca60a",
+    "report_sha256": "ba1c479b14d0707b83109ef63ddf17a17f6946e817a63763779cfc0367d3d994",
     "cases": [
       {
         "id": "completed-action",
@@ -243,6 +243,14 @@
         "passed": true
       },
       {
+        "id": "full-tools-data-speed-is-not-enabled",
+        "passed": true
+      },
+      {
+        "id": "full-tools-slow-data-is-not-enabled",
+        "passed": true
+      },
+      {
         "id": "fact-paraphrase",
         "passed": true
       },
@@ -274,8 +282,8 @@
       "spoken": "My VPN is disabled.",
       "transcript": "My VPN is disabled.",
       "vad_speech_frames": 53,
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "dd46fc3bb809c83a20c0e00beec071a2a29a81e7d3671ab87b8a182ea37b3309",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "535101a015f02eb332ed9b4b8e4abf4935e998b21b5008b75ed06fdb632ba06e",
       "tool_result": "VPN is turned OFF."
     },
     {
@@ -283,8 +291,8 @@
       "spoken": "My VPN is enabled in settings, but it is not connected.",
       "transcript": "MyVPN is enabled in settings, but it is not connected.",
       "vad_speech_frames": 110,
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "1ee540b2f7f046f9d370ca742b8c2a6cc68cec2c1f237955cd3ead4b716e0452",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "3dbde86307e1d52fa6033d143eeb87febd932b12cdca29f577a75e616c6a5b80",
       "tool_result": "VPN is turned ON in settings, but currently not connected."
     },
     {
@@ -292,8 +300,8 @@
       "spoken": "My VPN is connected.",
       "transcript": "MyVPN is connected.",
       "vad_speech_frames": 52,
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "adc902f98a2137a0e493f9a9adec6f3ad6863357440075f597993a9abc71f230",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "6edeee21db50d495ec22b9033b8f436a45ca1678184b773da4ecf8c0b1536dc5",
       "tool_result": "VPN is ON and connected (no specific details available)."
     }
   ],
@@ -306,7 +314,7 @@
     }
   },
   "spoken_diagnostic": {
-    "status": "pending_common_turn_guard_audit",
+    "status": "pending_data_performance_audit",
     "domain": "telecom",
     "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
     "seed": 42,
@@ -327,16 +335,16 @@
     "db_match": true,
     "wrong_write_reward": 0.0,
     "termination": "user_stop",
-    "audio_seconds": 48.1,
-    "wall_seconds": 56.82429125002818,
-    "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
+    "audio_seconds": 46.1,
+    "wall_seconds": 54.572815042047296,
+    "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
     "diagnostics": {
       "failed_requests_without_cancellation": [],
       "native_chat_failures": [],
       "unexpected_native_cancellations": []
     },
     "intentional_cancellations": 0,
-    "simulation_sha256": "889ce30de2443841e3fd3452aeec3447fe633f758bc6a3e0f52263bfed1ec665"
+    "simulation_sha256": "7f8cc8ae218d86aa96df6895f46d4adc0d26721dcdcace8956e07ecaafb4a070"
   },
   "known_phone_voice_checks": [
     {
@@ -344,8 +352,8 @@
       "spoken": "My phone number is 555-123-2002.",
       "transcript": "My phone number is 555-123-2002.",
       "vad_speech_frames": 133,
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "84df3c112a7259461701880772d8f39a5b7559b9c46743636af01d113bea0cb3",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "3b4a4ee713d286df70f843c03541f3c8102c36883cd984d439ff860c3193f086",
       "number": "555-123-2002"
     },
     {
@@ -353,8 +361,8 @@
       "spoken": "My phone number is 555-123-9876.",
       "transcript": "My phone number is 555-123-9876.",
       "vad_speech_frames": 142,
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "61e8690c6bdfb9d252364c210a153a9515cf97ffd02e6090b3bcc89b881edb8d",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "7b8b99cc8b44644cb2dbe9a943a9e8e134eac4898f879f101f1e098e0c0f6eb8",
       "number": "555-123-9876"
     }
   ],
@@ -440,6 +448,21 @@
       },
       "note": "Offers by the service agent were misinterpreted as requests to repeat a customer speed test. Excluded from agent-performance results.",
       "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "6e1d2c71aa3619205596f504547c4dd02b070e02",
+      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 864.738877833006,
+      "model_performance_qualified": false,
+      "status": "data_speed_question_misinterpreted_as_enabled_setting",
+      "successful_agent_tools": 6,
+      "successful_customer_tools": 1,
+      "note": "Questions about slow data speed incorrectly reported mobile data enabled. This caller-routing defect excludes the run from accepted agent-performance scores.",
+      "native_inference_failures": 0
     }
   ],
   "actual_model_tests_passed": 8,
@@ -449,16 +472,16 @@
       "counterfactual_results": 2,
       "passed": true,
       "scope": "Short fixture verifies basic result transport; not a long-context planning proof.",
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "3aa50aac4e35a422fa53e0eecc01c86131088e4d9e2b2f13cd475293355084d0"
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "ac884d490f7de3ad1f7e87f3f30e89475cf1118489f9e7d103a7797a3c489a4d"
     },
     {
       "model": "gemma4-e4b-it",
       "counterfactual_results": 2,
       "passed": true,
       "scope": "Short fixture verifies basic result transport; not a long-context planning proof.",
-      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
-      "report_sha256": "8e5c354c7d1daca3ebb3bca6e9622c7deba9ab691c2168fc52d7b58829a1ef7c"
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "report_sha256": "a15616a5ae1b0651fa805884b9998deaa55460e52349c207feed4d997aa42da7"
     }
   ],
   "action_owner_calibration": [
