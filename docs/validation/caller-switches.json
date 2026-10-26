@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "scope": "Experimental local v2 caller; functional controls are not domain scores.",
+  "source_sha256": "fa45514a1d468e30f16a28b61b28d418312e4f4e5819bcc40442e1e44aede806",
+  "offline": {
+    "passed": 685,
+    "local_models_deselected": 19,
+    "lint": "passed",
+    "frozen_inputs": 64,
+    "tasks": 278,
+    "upstream_replays": 2
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 74,
+    "full_telecom_toolset_cases": 50,
+    "errors": 0,
+    "suite_sha256": "9187477f7137343c222469d3b8fda9e59ce35e0fe909bc582a2aa6222102a9b4",
+    "report_sha256": "b69c267b38fd043b0cdd8150f1ce6cc53e44b161b83446d0ca13cd7365f5e2db"
+  },
+  "native_checks": {
+    "passed": 10,
+    "vpn_voice_states": 3,
+    "known_phone_voice_checks": 2,
+    "goal_speed_voice_checks": 2,
+    "counterfactual_tool_history_models": 2,
+    "report_sha256": {
+      "voice-grounding-switch-targets/goal-speed-data-False.json": "27424aef0768e1593eb001e93d77657c51d1704a0821443074c9b66df5f6e259",
+      "voice-grounding-switch-targets/goal-speed-data-True.json": "8661df6d6883afff6c93fcc447599db1c4b0370a7e49324582a4414a779ab48d",
+      "voice-grounding-switch-targets/phone-555-123-2002.json": "5a03d27890029b40f4da7e25dc82a22bac9be7487c5bfda219c13a74c637b49e",
+      "voice-grounding-switch-targets/phone-555-123-9876.json": "db15aa225633381eb6633b478972e928170460588fe264f061bee8001ecd4327",
+      "voice-grounding-switch-targets/vpn-enabled-False-connected-False.json": "d4ad5273b4a2728750bbcca115be5f9211bd346aefc182dc6164197bec76628b",
+      "voice-grounding-switch-targets/vpn-enabled-True-connected-False.json": "005620dd46ada8c588393827bddcc97cdaa3aed9f0e016b4297c702daa8f527f",
+      "voice-grounding-switch-targets/vpn-enabled-True-connected-True.json": "b00e4d4c8054a98ce56c487994c404c5c97a5e41e7243588767557415e305e08",
+      "native-tool-history-switch-targets/gemma4-12b-it.json": "6d8c6f382857d94ba84303426fb860fe08104cc53bd81f81dbc0873e5b8ea09a",
+      "native-tool-history-switch-targets/gemma4-e4b-it.json": "bb6ed68bae36f74355235b2584ca1af8c35b2dc6ff70a51922e0cada5d9ba8c2"
+    }
+  },
+  "controlled_spoken_pipeline": {
+    "reward": 1.0,
+    "db_match": true,
+    "wrong_write_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 55.85,
+    "wall_seconds": 66.52736737503437,
+    "simulation_sha256": "7ac890f1ca001c3c97f6a629268e33abad0f95adf3df42cf78a961061c3e51bc"
+  },
+  "prior_spoken_diagnostic": {
+    "source_sha256": "ce5cf6b7b410c4e04dd5d5d57131648e0e78cf1480b384c677066a2e75629b89",
+    "status": "operator_interrupted_caller_parser_failure",
+    "scored": false,
+    "audio_seconds": 823.0,
+    "ticks": 16460,
+    "error_type": "KeyboardInterrupt",
+    "failed_run_sha256": "3040d61512be773c26d920ffb713f358d84f89fcb80d77abef6fec25e5920e25",
+    "agent_request": "Please turn off Airplane Mode on your device. This will restore your cellular and data connections. Would you like me to check anything else?",
+    "caller_response": "Could you clarify the exact device check or setting you want me to use?",
+    "cause": "The direction parser interpreted the locative on your device as a second switch direction, so the clear OFF request became ambiguous.",
+    "model_performance_qualified": false
+  },
+  "prior_qualification": {
+    "passed": false,
+    "checks": 74,
+    "failed_checks": 1,
+    "source_sha256": "db1d95775c8ed8b5c54e468f0d104b0e30a4843158b8c0784f9b98440e13d720",
+    "report_sha256": "56ddc8b76057be59b02e42d6f67f96653e26cc55e41ee4aaec8f0e722013bacc",
+    "cause": "The raw terminal assessment treated a pending customer instruction as completed work. The current guard uses the same history-only response as caller generation."
+  },
+  "execution_condition": {
+    "shared_workstation": true,
+    "exclusive_latency_claim": false,
+    "native_memory_limit_gib": 24,
+    "hardware": "Apple M5 Pro, 48 GiB unified memory"
+  },
+  "spoken_audit": {
+    "status": "pending_new_source_audit",
+    "scored": false
+  },
+  "pilot": {
+    "planned_calls": 18,
+    "task_plan_sha256": "321f2eb330b2b74dbbdd0c77e7acc7f787e62f1434cceba39d3ee27a01f244a6",
+    "trials": 2,
+    "seeds": [
+      70,
+      71
+    ],
+    "status": "not_started",
+    "complete": false
+  }
+}

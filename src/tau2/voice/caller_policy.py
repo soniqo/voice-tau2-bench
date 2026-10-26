@@ -311,6 +311,19 @@ class QualifiedCallerBackend:
                 proposed_decision=assessment.decision,
                 guard="agent_confirmation_question",
             )
+        if decision != "CONTINUE" and self.device_controller is not None:
+            # Use the same history-only device response as generation. This
+            # constructs a response without executing any tool or changing state.
+            pending = self.device_controller.respond(
+                payload["conversation"], tools or []
+            )
+            if pending is not None:
+                decision = "CONTINUE"
+                record.update(
+                    decision=decision,
+                    proposed_decision=assessment.decision,
+                    guard="pending_customer_device_response",
+                )
         if (
             assessment.decision == "COMPLETE"
             and self.device_controller is not None

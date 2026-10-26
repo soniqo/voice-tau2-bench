@@ -792,3 +792,48 @@ def test_excellent_radio_signal_is_not_evidence_of_excellent_internet_speed():
         "model", history, tools=get_environment().get_user_tools()
     )
     assert decision == "CONTINUE"
+
+
+@pytest.mark.parametrize("proposal", ["COMPLETE", "REFUSED"])
+def test_terminal_assessment_cannot_skip_a_pending_customer_device_response(proposal):
+    from tau2.domains.telecom.environment import get_environment
+
+    instruction = "Please turn off Airplane Mode on your device. This will restore your cellular and data connections. Would you like me to check anything else?"
+    backend = Backend([assessment(proposal, instruction)])
+    caller = QualifiedCallerBackend(
+        backend,
+        "Restore mobile internet and follow the agent instructions.",
+        device_grounding=True,
+    )
+    env = get_environment()
+    env.user_tools.db.device.airplane_mode = True
+    before = env.user_tools.db.device.model_dump()
+    decision, _ = caller.assess(
+        "model",
+        [UserMessage(role="user", content=instruction)],
+        tools=env.get_user_tools(),
+    )
+    assert decision == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "pending_customer_device_response"
+    assert caller.decisions[-1]["proposed_decision"] == proposal
+    assert env.user_tools.db.device.model_dump() == before
+    assert len(backend.calls) == 1
+    assert backend.calls[0][1]["tools"] is None
+
+
+def test_device_response_guard_allows_a_later_completed_confirmation():
+    from tau2.domains.telecom.environment import get_environment
+
+    quote = "Your mobile internet has been restored."
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", quote)]),
+        "Restore mobile internet and follow the agent instructions.",
+        device_grounding=True,
+    )
+    decision, _ = caller.assess(
+        "model",
+        [UserMessage(role="user", content=quote)],
+        tools=get_environment().get_user_tools(),
+    )
+    assert decision == "COMPLETE"
+    assert "guard" not in caller.decisions[-1]

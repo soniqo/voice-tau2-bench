@@ -278,6 +278,49 @@ def agent_action_only(text):
     return bool(AGENT_ACTION.search(text)) and not any(customer_request_clauses(text))
 
 
+def setting_changes(clause, previous):
+    """Bind a switch direction to its verb/object list, excluding later context."""
+    topics = "|".join(setting.topic for setting in SETTINGS)
+    item = (
+        r"(?:(?:your|the|my|this|both)\s+)?(?:(?:phone|device)'s\s+)?"
+        rf"(?:{topics}|\bit\b|\bthat setting\b)"
+        r"(?:\s+(?:mode|setting|switch|toggle))?"
+    )
+    objects = rf"(?P<objects>{item}(?:\s*(?:,\s*(?:and\s+)?|and\s+){item})*)"
+    patterns = [
+        (rf"\b(?:enable|activate|connect)\s+(?:to\s+)?{objects}", True),
+        (rf"\b(?:disable|deactivate|disconnect)\s+(?:from\s+)?{objects}", False),
+        (rf"\b(?:turn|switch|set)\s+(?P<state>on|off)\s+{objects}", None),
+        (rf"\b(?:turn|switch|set)\s+{objects}\s+(?:to\s+)?(?P<state>on|off)\b", None),
+    ]
+    changes = []
+    ambiguous = False
+    for pattern, target in patterns:
+        for match in re.finditer(pattern, clause, re.I):
+            if re.match(r"\s*(?:or|and|/)\s*(?:on|off)\b", clause[match.end() :], re.I):
+                ambiguous = True
+                continue
+            value = (
+                target if target is not None else match.group("state").lower() == "on"
+            )
+            selected = [
+                (found.start(), setting)
+                for setting in SETTINGS
+                if (found := re.search(setting.topic, match.group("objects"), re.I))
+            ]
+            pronoun = re.search(
+                r"\b(?:it|that setting)\b", match.group("objects"), re.I
+            )
+            if pronoun:
+                if previous is None:
+                    ambiguous = True
+                    continue
+                selected.append((pronoun.start(), previous))
+            for _, setting in sorted(selected, key=lambda entry: entry[0]):
+                changes.append((match.start(), setting, value))
+    return sorted(changes, key=lambda entry: entry[0]), ambiguous
+
+
 def requested_steps(text):
     steps = []
     ambiguous = False
@@ -402,6 +445,23 @@ def requested_steps(text):
                 # A topic mention in a symptom, location or line-selection
                 # question does not request a Boolean setting observation.
                 continue
+        action = ACTION.search(clause) and not CONFIRMATION.search(clause)
+        if action:
+            changes, unclear = setting_changes(clause, previous)
+            if changes or unclear:
+                ambiguous |= unclear
+                for _, setting, target in changes:
+                    previous = setting
+                    steps.append(
+                        Step(
+                            setting.name,
+                            setting.read,
+                            setting.on if target else setting.off,
+                            target,
+                            fresh=fresh,
+                        )
+                    )
+                continue
         found = [
             (match.start(), setting)
             for setting in SETTINGS
@@ -414,37 +474,15 @@ def requested_steps(text):
         ):
             found = [(0, previous)]
         if found:
+            if action:
+                ambiguous = True
+                continue
             for _, setting in sorted(found, key=lambda item: item[0]):
                 previous = setting
-                action = ACTION.search(clause) and not CONFIRMATION.search(clause)
-                target = None
-                if action:
-                    on = bool(
-                        re.search(
-                            r"\b(?:enable|activate|connect)\b|\b(?:turn|switch|set)\b.{0,45}\bon\b",
-                            clause,
-                            re.I,
-                        )
-                    )
-                    off = bool(
-                        re.search(
-                            r"\b(?:disable|deactivate|disconnect)\b|\b(?:turn|switch|set)\b.{0,45}\boff\b",
-                            clause,
-                            re.I,
-                        )
-                    )
-                    if on == off:
-                        ambiguous = True
-                        continue
-                    target = on
                 steps.append(
                     Step(
                         setting.name,
                         setting.read,
-                        (setting.on if target else setting.off)
-                        if target is not None
-                        else None,
-                        target,
                         fresh=fresh,
                     )
                 )
