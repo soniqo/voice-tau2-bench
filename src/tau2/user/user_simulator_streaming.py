@@ -368,6 +368,7 @@ class VoiceStreamingUserSimulator(
         backchannel: Optional[BackchannelSettings] = None,
         decision_model: str = VOICE_USER_SIMULATOR_DECISION_MODEL,
         decision_model_args: Optional[dict] = None,
+        wait_for_complete_agent_turns: bool = False,
     ):
         """
         Initialize the streaming user simulator.
@@ -401,6 +402,8 @@ class VoiceStreamingUserSimulator(
             decision_model: Model for interruption and backchannel decisions.
             decision_model_args: Explicit helper-model arguments; pass an empty
                 dictionary when no provider-specific arguments apply.
+            wait_for_complete_agent_turns: Wait for an utterance boundary or a
+                complete question before initiating a response during agent speech.
             audio_taps_dir: If set, record audio at each pipeline stage to WAV files in this directory.
         """
         # Initialize mixin and base class
@@ -429,6 +432,7 @@ class VoiceStreamingUserSimulator(
         self.validate_voice_settings()
         self.wait_to_respond_threshold_other = wait_to_respond_threshold_other
         self.wait_to_respond_threshold_self = wait_to_respond_threshold_self
+        self.wait_for_complete_agent_turns = wait_for_complete_agent_turns
         self.yield_threshold_when_interrupted = yield_threshold_when_interrupted
         self.yield_threshold_when_interrupting = yield_threshold_when_interrupting
         self.backchannel_min_threshold = backchannel_min_threshold
@@ -806,6 +810,39 @@ class VoiceStreamingUserSimulator(
         """
         Decide the next action to take in the turn-taking.
         """
+        if (
+            getattr(self, "wait_for_complete_agent_turns", False)
+            and not state.is_talking
+            and not state.input_from_environment()
+        ):
+            heard = [
+                m
+                for m in state.input_turn_taking_buffer
+                if isinstance(m, AssistantMessage)
+            ]
+            latest = next(
+                (m for m in reversed(heard) if m.has_text_content()),
+                None,
+            )
+            question_heard = latest is not None and any(
+                "?" in (m.content or "")
+                for m in heard
+                if not latest.utterance_ids
+                or set(latest.utterance_ids).intersection(m.utterance_ids or [])
+            )
+            if (
+                latest is not None
+                and not latest.is_final_chunk
+                and not question_heard
+                and (
+                    state.input_ongoing_speech_duration() > 0
+                    or state.time_since_last_other_talk
+                    < self.wait_to_respond_threshold_self
+                )
+            ):
+                return TurnTakingAction(
+                    action="wait", info="Listening until the agent finishes a request."
+                )
         # Prepare listener reaction callbacks
         should_interrupt_callback = None
         should_backchannel_callback = None
@@ -1367,6 +1404,16 @@ class VoiceStreamingUserSimulator(
             messages=messages,
             tools=self.tools,
             call_name="user_streaming_response",
+            **(
+                {
+                    "agent_silence_seconds": state.time_since_last_other_talk
+                    * self.tick_duration_seconds,
+                    "caller_idle_seconds": self.wait_to_respond_threshold_self
+                    * self.tick_duration_seconds,
+                }
+                if getattr(self, "wait_for_complete_agent_turns", False)
+                else {}
+            ),
             **self.llm_args,
         )
 
@@ -1476,6 +1523,9 @@ class VoiceStreamingUserSimulator(
                             role="assistant",
                             tool_calls=msg.tool_calls,
                             content=msg.content,
+                            is_final_chunk=msg.is_final_chunk,
+                            utterance_ids=msg.utterance_ids,
+                            chunk_id=msg.chunk_id,
                         )
                     )
             elif isinstance(msg, AssistantMessage):
@@ -1487,6 +1537,9 @@ class VoiceStreamingUserSimulator(
                         UserMessage(
                             role="user",
                             content=msg.content,
+                            is_final_chunk=msg.is_final_chunk,
+                            utterance_ids=msg.utterance_ids,
+                            chunk_id=msg.chunk_id,
                         )
                     )
             elif isinstance(msg, ToolMessage):
@@ -1497,6 +1550,9 @@ class VoiceStreamingUserSimulator(
                             id=msg.id,
                             role=msg.role,
                             content=msg.content,
+                            requestor=msg.requestor,
+                            error=msg.error,
+                            execution_status=msg.execution_status,
                         )
                     )
             elif isinstance(msg, SystemMessage):

@@ -11,7 +11,8 @@ leaderboard results.
 See [validation results and working parameters](validation/local-v2.md) for the
 spoken pipeline checks, qualification results, and known limits. The
 [native cache follow-up](validation/native-prefill.md) verifies the newer runtime.
-The held-out pilot has not run.
+The [device-controller follow-up](validation/grounded-caller.md) records current
+caller validation and held-out pilot progress.
 
 ## Models
 
@@ -68,28 +69,112 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 22 checks cover completed versus promised work, required follow-ups after a
-refusal, incomplete answers, customer device tools, unknown identifiers, and
-positive/negative semantic facts. They also check customer/agent role separation,
-goal disclosure, customer claims that lack agent confirmation, partial action
-completion, and device observations that do not establish working connectivity.
-These fixtures are outside the frozen task
-frame. Passing checks is a preflight requirement, not evidence of domain accuracy
-or complete customer reliability.
+The 68 checks cover completed versus promised work, required follow-ups after a
+refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
+and positive/negative semantic facts. Forty-four use the full 30-tool telecom
+customer interface, including actual reads and writes in fresh fixture devices.
+They cover read-before-toggle and no-op behavior, stale facts after a write,
+compound instructions, required parameters, persona reassurance, VPN states,
+service-working and data-speed questions versus enabled settings, and agent offers that must not
+become customer actions. Streaming cases include incomplete speech and completed
+questions heard during an ongoing turn; two cases exercise callers without a
+phone controller.
+
+These fixtures are outside the frozen task frame. Passing checks is a preflight
+requirement, not evidence of domain accuracy or complete customer reliability.
+Reports from different sources, suites, models or execution conditions do not
+qualify a current run. Reply-generation and evaluation exceptions fail
+qualification even after a valid terminal assessment. Error-bearing reports
+cannot enable a benchmark run.
 
 A model-driven customer controller reads only the customer's scenario and the
 heard dialogue. It decides whether to continue, finish completed work, or finish
 an addressed refusal. It never sees reference actions, grading state, or agent
 private tool results. A terminal assessment requires a supporting quote actually
 heard from the service agent. A conservative English-language guard keeps the
-call open if that quote merely offers or promises a future action; the guard
-cannot generate a stop. A well-formed terminal proposal without a supporting
-agent quote gets at most one model reassessment using the same caller-visible
+call open if that quote merely offers or promises a future action, or consists
+only of an English confirmation question. A completed-action statement followed
+by a question is still eligible for a terminal decision. These guards
+cannot generate a stop. A terminal proposal with invalid control-field values
+(such as a misspelled decision enum) or without a supporting agent quote gets
+at most one model reassessment using the same caller-visible
 scenario and conversation. The rejected proposal is recorded. The reassessment
 must pass the same evidence checks; a second unsupported proposal leaves the
-trial unscored. Malformed responses and inference errors propagate immediately.
+trial unscored. Invalid JSON syntax, assessment tool calls and inference errors
+propagate immediately; typed control-field errors receive the single bounded
+schema repair above. Every rejected response is retained, and no decision or
+evidence is filled in by the runtime.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
+The v2 profile explicitly enables `execution.device_grounding`. For telecom,
+`CustomerDeviceController` handles recognized requests before the model-driven
+TOOL/SPEAK path. It reads only heard agent speech and actual customer tool
+results. It returns declared calls for normal execution, reads unknown settings
+before toggling, and reports an already-correct setting without changing it.
+Every customer write invalidates cached device observations; successful results
+restore only facts they actually report. Rejected/failed calls and service-agent
+private results cannot become customer facts.
+
+Phone-status speech comes from those observations using deterministic rendering.
+VPN enabled-but-disconnected remains distinct from a disabled or connected VPN.
+The controller records source tool IDs, preserves requested action order, asks
+for missing/ambiguous parameters and pauses rebooting for explicit photo-safety
+concerns until the agent reassures the caller. It can only keep a pending device
+exchange open, never manufacture a successful terminal state or reward.
+
+In v2, speech-frame merging and caller role conversion preserve the last frame's
+utterance boundary across airline, retail and telecom. The caller waits on an unfinished phrase, while
+a complete question can still prompt a response during agent speech. After the
+configured idle interval it can ask whether the agent is still there. The guard
+also covers gaps inside unfinished speech; a complete question can still permit
+barge-in. The selected behavior is recorded in `settings.json`. Phone-number
+questions use only the number explicitly supplied in the caller's known information;
+an unknown number is reported as unknown, without a device check.
+Agent tool calls remain silent and do not reset the caller's speech timer.
+Describing the original reported symptoms stays with the conversation model;
+an explicit device check still requires the actual customer tool result.
+Mentioning data in a location, line-selection or symptom question does not request
+a Boolean setting read. Internet-working questions and speed tests use the speed
+test; MMS capability questions use the MMS test. A distinct request to run a speed
+test performs a new test. Negated test requests require clarification and execute
+no tool. Explicit setting changes retain their read-before-write behavior.
+Tool dispatch, known-number replies and vague follow-ups share the same check of
+who was asked to act. Agent offers such as “Would you like me to check that?”
+stay conversational and cannot become a customer recheck. Follow-ups inspect the
+latest customer request, excluding an agent's own promised work in its preamble.
+Agent-only offers and promises restrict the caller to SPEAK mode before the
+model chooses a response. The local model still decides how to answer using its
+scenario and persona. Already-spoken tool results remain in history, while only
+an unspoken result takes priority over a new question. The next heard agent turn
+is also presented directly before the labelled conversation data.
+
+Other conversation, caller goals, account information, and business decisions still use
+the local caller model. This finite English device adapter is an explicit
+experimental caller condition; clarification for an unrecognized instruction is
+part of that condition. It does not read hidden device state or reference actions,
+repair the evaluated agent's arguments, or substitute gold speech. Historical v1
+profiles retain their original execution settings and do not enable it.
+Caller control reads heard turns: adjacent speech fragments from the same speaker
+are merged, while speaker changes and tool-call/result boundaries are preserved.
+For open calls outside the device controller, a separate TOOL/SPEAK decision reads the
+heard request, caller scenario/persona and actual tool history. TOOL requires a
+native customer function call before speech; saying the action happened does not
+execute it. The tool request repeats the actual latest heard agent statement
+before the labelled history so it is treated as the pending instruction rather
+than an old transcript item. A prose response in TOOL mode gets one model
+reassessment with the same heard context. A second prose response leaves the
+trial unscored. Account questions without a matching customer tool route to
+SPEAK, where the caller can admit missing information. Unknown
+tools, invalid arguments and inference errors fail immediately. The ordinary
+orchestrator executes validated tool calls; the controller never changes device
+state itself. The leading routing label is used; any following annotation is
+recorded and does not select a tool or change its arguments. SPEAK turns receive
+no tools and answer the latest agent question using actual customer tool results.
+Persona-specific clarification requirements still apply. Terminal decisions
+allow 384 tokens, routing allows 16, and normal
+caller generation uses its configured limit. No reference actions or private
+agent state enter these choices.
+
 Calibration measures continuing versus stopping; the
 completion/refusal label remains diagnostic. Open calls generate a customer response with
 customer tools, the scenario, and persona instructions. V2 uses explicit local

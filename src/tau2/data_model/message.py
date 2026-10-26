@@ -829,6 +829,7 @@ def merge_message_chunks(
         audio_format=deepcopy(first_format) if first_format else None,
         audio_script_gold=merged_script_gold if merged_script_gold else None,
         utterance_ids=merged_utterance_ids if merged_utterance_ids else None,
+        is_final_chunk=chunks[-1].is_final_chunk,
         tool_calls=None,
         turn_taking_action=TurnTakingAction(action="N/A", info=merged_turn_action_info),
     )

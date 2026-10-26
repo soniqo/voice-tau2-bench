@@ -1,0 +1,604 @@
+{
+  "schema_version": 1,
+  "scope": "Experimental caller implementation; functional checks are not domain scores.",
+  "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+  "device_grounding": true,
+  "controller_policy": "device-observations-v1",
+  "offline": {
+    "tests_passed": 635,
+    "actual_model_tests_deselected": 17,
+    "lint": "passed",
+    "frozen_inputs": 64,
+    "tasks": 278,
+    "upstream_replays": 2
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 68,
+    "suite_sha256": "e439f178b69fcc24c72f19f6b916cd2911883998d154f725cca21d4a84055fdb",
+    "report_sha256": "0e9f6f80a65d4a6cbe898a226869cd5d4af979b11999de78110f2057c5ec9b9a",
+    "cases": [
+      {
+        "id": "completed-action",
+        "passed": true
+      },
+      {
+        "id": "promised-action",
+        "passed": true
+      },
+      {
+        "id": "resolved-refusal",
+        "passed": true
+      },
+      {
+        "id": "refusal-before-follow-up",
+        "passed": true
+      },
+      {
+        "id": "agent-goodbye-with-pending-work",
+        "passed": true
+      },
+      {
+        "id": "partially-answered",
+        "passed": true
+      },
+      {
+        "id": "all-questions-answered",
+        "passed": true
+      },
+      {
+        "id": "caller-device-action",
+        "passed": true
+      },
+      {
+        "id": "caller-speed-test",
+        "passed": true
+      },
+      {
+        "id": "unknown-account",
+        "passed": true
+      },
+      {
+        "id": "customer-claim-is-not-agent-confirmation",
+        "passed": true
+      },
+      {
+        "id": "disclose-actual-goal",
+        "passed": true
+      },
+      {
+        "id": "customer-must-not-do-agent-work",
+        "passed": true
+      },
+      {
+        "id": "device-setting-is-not-connectivity",
+        "passed": true
+      },
+      {
+        "id": "partially-completed-actions",
+        "passed": true
+      },
+      {
+        "id": "verified-connectivity-completion",
+        "passed": true
+      },
+      {
+        "id": "full-tools-airplane-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-roaming-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-claimed-action-without-execution",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-repeat-after-device-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-unsolicited-action",
+        "passed": true
+      },
+      {
+        "id": "full-tools-already-off",
+        "passed": true
+      },
+      {
+        "id": "full-tools-persona-needs-reassurance",
+        "passed": true
+      },
+      {
+        "id": "full-tools-later-troubleshooting-read",
+        "passed": true
+      },
+      {
+        "id": "full-tools-streaming-vpn-question",
+        "passed": true
+      },
+      {
+        "id": "full-tools-unknown-plan-usage",
+        "passed": true
+      },
+      {
+        "id": "full-tools-vpn-after-account-and-speed-test",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-false-connected-false",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-true-connected-false",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-enabled-true-connected-true",
+        "passed": true
+      },
+      {
+        "id": "grounded-write-and-report-airplane_mode",
+        "passed": true
+      },
+      {
+        "id": "grounded-write-and-report-roaming_enabled",
+        "passed": true
+      },
+      {
+        "id": "grounded-observe-before-toggle",
+        "passed": true
+      },
+      {
+        "id": "grounded-observe-already-correct",
+        "passed": true
+      },
+      {
+        "id": "grounded-vpn-stale-after-airplane-write",
+        "passed": true
+      },
+      {
+        "id": "grounded-agent-promise-not-customer-request",
+        "passed": true
+      },
+      {
+        "id": "grounded-unknown-mode-needs-clarification",
+        "passed": true
+      },
+      {
+        "id": "full-tools-incomplete-phone-turn",
+        "passed": true
+      },
+      {
+        "id": "full-tools-incomplete-greeting",
+        "passed": true
+      },
+      {
+        "id": "full-tools-known-phone-plural",
+        "passed": true
+      },
+      {
+        "id": "full-tools-known-affected-line",
+        "passed": true
+      },
+      {
+        "id": "full-tools-unknown-phone",
+        "passed": true
+      },
+      {
+        "id": "full-tools-complete-question-during-speech",
+        "passed": true
+      },
+      {
+        "id": "full-tools-describe-reported-symptoms",
+        "passed": true
+      },
+      {
+        "id": "full-tools-check-before-describing",
+        "passed": true
+      },
+      {
+        "id": "full-tools-working-is-not-enabled",
+        "passed": true
+      },
+      {
+        "id": "full-tools-speed-test-over-mobile-data",
+        "passed": true
+      },
+      {
+        "id": "full-tools-mms-over-mobile-data",
+        "passed": true
+      },
+      {
+        "id": "full-tools-which-line-using-data",
+        "passed": true
+      },
+      {
+        "id": "full-tools-more-about-reported-symptoms",
+        "passed": true
+      },
+      {
+        "id": "full-tools-location-is-not-a-setting",
+        "passed": true
+      },
+      {
+        "id": "full-tools-agent-offer-after-speed-test",
+        "passed": true
+      },
+      {
+        "id": "full-tools-agent-can-i-check-after-speed-test",
+        "passed": true
+      },
+      {
+        "id": "full-tools-agent-promise-after-speed-test",
+        "passed": true
+      },
+      {
+        "id": "non-phone-incomplete-identity-question",
+        "passed": true
+      },
+      {
+        "id": "non-phone-incomplete-product-question",
+        "passed": true
+      },
+      {
+        "id": "full-tools-data-speed-is-not-enabled",
+        "passed": true
+      },
+      {
+        "id": "full-tools-slow-data-is-not-enabled",
+        "passed": true
+      },
+      {
+        "id": "full-tools-report-restored-connection",
+        "passed": true
+      },
+      {
+        "id": "full-tools-report-working-connection",
+        "passed": true
+      },
+      {
+        "id": "full-tools-current-phone-network-technology",
+        "passed": true
+      },
+      {
+        "id": "full-tools-current-phone-network-settings",
+        "passed": true
+      },
+      {
+        "id": "fact-paraphrase",
+        "passed": true
+      },
+      {
+        "id": "fact-wrong-amount",
+        "passed": true
+      },
+      {
+        "id": "fact-negation",
+        "passed": true
+      },
+      {
+        "id": "fact-promise",
+        "passed": true
+      },
+      {
+        "id": "fact-partial",
+        "passed": true
+      },
+      {
+        "id": "fact-caller-only",
+        "passed": true
+      }
+    ]
+  },
+  "functional_voice_checks": [
+    {
+      "case": "vpn-enabled-False-connected-False",
+      "spoken": "My VPN is disabled.",
+      "transcript": "My VPN is disabled.",
+      "vad_speech_frames": 53,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "5ca10fe2d7b5b387b3b8ad7d9678d492bd024ff56dcc6c4c15db6841be9c4693",
+      "tool_result": "VPN is turned OFF."
+    },
+    {
+      "case": "vpn-enabled-True-connected-False",
+      "spoken": "My VPN is enabled in settings, but it is not connected.",
+      "transcript": "MyVPN is enabled in settings, but it is not connected.",
+      "vad_speech_frames": 110,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "fd90242a5361cb22e82bfad853d879fe12949f3d3862bec2437e7729f82068f7",
+      "tool_result": "VPN is turned ON in settings, but currently not connected."
+    },
+    {
+      "case": "vpn-enabled-True-connected-True",
+      "spoken": "My VPN is connected.",
+      "transcript": "MyVPN is connected.",
+      "vad_speech_frames": 52,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "823d743cb117d30b960cfb5f223a3d630cd5232c85e2a46ed826b9ddc607cf2c",
+      "tool_result": "VPN is ON and connected (no specific details available)."
+    }
+  ],
+  "native": {
+    "revision": "03e525fc7a42d71dafa5777dfe59264689c2b7cf+source-sha256:c8e7b9077752b9eea56ddbdbb4752db83ab2cf1a65d9d57a9dc555fcbf7f0caa",
+    "binary_sha256": "cc538f99363f066888436e953a64042421b40806ffcdd6e5dfa5f7e4e577dbbb",
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    }
+  },
+  "spoken_diagnostic": {
+    "status": "interrupted_waiting_for_exclusive_runtime",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+    "seed": 42,
+    "max_seconds": 2400,
+    "wall_timeout": 7200,
+    "caller_idle_seconds": 15,
+    "scored": false,
+    "reason": "External speech inference was active; the diagnostic was stopped and remains unscored."
+  },
+  "heldout_pilot": {
+    "planned_calls": 18,
+    "status": "waiting_for_exclusive_runtime_and_spoken_audit",
+    "complete": false
+  },
+  "controlled_spoken_pipeline": {
+    "functional_check_only": true,
+    "caller_mode": "controlled_spoken_input",
+    "reward": 1.0,
+    "db_match": true,
+    "wrong_write_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 39.85,
+    "wall_seconds": 44.803393958020024,
+    "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+    "diagnostics": {
+      "failed_requests_without_cancellation": [],
+      "native_chat_failures": [],
+      "unexpected_native_cancellations": []
+    },
+    "intentional_cancellations": 0,
+    "simulation_sha256": "ab40ca1b57ac0bfc2945b37b48006a4a3300599098fd3e19c96cfe9765ee7cd8"
+  },
+  "known_phone_voice_checks": [
+    {
+      "case": "phone-555-123-2002",
+      "spoken": "My phone number is 555-123-2002.",
+      "transcript": "My phone number is 555-123-2002.",
+      "vad_speech_frames": 133,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "fce49e3dfd0cf9e240efca43bbc79ef02ff8447cb6e3621f06d7b2697ee48b3c",
+      "number": "555-123-2002"
+    },
+    {
+      "case": "phone-555-123-9876",
+      "spoken": "My phone number is 555-123-9876.",
+      "transcript": "My phone number is 555-123-9876.",
+      "vad_speech_frames": 142,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "a814e59afa38a949745f16dfc2234625ac9e93e17adf210d9de3b88da3bfd6b0",
+      "number": "555-123-9876"
+    }
+  ],
+  "prior_spoken_diagnostics": [
+    {
+      "benchmark_commit": "7a0ae02b836759b66d8c62ca506c448e3b2c457b",
+      "source_sha256": "9556b0643253cebcf9f2869d6d55b205607faa35353b0ff8712ca574606e75f2",
+      "raw_reward": 0,
+      "termination": "timeout",
+      "audio_seconds": 352.8,
+      "wall_seconds": 1327.146145333012,
+      "status": "diagnostic_exposed_cancelled_work_deadline_defect",
+      "model_performance_qualified": false,
+      "native_inference_failures": 0,
+      "note": "Old completed speech work blocked subsequent turns until retired deadlines; raw timeout is not a clean model-performance result."
+    },
+    {
+      "benchmark_commit": "a8f1fdeea08bc218def8f19b93357ee82c023122",
+      "source_sha256": "420bd30cf2c0b882f6b715a38bd64600afea89ae9b9ffcd13a6c84740d8c50cc",
+      "termination": "timeout",
+      "raw_timeout_reward": 0.0,
+      "audio_seconds": 315.65000000000003,
+      "wall_seconds": 1240.5298488750122,
+      "model_performance_qualified": false,
+      "status": "caller_exposed_incomplete_turn_and_contact_routing_defects",
+      "raw_runner_scored": true,
+      "successful_agent_tools": 2,
+      "successful_customer_tools": 0,
+      "native_inference_failures": 0,
+      "note": "Caller interrupted incomplete questions and mishandled known phone-number questions; raw timeout is not a clean model-performance result."
+    },
+    {
+      "benchmark_commit": "3864a8b350b39543cff613a2735e0638c684dbfe",
+      "source_sha256": "82a5e4f8794d62435691f24eed35da81f0eae3b303912ea438fffa1c533a45fa",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 1028.7922584579792,
+      "model_performance_qualified": false,
+      "status": "caller_symptom_routing_and_silent_tool_timing_audit",
+      "successful_agent_tools": 27,
+      "unique_agent_call_signatures": 5,
+      "successful_customer_tools": 2,
+      "chat_count": 46,
+      "intentional_cancellations": 10,
+      "note": "Real speed-test result survived speech. Agent repeatedly read the same line. Symptom question was misrouted to a setting read; agent tool calls also falsely counted as speech. This run is diagnostic, not an accepted domain score.",
+      "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "b7ce4a22933ab795796087c7173c8ac6ba9ca7be",
+      "source_sha256": "2cac08b1ee83c2d89911439e1e89aaa28725df26ff764ebe6501829d460bafa0",
+      "raw_reward": 0.0,
+      "raw_runner_scored": true,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 887.2699863750022,
+      "model_performance_qualified": false,
+      "status": "caller_intent_audit",
+      "successful_agent_tools": 4,
+      "successful_customer_tools": 3,
+      "note": "Actual speed/VPN reads and speech passed; line-selection and alternate symptom wording still triggered generic data-setting reads. Agent later repeated an app-use question without progressing to device changes.",
+      "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "4a3c6dd1f169f95f25072c1901b641f516b83e5b",
+      "source_sha256": "ff7e74a440faf211950d976583eef337f0fadca977d53f9a7d980f2a02ed52e5",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 852.178918458987,
+      "model_performance_qualified": false,
+      "status": "agent_offer_misinterpreted_as_customer_recheck",
+      "successful_agent_tools": 6,
+      "successful_customer_tools": 12,
+      "customer_tool_counts": {
+        "run_speed_test": 8,
+        "check_network_status": 1,
+        "check_vpn_status": 1,
+        "check_data_restriction_status": 1,
+        "check_network_mode_preference": 1
+      },
+      "note": "Offers by the service agent were misinterpreted as requests to repeat a customer speed test. Excluded from agent-performance results.",
+      "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "6e1d2c71aa3619205596f504547c4dd02b070e02",
+      "source_sha256": "cfbebdf0498aeeaf044ce4139cecc1b526af56911dc44f4696fb26f88c179858",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 864.738877833006,
+      "model_performance_qualified": false,
+      "status": "data_speed_question_misinterpreted_as_enabled_setting",
+      "successful_agent_tools": 6,
+      "successful_customer_tools": 1,
+      "note": "Questions about slow data speed incorrectly reported mobile data enabled. This caller-routing defect excludes the run from accepted agent-performance scores.",
+      "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "b00dcf75ebde69eb0f9acb8883d47c479e03659d",
+      "source_sha256": "7c5a4c4298a96ca22a90ca8261f86f774011bdfe1bd98784092f5fbcc88eadd5",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 940.6901745420182,
+      "model_performance_qualified": false,
+      "status": "report_recovery_request_misinterpreted_as_agent_offer",
+      "successful_agent_tools": 6,
+      "successful_customer_tools": 3,
+      "customer_tool_counts": {
+        "check_network_status": 1,
+        "run_speed_test": 1,
+        "toggle_airplane_mode": 1
+      },
+      "note": "The actual speed test led the agent to diagnose Airplane Mode and request a successful toggle off. A subsequent request to report restored connectivity was misread as agent-owned work, and the compound instruction omitted its requested connectivity test. Excluded from accepted model-performance scores.",
+      "native_inference_failures": 0
+    },
+    {
+      "benchmark_commit": "f26931311fc4af2f343f649ecbf923361d37fd7f",
+      "source_sha256": "fd79e4085eda86dec8cc36ae1595c7cce4b2a16ae475331497ad0bed378c43c9",
+      "raw_runner_scored": true,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 600.0,
+      "wall_seconds": 1002.5955200410099,
+      "model_performance_qualified": false,
+      "status": "network_technology_question_blocked_by_generic_phone_hint",
+      "successful_agent_tools": 5,
+      "successful_customer_tools": 3,
+      "customer_tool_counts": {
+        "run_speed_test": 1,
+        "check_network_status": 1,
+        "check_vpn_status": 1
+      },
+      "caller_clarifications": 5,
+      "native_speech": {
+        "max_first_audio_seconds": 10.614540292008314,
+        "max_wall_seconds": 74.3529017920373
+      },
+      "note": "The caller asked for clarification repeatedly when asked to inspect the current 2G/3G connection. A broad phone hint took priority over the existing cellular-technology read. Generated agent questions were also superseded before delivery during slow synthesis and repeated silence check-ins; these planned questions are not treated as heard caller input.",
+      "native_inference_failures": 0
+    }
+  ],
+  "actual_model_tests_passed": 8,
+  "native_tool_history_checks": [
+    {
+      "model": "gemma4-12b-it",
+      "counterfactual_results": 2,
+      "passed": true,
+      "scope": "Short fixture verifies basic result transport; not a long-context planning proof.",
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "cf4a638a0f0aaef038f0994af77ebeae64238babe0c342045718e1f1c7a455b7"
+    },
+    {
+      "model": "gemma4-e4b-it",
+      "counterfactual_results": 2,
+      "passed": true,
+      "scope": "Short fixture verifies basic result transport; not a long-context planning proof.",
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+      "report_sha256": "5267b979880992be3e9700a85dd65b1e1c7ea0dd463ba6bf44d89ddd9d6e3374"
+    }
+  ],
+  "action_owner_calibration": [
+    {
+      "case": "full-tools-agent-offer-after-speed-test",
+      "reply": "Yes, please check if my data is being restricted.",
+      "tool_calls": null,
+      "passed": true,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076"
+    },
+    {
+      "case": "full-tools-agent-can-i-check-after-speed-test",
+      "reply": "Yes, please check that for me.",
+      "tool_calls": null,
+      "passed": true,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076"
+    },
+    {
+      "case": "full-tools-agent-promise-after-speed-test",
+      "reply": "Can you please restore my mobile internet?",
+      "tool_calls": null,
+      "passed": true,
+      "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076"
+    }
+  ],
+  "qualification_errors_fail_closed": true,
+  "common_turn_guard_domains": [
+    "airline",
+    "retail",
+    "telecom"
+  ],
+  "qualification_regression": {
+    "source_sha256": "ac1b3a0730aeb9e5f48bf34ab6f6c6d5ff3d6712739ca6d22c20f6b03e4d1e73",
+    "passed": false,
+    "passed_cases": 65,
+    "total_cases": 66,
+    "failed_case": "full-tools-streaming-vpn-question",
+    "reason": "A connection-speed explanation incorrectly replaced the requested VPN check.",
+    "fixed_in_current_source": true
+  },
+  "execution_conditions": {
+    "exclusive_runtime_verified": false,
+    "external_speech_process_observed_during_diagnostic": true,
+    "timing_scope": "Prior controls establish functionality; their timings were not collected under a verified exclusive model runtime."
+  },
+  "partial_spoken_audit": {
+    "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+    "benchmark_commit": "c93548158625a78b5d9f71b348504e9fbb8fb249",
+    "audio_seconds": 688.2,
+    "ticks": 13764,
+    "customer_tool_calls": 4,
+    "grounded_reports": 5,
+    "controller_clarifications": 0,
+    "scored": false,
+    "scope": "Audited heard requests and actual tool evidence in the saved partial trace; no completed task outcome.",
+    "failed_run_sha256": "71d0ca677c2600a563ee791c2810f17cc3e7b07e0d5c1ef7ca43fd8bd51640a6"
+  }
+}

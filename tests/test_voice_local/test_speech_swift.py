@@ -41,6 +41,39 @@ def test_failed_chat_keeps_exact_sent_body_and_error_response():
     backend.close()
 
 
+@pytest.mark.parametrize("with_system", [True, False])
+def test_required_tool_choice_keeps_one_initial_system_turn(with_system):
+    received = []
+
+    def server(request):
+        received.append(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "content": "",
+                "generatedTokens": 4,
+                "toolCalls": [{"id": "call", "name": "enable_data", "arguments": {}}],
+            },
+        )
+
+    backend = SpeechSwiftBackend(
+        "http://127.0.0.1:8080", transport=httpx.MockTransport(server)
+    )
+    messages = (
+        [SystemMessage(role="system", content="Customer instructions.")]
+        if with_system
+        else []
+    ) + [UserMessage(role="user", content="Enable data.")]
+    backend.generate("gemma4-e4b-it", messages, tool_choice="required")
+    systems = [row for row in received[0]["messages"] if row["role"] == "system"]
+    assert len(systems) == 1
+    assert received[0]["messages"][0] is systems[0]
+    assert "Use one of the supplied tools" in systems[0]["content"]
+    if with_system:
+        assert "Customer instructions." in systems[0]["content"]
+    backend.close()
+
+
 def test_successful_requests_and_failed_audio_do_not_retain_request_bodies():
     def server(request):
         payload = json.loads(request.content)
@@ -466,3 +499,22 @@ def test_caller_discards_a_reply_superseded_before_it_was_spoken():
     assert caller._generation is None
     assert caller.stale_generation_count == 1
     assert len(state.input_turn_taking_buffer) == 2
+
+
+def test_private_agent_tool_call_is_silent_for_caller_turn_taking():
+    from tau2.data_model.message import ToolCall
+
+    agent = SpeechSwiftAgent([], "policy", backend=object())
+    state = agent.get_init_state()
+    reply = AssistantMessage(
+        role="assistant",
+        tool_calls=[
+            ToolCall(id="lookup", name="get_details_by_id", arguments={"id": "L1002"})
+        ],
+    )
+    agent._events.put(("tools", agent._epoch, reply))
+    delivered = agent._drain_events(state)
+    assert delivered.tool_calls == reply.tool_calls
+    assert delivered.contains_speech is False
+    assert state.messages[-1].contains_speech is False
+    agent.stop()

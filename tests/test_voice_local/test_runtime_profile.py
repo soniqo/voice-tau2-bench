@@ -79,6 +79,15 @@ def test_v2_budget_defaults_keep_call_and_wall_time_separate():
     assert requested.budgets(600) == (600, 7200)
     assert profile().budgets() == (600, 600)
     assert profile().budgets(1200) == (1200, 1200)
+    assert requested.execution.device_grounding is True
+    assert profile().execution.device_grounding is False
+
+
+def test_historical_profiles_cannot_enable_new_device_grounding():
+    data = profile().model_dump(mode="json")
+    data["execution"]["device_grounding"] = True
+    with pytest.raises(ValueError, match="Historical v1"):
+        LocalVoiceProfile.model_validate(data)
 
 
 @pytest.mark.parametrize(

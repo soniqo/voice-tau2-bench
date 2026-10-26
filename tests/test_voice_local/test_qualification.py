@@ -50,7 +50,8 @@ def test_v2_requires_passing_matching_qualification(certificate):
 
 
 @pytest.mark.parametrize(
-    "change", ["failed", "missing", "duplicate", "model", "assets"]
+    "change",
+    ["failed", "missing", "duplicate", "model", "assets", "device_grounding", "error"],
 )
 def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, change):
     profile, provenance, report, path = certificate
@@ -62,6 +63,10 @@ def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, c
         report["cases"][0] = report["cases"][1]
     elif change == "model":
         profile.roles["caller"].model_id = "different caller"
+    elif change == "device_grounding":
+        profile.execution.device_grounding = False
+    elif change == "error":
+        report["cases"][0]["error"] = "Caller reply generation failed"
     else:
         provenance["native"]["configuration"]["assets"]["pinned"] = "changed"
     path.write_text(json.dumps(report))
@@ -74,61 +79,159 @@ def test_historical_profiles_do_not_require_new_caller_policy():
     assert qualification.require_qualification(None, profile, {}) is None
 
 
-def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
-    case = {
-        "id": "caller-tool-continuation",
-        "scenario": "Create an appointment named Annual Checkup.",
-        "history": [["user", "What should it be called?"]],
-        "decision": "CONTINUE",
-        "reply": {"notification_tools": True, "must_contain": ["annual", "checkup"]},
+def terminal(decision="CONTINUE", evidence=None):
+    return AssistantMessage(
+        role="assistant",
+        content=json.dumps(
+            {"reasoning": "fixture", "agent_evidence": evidence, "decision": decision}
+        ),
+    )
+
+
+def provenance():
+    return {
+        "benchmark": {"sha256": "source"},
+        "native": {
+            "configuration": {"assets": {"pinned": True}},
+            "voxcpm2_parameter_elements": {"float16": 1},
+        },
     }
+
+
+def single_case(monkeypatch, case):
     monkeypatch.setattr(
         qualification,
         "qualification_suite",
         lambda: {"suite": "fixture", "caller": [case], "judge": []},
     )
-    assessment = AssistantMessage(
-        role="assistant",
-        content=json.dumps(
-            {
-                "reasoning": "title question remains open",
-                "agent_evidence": None,
-                "decision": "CONTINUE",
-            }
-        ),
+    return load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
     )
-    replies = iter(
-        [
-            assessment,
-            assessment,
+
+
+def test_qualification_replays_incomplete_speech_without_speaking(monkeypatch):
+    case = {
+        "id": "partial-turn",
+        "scenario": "Restore my internet.",
+        "toolset": "telecom",
+        "history": [["user", "Which phone ", {"is_final_chunk": False}]],
+        "decision": "CONTINUE",
+        "reply": {"no_speech": True},
+    }
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            assert kwargs["call_name"].startswith("caller_terminal_v2")
+            return terminal()
+
+    row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
+    assert row["passed"] is True and row["final_action"] == "wait"
+
+
+@pytest.mark.parametrize(
+    "reply,passed",
+    [
+        (AssistantMessage(role="assistant", content="Yes, please."), True),
+        (AssistantMessage(role="assistant", content=""), False),
+        (
             AssistantMessage(
                 role="assistant",
                 tool_calls=[
-                    ToolCall(id="read", name="check_notifications", arguments={})
+                    ToolCall(id="unexpected", name="check_vpn_status", arguments={})
                 ],
             ),
-            assessment,
-            AssistantMessage(role="assistant", content="Annual Checkup, please."),
-        ]
+            False,
+        ),
+    ],
+)
+def test_qualification_requires_speech_for_an_agent_offer(monkeypatch, reply, passed):
+    case = {
+        "id": "agent-offer",
+        "scenario": "Restore my internet.",
+        "toolset": "telecom",
+        "history": [["user", "Would you like me to check that?"]],
+        "decision": "CONTINUE",
+        "reply": {"must_speak": True},
+    }
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="SPEAK")
+            return reply
+
+    row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
+    assert row["passed"] is passed
+
+
+def test_long_conversation_vpn_answer_is_replaced_with_an_actual_device_read(
+    monkeypatch,
+):
+    case = next(
+        case
+        for case in qualification.qualification_suite()["caller"]
+        if case["id"] == "full-tools-vpn-after-account-and-speed-test"
     )
+    profile = single_case(monkeypatch, case)
+
+    class CapturedReplies:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="SPEAK")
+            return AssistantMessage(
+                role="assistant", content="No, I'm not using a VPN."
+            )
+
+    report = qualification.qualify(CapturedReplies(), profile, provenance())
+    assert report["passed"] is True
+    row = report["cases"][0]
+    assert row["actual_action"] == "continue"
+    assert row["final_action"] == "tool"
+    assert row["response"]["content"] is None
+    assert row["response"]["tool_calls"][0]["name"] == "check_vpn_status"
+    assert row["passed"] is True
+
+
+def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatch):
+    case = {
+        "id": "read-before-answer",
+        "scenario": "Create an appointment named Annual Checkup.",
+        "history": [["user", "What should it be called?"]],
+        "decision": "CONTINUE",
+        "reply": {"notification_tools": True, "must_contain": ["annual", "checkup"]},
+    }
+    profile = single_case(monkeypatch, case)
     sent = []
 
     class Backend:
         def generate(self, model, messages, **kwargs):
             sent.append(messages)
-            return next(replies)
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                history = json.loads(messages[-1].content)["conversation"]
+                return AssistantMessage(
+                    role="assistant",
+                    content="SPEAK"
+                    if any(row["speaker"] == "customer_tool" for row in history)
+                    else "TOOL",
+                )
+            if kwargs.get("tool_choice") == "required":
+                return AssistantMessage(
+                    role="assistant",
+                    tool_calls=[
+                        ToolCall(id="read", name="check_notifications", arguments={})
+                    ],
+                )
+            return AssistantMessage(role="assistant", content="Annual Checkup, please.")
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"fixture": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
-        },
-    }
-    report = qualification.qualify(Backend(), profile, provenance)
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is True
     assert report["cases"][0]["fixture_tool_result"]["content"] == "[]"
     assert '"speaker": "customer_tool"' in sent[-1][-1].content
@@ -136,48 +239,96 @@ def test_qualification_checks_answer_after_one_permitted_fixture_read(monkeypatc
 
 def test_qualification_labels_device_observations_as_customer_tools(monkeypatch):
     case = {
-        "id": "device-intermediate-observation",
-        "scenario": "Restore my mobile internet.",
+        "id": "observations",
+        "scenario": "Restore internet.",
         "history": [
             ["user", "Please turn off airplane mode."],
-            ["tool", '{"airplane_mode": false, "signal": "Excellent"}'],
+            ["tool", "Airplane Mode: OFF"],
         ],
         "decision": "CONTINUE",
     }
-    monkeypatch.setattr(
-        qualification,
-        "qualification_suite",
-        lambda: {"suite": "fixture", "caller": [case], "judge": []},
-    )
-    sent = []
+    profile = single_case(monkeypatch, case)
+    received = []
 
     class Backend:
         def generate(self, model, messages, **kwargs):
-            sent.append(json.loads(messages[-1].content))
-            return AssistantMessage(
-                role="assistant",
-                content=json.dumps(
-                    {
-                        "reasoning": "Device setting alone does not prove connectivity.",
-                        "agent_evidence": None,
-                        "decision": "CONTINUE",
-                    }
-                ),
-            )
+            received.append(json.loads(messages[-1].content))
+            return terminal()
 
-    profile = load_profile(
-        repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
-    )
-    provenance = {
-        "benchmark": {"sha256": "source"},
-        "native": {
-            "configuration": {"assets": {"fixture": True}},
-            "voxcpm2_parameter_elements": {"float16": 1},
+    report = qualification.qualify(Backend(), profile, provenance())
+    assert report["passed"] is True
+    assert received[0]["conversation"][-1]["speaker"] == "customer_tool"
+
+
+def test_qualification_executes_real_device_write_with_full_customer_toolset(
+    monkeypatch,
+):
+    case = {
+        "id": "actual-device-write",
+        "scenario": "Restore internet.",
+        "toolset": "telecom",
+        "device": {"airplane_mode": True},
+        "history": [["user", "Please turn off Airplane Mode."]],
+        "decision": "CONTINUE",
+        "reply": {
+            "tool": "toggle_airplane_mode",
+            "arguments": {},
+            "permitted_read": "check_network_status",
+            "device_after": {"airplane_mode": False},
         },
     }
-    report = qualification.qualify(Backend(), profile, provenance)
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="TOOL")
+            assert kwargs["tool_choice"] == "required" and len(kwargs["tools"]) == 30
+            return AssistantMessage(
+                role="assistant",
+                tool_calls=[
+                    ToolCall(id="write", name="toggle_airplane_mode", arguments={})
+                ],
+            )
+
+    report = qualification.qualify(Backend(), profile, provenance())
     assert report["passed"] is True
-    observation = sent[0]["conversation"][-1]
-    assert observation["speaker"] == "customer_tool"
-    assert json.loads(observation["content"])["signal"] == "Excellent"
-    assert observation["tool_call_id"] == "fixture-tool-1"
+    assert report["cases"][0]["device_after"] == {"airplane_mode": False}
+    assert "Airplane Mode is now OFF" in report["cases"][0]["fixture_tool_result"]
+
+
+def test_qualification_rejects_terminal_control_after_permitted_fixture_read(
+    monkeypatch,
+):
+    case = {
+        "id": "early-stop-after-read",
+        "scenario": "More help needed.",
+        "history": [["user", "Done."]],
+        "decision": "CONTINUE",
+        "reply": {"notification_tools": True, "must_contain": []},
+    }
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                history = json.loads(messages[-1].content)["conversation"]
+                return (
+                    terminal("COMPLETE", "Done.")
+                    if any(row["speaker"] == "customer_tool" for row in history)
+                    else terminal()
+                )
+            if kwargs["call_name"] == "caller_tool_route_v2":
+                return AssistantMessage(role="assistant", content="TOOL")
+            return AssistantMessage(
+                role="assistant",
+                tool_calls=[
+                    ToolCall(id="read", name="check_notifications", arguments={})
+                ],
+            )
+
+    report = qualification.qualify(Backend(), profile, provenance())
+    assert report["passed"] is False
+    assert report["cases"][0]["final_action"] == "stop"

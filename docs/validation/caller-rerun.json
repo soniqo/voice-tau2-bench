@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "scope": "Development diagnostics; not an overall model score or a reusable qualification certificate.",
+  "qualification_summary": {
+    "passed": true,
+    "passed_checks": 32,
+    "total_checks": 32,
+    "source_sha256": "a206ac2f33fe63d9e25e7d7b92ae5efb1c5ae1829bdbab791ab5ed39c7ad7cd6",
+    "suite_sha256": "d36bc1558ab62e2bbea8c3be8dfc5cd6b1dd188892663474fabb6c88cc6a0ced",
+    "full_report_sha256": "8bb5b92d425504e57d76c6c0a402a454f91fb077cfd1cda63aa3999326edb297",
+    "cases": [
+      {
+        "id": "completed-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "promised-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "resolved-refusal",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "refusal-before-follow-up",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "agent-goodbye-with-pending-work",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "partially-answered",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "all-questions-answered",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "caller-device-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "caller-speed-test",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "unknown-account",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "customer-claim-is-not-agent-confirmation",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "disclose-actual-goal",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "customer-must-not-do-agent-work",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "device-setting-is-not-connectivity",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "partially-completed-actions",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "verified-connectivity-completion",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-airplane-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-roaming-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-claimed-action-without-execution",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-repeat-after-device-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-no-unsolicited-action",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-already-off",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-persona-needs-reassurance",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-later-troubleshooting-read",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-streaming-vpn-question",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "full-tools-unknown-plan-usage",
+        "component": "caller",
+        "passed": true
+      },
+      {
+        "id": "fact-paraphrase",
+        "component": "judge",
+        "passed": true
+      },
+      {
+        "id": "fact-wrong-amount",
+        "component": "judge",
+        "passed": true
+      },
+      {
+        "id": "fact-negation",
+        "component": "judge",
+        "passed": true
+      },
+      {
+        "id": "fact-promise",
+        "component": "judge",
+        "passed": true
+      },
+      {
+        "id": "fact-partial",
+        "component": "judge",
+        "passed": true
+      },
+      {
+        "id": "fact-caller-only",
+        "component": "judge",
+        "passed": true
+      }
+    ],
+    "scope": "Historical 32-check pass on 5dcfba27; not valid for the expanded 33-check suite."
+  },
+  "offline_validation": {
+    "passed": 518,
+    "model_tests_deselected": 10,
+    "frozen_inputs": 64,
+    "frozen_tasks": 278,
+    "upstream_replays": 2,
+    "lint": "passed"
+  },
+  "fresh_spoken_diagnostic": {
+    "status": "operator_stopped_after_failed_caller_validity_audit",
+    "domain": "telecom",
+    "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
+    "seed": 42,
+    "scored": false,
+    "benchmark_commit": "5dcfba27f28fdf9d5400415604c4302e3939fc66",
+    "audio_seconds": 221.35000000000002,
+    "ticks": 4427,
+    "trace_sha256": "41cc300c6034c0737fdb03aa39b94cf4c7f9def74e94d052d8254329fdcc1a13",
+    "audit": {
+      "agent_question": "Could you please tell me if you're currently using a VPN?",
+      "caller_reply": "No, I'm not using a VPN.",
+      "actual_customer_tools_before_answer": [
+        "run_speed_test"
+      ],
+      "missing_observation": "No check_vpn_status result existed in the caller history.",
+      "secondary_finding": "The caller later ran check_network_status but initially asked the agent for its finding instead of reporting the actual customer tool result."
+    },
+    "diagnostics": {
+      "failed_requests_without_cancellation": [],
+      "native_chat_failures": [],
+      "unexpected_native_cancellations": []
+    },
+    "intentional_shutdown_cancellations": 1
+  },
+  "heldout_pilot": {
+    "planned_calls": 18,
+    "complete": false,
+    "status": "not_started_caller_validity_failed"
+  },
+  "current_gate": {
+    "required_checks": 33,
+    "qualified": false,
+    "reason": "Longer spoken conversation failed caller device-fact grounding; new regression fixture added.",
+    "suite_sha256": "ff027727345171bc6dbdc870001c2a4d8c106762fbf3fe235a3b659940cbce42"
+  }
+}
