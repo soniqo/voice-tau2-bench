@@ -14,6 +14,7 @@ from tau2.data_model.semantic_communication import (
 )
 from tau2.environment.tool import Tool
 from tau2.evaluator.evaluator_communicate import CommunicateEvaluator
+from tau2.evaluator.evaluator_nl_assertions import NLAssertionsEvaluator
 from tau2.inference import InferenceBackends, use_inference_backends
 from tau2.user.user_simulator_base import STOP
 from tau2.voice.baseline import repository_root
@@ -370,10 +371,25 @@ def qualify(backend, profile, provenance):
                     if case["said"]
                     else [UserMessage(role="user", content=case["caller_said"])]
                 )
-                check = CommunicateEvaluator.evaluate_communicate_info(
-                    history, [case["expected"]], scoring=scoring
-                )[0]
+                kind = case.get("kind", "communicate")
+                if kind == "nl_assertion":
+                    from tau2.config import DEFAULT_LLM_NL_ASSERTIONS
+
+                    if profile.roles["judge"].model_id != DEFAULT_LLM_NL_ASSERTIONS:
+                        raise ValueError(
+                            "The NL assertion judge does not match the profile judge"
+                        )
+                    check = NLAssertionsEvaluator.evaluate_nl_assertions(
+                        history, [case["expected"]]
+                    )[0]
+                elif kind == "communicate":
+                    check = CommunicateEvaluator.evaluate_communicate_info(
+                        history, [case["expected"]], scoring=scoring
+                    )[0]
+                else:
+                    raise ValueError(f"Unknown judge qualification kind: {kind}")
                 row.update(
+                    kind=kind,
                     actual=check.met,
                     justification=check.justification,
                     passed=check.met == case["met"],

@@ -1641,6 +1641,20 @@
       "said": null,
       "caller_said": "I expect a refund of $42.50.",
       "met": false
+    },
+    {
+      "id": "nl-assertion-correct-amount",
+      "kind": "nl_assertion",
+      "expected": "The agent told the customer that the refund is $42.50.",
+      "said": "I have issued a refund of forty-two dollars and fifty cents.",
+      "met": true
+    },
+    {
+      "id": "nl-assertion-wrong-amount",
+      "kind": "nl_assertion",
+      "expected": "The agent told the customer that the refund is $42.50.",
+      "said": "I have issued a refund of twenty-four dollars and fifty cents.",
+      "met": false
     }
   ]
 }

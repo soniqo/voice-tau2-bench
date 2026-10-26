@@ -18,6 +18,9 @@ goal-verification checks. The [setting-direction follow-up](validation/caller-sw
 records the preceding caller revision.
 The [status-bar follow-up](validation/caller-views.md) records the latest read-target
 correction and validation.
+The [NL-judge follow-up](validation/nl-judge.md) records current whole-source
+qualification and the completed development-call audit. See
+[pilot grading coverage](validation/pilot-grading.md) for reporting groups.
 
 ## Models
 
@@ -74,7 +77,7 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 75 checks cover completed versus promised work, required follow-ups after a
+The 77 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
 and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
@@ -84,6 +87,9 @@ service-working and data-speed questions versus enabled settings, and agent offe
 become customer actions. Streaming cases include incomplete speech and completed
 questions heard during an ongoing turn; two cases exercise callers without a
 phone controller.
+Two judge cases exercise the actual NL-assertion prompt in addition to the six
+communication cases. NL results must cover every requested assertion with a
+Boolean value. A judge-model mismatch fails qualification before inference.
 
 These fixtures are outside the frozen task frame. Passing checks is a preflight
 requirement, not evidence of domain accuracy or complete customer reliability.

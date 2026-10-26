@@ -694,6 +694,60 @@ def test_real_local_semantic_judge_uses_the_preserved_prompt(runtime):
     assert [check.met for check in checks] == [True, False]
 
 
+@pytest.mark.parametrize("correct_amount", [False, True])
+def test_real_nl_assertion_judge_checks_every_requested_outcome(
+    runtime, tmp_path, correct_amount
+):
+    import json
+
+    from tau2.data_model.tasks import EvaluationCriteria, RewardType, Task, UserScenario
+    from tau2.evaluator.evaluator_nl_assertions import NLAssertionsEvaluator
+    from tau2.voice.provenance import benchmark_sources
+
+    outcomes = [
+        "The agent told the customer that the refund is $42.50.",
+        "The agent told the customer that the refund will arrive within five business days.",
+    ]
+    amount = "$42.50" if correct_amount else "$24.50"
+    text = f"Your refund is {amount}. It will arrive within five business days."
+    task = Task(
+        id="native-nl-judge-control",
+        user_scenario=UserScenario(instructions="Ask about a refund."),
+        evaluation_criteria=EvaluationCriteria(
+            nl_assertions=outcomes, reward_basis=[RewardType.NL_ASSERTION]
+        ),
+    )
+    start = len(runtime.events)
+    with use_inference_backends(
+        InferenceBackends(chat=runtime, synthesis=runtime, transcription=runtime)
+    ):
+        reward = NLAssertionsEvaluator.calculate_reward(
+            task, [AssistantMessage(role="assistant", content=text)]
+        )
+    root = Path(os.environ.get("TAU_VOICE_NL_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    (root / f"correct-amount-{correct_amount}.json").write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "agent_text": text,
+                "requested_outcomes": outcomes,
+                "reward_info": reward.model_dump(mode="json"),
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert len(reward.nl_assertions) == 2
+    checked = {c.nl_assertion: c.met for c in reward.nl_assertions}
+    assert checked == {outcomes[0]: correct_amount, outcomes[1]: True}
+    assert reward.reward == float(correct_amount)
+    assert len([e for e in runtime.events[start:] if e["operation"] == "chat"]) == 1
+
+
 def test_real_long_context_releases_request_buffers(runtime):
     for _ in range(3):
         reply = runtime.generate(
