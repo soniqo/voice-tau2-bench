@@ -14,7 +14,8 @@ spoken pipeline checks, qualification results, and known limits. The
 The [device-controller follow-up](validation/grounded-caller.md) records current
 caller validation and held-out pilot progress. The
 [acceptance and spoken-speed follow-up](validation/caller-goals.md) records the
-current goal-verification checks.
+goal-verification checks. The [setting-direction follow-up](validation/caller-switches.md)
+records the current caller qualification.
 
 ## Models
 
@@ -71,9 +72,9 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 71 checks cover completed versus promised work, required follow-ups after a
+The 74 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
-and positive/negative semantic facts. Forty-seven use the full 30-tool telecom
+and positive/negative semantic facts. Fifty use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
 They cover read-before-toggle and no-op behavior, stale facts after a write,
 compound instructions, required parameters, persona reassurance, VPN states,
@@ -140,6 +141,10 @@ a Boolean setting read. Internet-working questions and speed tests use the speed
 test; MMS capability questions use the MMS test. A distinct request to run a speed
 test performs a new test. Negated test requests require clarification and execute
 no tool. Explicit setting changes retain their read-before-write behavior.
+Switch directions bind to the requested setting or coordinated setting list:
+“turn off Airplane Mode on your device” requests OFF; the location does not supply
+an ON direction. A reason such as “to restore mobile data” does not request a
+second setting change. Unsupported or contradictory directions require clarification.
 Tool dispatch, known-number replies and vague follow-ups share the same check of
 who was asked to act. Agent offers such as “Would you like me to check that?”
 stay conversational and cannot become a customer recheck. Follow-ups inspect the

@@ -141,6 +141,112 @@ def test_setting_change_observes_before_acting_and_never_reverses_a_correct_stat
     assert repeated.raw_data["device_grounding"]["observations"]
 
 
+@pytest.mark.parametrize("initial", [False, True])
+@pytest.mark.parametrize(
+    "instruction,desired",
+    [
+        (
+            "Please turn off Airplane Mode on your device. This will restore your cellular and data connections. Would you like me to check anything else?",
+            False,
+        ),
+        ("Please turn Airplane Mode off on your phone.", False),
+        ("Please switch off flight mode on the device.", False),
+        ("Please set Airplane Mode to off on your phone.", False),
+        ("Please disable Airplane Mode on your device.", False),
+        ("Please turn on Airplane Mode on your device.", True),
+        ("Please turn Airplane Mode on on your phone.", True),
+        ("Please enable Airplane Mode on your phone.", True),
+        ("Please activate flight mode on your phone.", True),
+    ],
+)
+def test_setting_direction_excludes_the_on_in_a_device_location(
+    initial, instruction, desired
+):
+    env, caller = setup({"airplane_mode": initial})
+    response, calls = complete(
+        caller, env, [UserMessage(role="user", content=instruction)]
+    )
+    assert calls == [
+        "check_network_status",
+        *(["toggle_airplane_mode"] if initial != desired else []),
+    ]
+    assert env.user_tools.db.device.airplane_mode is desired
+    assert ("ON" if desired else "OFF") in response.content
+
+
+@pytest.mark.parametrize("initial", [False, True])
+@pytest.mark.parametrize("data_enabled", [False, True])
+def test_explanation_does_not_extend_the_switch_object_list(initial, data_enabled):
+    env, caller = setup({"airplane_mode": initial, "data_enabled": data_enabled})
+    _, calls = complete(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user",
+                content="Please turn off Airplane Mode on your device to restore mobile data.",
+            )
+        ],
+    )
+    assert calls == [
+        "check_network_status",
+        *(["toggle_airplane_mode"] if initial else []),
+    ]
+    assert env.user_tools.db.device.airplane_mode is False
+    assert env.user_tools.db.device.data_enabled is data_enabled
+
+
+@pytest.mark.parametrize("initial", [False, True])
+@pytest.mark.parametrize(
+    "instruction",
+    [
+        "Please turn off Wi-Fi and VPN on your device.",
+        "Please turn Wi-Fi and VPN off on your device.",
+        "Please disable Wi-Fi and VPN on your device.",
+    ],
+)
+def test_coordinated_switch_objects_share_only_the_requested_direction(
+    initial, instruction
+):
+    env, caller = setup(
+        {
+            "wifi_enabled": initial,
+            "vpn_enabled_setting": initial,
+            "vpn_connected": initial,
+        }
+    )
+    _, calls = complete(caller, env, [UserMessage(role="user", content=instruction)])
+    assert calls == [
+        "check_wifi_status",
+        *(["toggle_wifi"] if initial else []),
+        "check_vpn_status",
+        *(["disconnect_vpn"] if initial else []),
+    ]
+    assert env.user_tools.db.device.wifi_enabled is False
+    assert env.user_tools.db.device.vpn_connected is False
+
+
+@pytest.mark.parametrize("initial", [False, True])
+def test_coordinated_mobile_data_and_roaming_are_both_requested(initial):
+    env, caller = setup({"data_enabled": initial, "roaming_enabled": initial})
+    _, calls = complete(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user",
+                content="Please enable mobile data and roaming on your phone.",
+            )
+        ],
+    )
+    assert calls[0] == "check_network_status"
+    assert calls.count("toggle_data") == (0 if initial else 1)
+    assert calls.count("toggle_roaming") == (0 if initial else 1)
+    assert set(calls) <= {"check_network_status", "toggle_data", "toggle_roaming"}
+    assert env.user_tools.db.device.data_enabled is True
+    assert env.user_tools.db.device.roaming_enabled is True
+
+
 def test_customer_claim_cannot_supply_a_device_observation():
     env, caller = setup({"airplane_mode": True})
     history = [
@@ -254,6 +360,7 @@ def test_rejected_tool_result_cannot_become_a_fact():
         "Please don't turn airplane mode off yet.",
         "Do you know how to disable airplane mode?",
         "Please turn airplane mode on and off.",
+        "Please turn airplane mode on or off.",
         "Please change your APN settings.",
     ],
 )

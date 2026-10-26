@@ -1498,6 +1498,77 @@
         ]
       ],
       "decision": "COMPLETE"
+    },
+    {
+      "id": "full-tools-airplane-off-on-device",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode on your device. This will restore your cellular and data connections. Would you like me to check anything else?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false,
+          "data_enabled": true
+        }
+      }
+    },
+    {
+      "id": "full-tools-wifi-off-on-phone",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "wifi_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn Wi-Fi off on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_wifi_status",
+        "tool": "toggle_wifi",
+        "arguments": {},
+        "device_after": {
+          "wifi_enabled": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-roaming-on-on-phone",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "user",
+          "Please set data roaming to on on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        }
+      }
     }
   ],
   "judge": [
