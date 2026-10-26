@@ -699,3 +699,96 @@ def test_unknown_answer_cannot_hide_an_unexecuted_action_claim():
             tools=[Tool(set_mobile_data)],
             call_name="user_streaming_response",
         )
+
+
+@pytest.mark.parametrize(
+    "result,error,expected",
+    [
+        (
+            "Speed Test Result: 200.00 Mbps (Excellent). Connection is very fast.",
+            False,
+            "COMPLETE",
+        ),
+        ("Speed Test Result: 80.00 Mbps (Good).", False, "CONTINUE"),
+        ("Speed test failed: No Connection.", False, "CONTINUE"),
+        ("Speed Test Result: 200.00 Mbps (Excellent).", True, "CONTINUE"),
+    ],
+)
+def test_explicit_speed_acceptance_requires_successful_speed_tool_evidence(
+    result, error, expected
+):
+    from tau2.domains.telecom.environment import get_environment
+
+    quote = "Your mobile internet is restored."
+    backend = Backend(
+        [
+            json.dumps(
+                {
+                    "decision": "COMPLETE",
+                    "agent_evidence": quote,
+                    "reasoning": "fixture",
+                }
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(
+        backend,
+        "You will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+        device_grounding=True,
+    )
+    history = [
+        AssistantMessage(
+            role="assistant",
+            tool_calls=[ToolCall(id="speed", name="run_speed_test", arguments={})],
+        ),
+        ToolMessage(
+            role="tool", id="speed", requestor="user", content=result, error=error
+        ),
+        UserMessage(role="user", content=quote),
+    ]
+    decision, _ = caller.assess(
+        "model", history, tools=get_environment().get_user_tools()
+    )
+    assert decision == expected
+    if expected == "CONTINUE":
+        assert caller.decisions[-1]["guard"] == "caller_goal_result_not_verified"
+
+
+def test_excellent_radio_signal_is_not_evidence_of_excellent_internet_speed():
+    from tau2.domains.telecom.environment import get_environment
+
+    quote = "Your mobile internet is restored."
+    caller = QualifiedCallerBackend(
+        Backend(
+            [
+                json.dumps(
+                    {
+                        "decision": "COMPLETE",
+                        "agent_evidence": quote,
+                        "reasoning": "fixture",
+                    }
+                )
+            ]
+        ),
+        "You will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+        device_grounding=True,
+    )
+    history = [
+        AssistantMessage(
+            role="assistant",
+            tool_calls=[
+                ToolCall(id="network", name="check_network_status", arguments={})
+            ],
+        ),
+        ToolMessage(
+            role="tool",
+            id="network",
+            requestor="user",
+            content="Cellular Signal: excellent\nMobile Data Enabled: Yes",
+        ),
+        UserMessage(role="user", content=quote),
+    ]
+    decision, _ = caller.assess(
+        "model", history, tools=get_environment().get_user_tools()
+    )
+    assert decision == "CONTINUE"

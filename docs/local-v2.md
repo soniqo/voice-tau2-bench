@@ -12,7 +12,9 @@ See [validation results and working parameters](validation/local-v2.md) for the
 spoken pipeline checks, qualification results, and known limits. The
 [native cache follow-up](validation/native-prefill.md) verifies the newer runtime.
 The [device-controller follow-up](validation/grounded-caller.md) records current
-caller validation and held-out pilot progress.
+caller validation and held-out pilot progress. The
+[acceptance and spoken-speed follow-up](validation/caller-goals.md) records the
+current goal-verification checks.
 
 ## Models
 
@@ -69,9 +71,9 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 68 checks cover completed versus promised work, required follow-ups after a
+The 71 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
-and positive/negative semantic facts. Forty-four use the full 30-tool telecom
+and positive/negative semantic facts. Forty-seven use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
 They cover read-before-toggle and no-op behavior, stale facts after a write,
 compound instructions, required parameters, persona reassurance, VPN states,
@@ -188,6 +190,14 @@ stop, or rejected customer tool calls invalidate the trial and leave it unscored
 calibration fixture hash, caller/helper/judge roles, and native model pins. Source
 or model changes require qualification again; a documentation-only commit does
 not. Failed qualification exits with a nonzero status and preserves its report.
+
+When the caller explicitly requires an Excellent speed-test result, v2 binds
+completion to the successful customer measurement. Signal strength and enabled
+settings cannot satisfy that condition. Closing remarks trigger a read-only
+verification while it is unverified; device writes invalidate old observations.
+The evaluated agent still chooses the repair actions. Successful speed results
+speak their actual quality and rate in plain words, with the original tool result
+retained as evidence. See the [goal-verification record](validation/caller-goals.md).
 
 ## Run a functional check
 

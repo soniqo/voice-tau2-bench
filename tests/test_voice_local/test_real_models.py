@@ -366,6 +366,114 @@ def test_real_grounded_vpn_tool_result_survives_speech_and_telephony(
         assert "connected" in text and "not connected" not in text, recognized
 
 
+@pytest.mark.parametrize("data_enabled", [False, True])
+def test_real_goal_speed_measurement_survives_voice(runtime, tmp_path, data_enabled):
+    import json
+    import wave
+
+    from tau2.domains.telecom.environment import get_environment
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    environment = get_environment()
+    environment.user_tools.db.device.data_enabled = data_enabled
+    environment.user_tools.simulate_network_search()
+    caller = QualifiedCallerBackend(
+        runtime,
+        "You will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+        device_grounding=True,
+    )
+    tools = environment.get_user_tools()
+    history = [
+        UserMessage(
+            role="user",
+            content="Your connection is restored. Is there anything else I can help you with?",
+        )
+    ]
+    start = len(runtime.events)
+    request = caller.generate(
+        "gemma4-e4b-it", history, tools=tools, call_name="user_streaming_response"
+    )
+    assert (
+        len(request.tool_calls) == 1 and request.tool_calls[0].name == "run_speed_test"
+    )
+    call = request.tool_calls[0]
+    observed = next(tool for tool in tools if tool.name == call.name)(**call.arguments)
+    history.extend(
+        [
+            request,
+            ToolMessage(role="tool", requestor="user", id=call.id, content=observed),
+        ]
+    )
+    reply = caller.generate(
+        "gemma4-e4b-it", history, tools=tools, call_name="user_streaming_response"
+    )
+    assert not reply.is_tool_call()
+    assert reply.raw_data["device_grounding"]["observations"][0]["text"] == observed
+    if data_enabled:
+        assert "Excellent internet speed" in reply.content
+    else:
+        assert reply.content == observed
+    assert (
+        caller.device_controller.goal_verified(caller.conversation(history), tools)
+        is data_enabled
+    )
+    assert environment.user_tools.db.device.data_enabled is data_enabled
+    assert not any(event["operation"] == "chat" for event in runtime.events[start:])
+    speech = runtime.synthesize(
+        reply.content,
+        RuntimeTTSConfig(
+            model_id="voxcpm2",
+            voice_id="A natural adult male voice speaking American English.",
+            seed=42,
+        ),
+    )
+    telephone = AudioData(
+        data=audioop.ulaw2lin(audioop.lin2ulaw(pcm16(speech, 8000).data, 2), 2),
+        format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=8000),
+    )
+    detection = pcm16(telephone, 16000).data
+    probabilities = runtime.vad(
+        detection[: len(detection) // 1024 * 1024],
+        uuid.uuid4().hex,
+        reset=True,
+        end_stream=True,
+    )
+    recognized = runtime.transcribe(
+        telephone, RuntimeTranscriptionConfig(model="whisper-large-v3")
+    ).transcript
+    root = Path(os.environ.get("TAU_VOICE_DEVICE_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    name = f"goal-speed-data-{data_enabled}"
+    with wave.open(str(root / (name + ".wav")), "wb") as output:
+        output.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
+        output.writeframes(telephone.data)
+    (root / (name + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "data_enabled": data_enabled,
+                "tool": "run_speed_test",
+                "tool_result": observed,
+                "spoken": reply.content,
+                "transcript": recognized,
+                "vad_probabilities": probabilities,
+                "device_grounding": reply.raw_data["device_grounding"],
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert sum(p >= 0.5 for p in probabilities) >= 4
+    if data_enabled:
+        assert "excellent" in recognized.lower(), recognized
+    else:
+        assert re.search(r"\bno\s+connection\b", recognized, re.I), recognized
+
+
 @pytest.mark.parametrize("number", ["555-123-2002", "555-123-9876"])
 def test_real_known_phone_answer_survives_speech_and_telephony(
     runtime, tmp_path, number

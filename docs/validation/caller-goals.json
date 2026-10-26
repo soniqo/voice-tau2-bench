@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "scope": "Experimental local v2 caller; functional controls are not domain scores.",
+  "source_sha256": "ce5cf6b7b410c4e04dd5d5d57131648e0e78cf1480b384c677066a2e75629b89",
+  "offline": {
+    "passed": 651,
+    "local_models_deselected": 19,
+    "lint": "passed",
+    "frozen_inputs": 64,
+    "tasks": 278,
+    "upstream_replays": 2
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 71,
+    "errors": 0,
+    "suite_sha256": "a82268958d59486d61f95705b1fc86092311049af9d437fd31104e3ea4dd1ad6",
+    "report_sha256": "e42b5f3f536b95ec0f3e9e99e639a98d76c1e4958f52d868254d4c12d28e187e"
+  },
+  "native_checks": {
+    "passed": 10,
+    "vpn_voice_states": 3,
+    "known_phone_voice_checks": 2,
+    "goal_speed_voice_checks": [
+      {
+        "data_enabled": false,
+        "tool": "run_speed_test",
+        "tool_result": "Speed test failed: No Connection.",
+        "spoken": "Speed test failed: No Connection.",
+        "transcript": "Speed test failed. No connection.",
+        "report_sha256": "c30d6fb2ec6db3aa6bf9fe6736eee6e63d8f8bf1f160720820899e9f03de9b2c",
+        "vad_speech_frames": 61
+      },
+      {
+        "data_enabled": true,
+        "tool": "run_speed_test",
+        "tool_result": "Speed Test Result: 275.00 Mbps (Excellent). Connection is very fast.",
+        "spoken": "The speed test reports Excellent internet speed, at 275.00 megabits per second.",
+        "transcript": "The speed test reports excellent internet speed at 275.00 megabits per second.",
+        "report_sha256": "1539c6fc39f3f413a47ccccc7199957bb264589fc66d6d6011ceedc1a237a40d",
+        "vad_speech_frames": 198
+      }
+    ],
+    "counterfactual_tool_history_models": 2
+  },
+  "controlled_spoken_pipeline": {
+    "reward": 1.0,
+    "db_match": true,
+    "wrong_write_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 29.85,
+    "wall_seconds": 33.00062704202719,
+    "simulation_sha256": "cb01215ee8a68699a62083ba36b324afc5e09d6483d13caa92318a8a263b6e0c"
+  },
+  "prior_spoken_diagnostic": {
+    "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+    "benchmark_commit": "282cf1701080f1a053d43cb90b65f46c78166a79",
+    "raw_runner_scored": true,
+    "raw_reward": 0.0,
+    "termination": "user_stop",
+    "audio_seconds": 504.0,
+    "wall_seconds": 748.5261065000086,
+    "model_performance_qualified": false,
+    "status": "enabled_setting_and_radio_signal_accepted_without_speed_verification",
+    "note": "A try-to-connect request reported an enabled setting. The caller accepted the agent closure without a successful post-change speed test; the final frozen domain assertions failed.",
+    "simulation_sha256": "b14c0a98b33a9da0d2ebdb284e0cffbe9ba69e12de90098a9274f0f869e2fa43"
+  },
+  "speech_control_failure": {
+    "source_sha256": "841af50de02e59566b921cab53d151e8c8bade7ccd7d9f59364703404dec399c",
+    "spoken": "Speed Test Result: 275.00 Mbps (Excellent). Connection is very fast.",
+    "transcript": "Speed test result, 275.00 Mbps. Connection is very fast.",
+    "passed": false,
+    "cause": "The parenthesized quality label did not survive speech; the current source speaks the actual quality in a plain sentence."
+  },
+  "execution_condition": {
+    "shared_workstation": true,
+    "exclusive_latency_claim": false,
+    "native_memory_limit_gib": 24,
+    "hardware": "Apple M5 Pro, 48 GiB unified memory"
+  },
+  "spoken_audit": {
+    "status": "pending_new_source_audit",
+    "scored": false
+  },
+  "pilot": {
+    "planned_calls": 18,
+    "task_plan_sha256": "321f2eb330b2b74dbbdd0c77e7acc7f787e62f1434cceba39d3ee27a01f244a6",
+    "trials": 2,
+    "seeds": [
+      70,
+      71
+    ],
+    "status": "not_started",
+    "complete": false
+  }
+}
