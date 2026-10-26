@@ -69,9 +69,9 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 64 checks cover completed versus promised work, required follow-ups after a
+The 66 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
-and positive/negative semantic facts. Forty use the full 30-tool telecom
+and positive/negative semantic facts. Forty-two use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
 They cover read-before-toggle and no-op behavior, stale facts after a write,
 compound instructions, required parameters, persona reassurance, VPN states,

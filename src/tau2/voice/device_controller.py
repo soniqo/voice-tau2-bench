@@ -142,7 +142,7 @@ CUSTOMER_REQUEST = re.compile(
     r"\b(?:could|can|would|will) you\b(?!\s+(?:like|want)\s+me\b)", re.I
 )
 AGENT_ACTION = re.compile(
-    r"\b(?:would you like me|do you want me|shall i|can i|could i|may i|i'll|i will|let me)\b",
+    r"\b(?:would you like me|do you want me|shall i|can i|could i|may i|i'll|i will|let me(?!\s+know\b))\b",
     re.I,
 )
 
@@ -370,9 +370,12 @@ def requested_steps(text):
             fresh = True
         # Test the service when asked whether it works. An enabled radio is
         # not evidence of internet connectivity or successful MMS delivery.
-        if re.search(DATA_TOPIC + r"|\binternet\b", clause, re.I) and not ACTION.search(
-            clause
-        ):
+        working = re.search(r"\b(?:work(?:ing)?|restor(?:e[ds]?|ing))\b", clause, re.I)
+        performance = re.search(r"\b(?:slow(?:er)?|fast(?:er)?)\b", clause, re.I)
+        service_topic = re.search(DATA_TOPIC + r"|\binternet\b", clause, re.I) or (
+            re.search(r"\bconnection\b", clause, re.I) and (working or performance)
+        )
+        if service_topic and not ACTION.search(clause):
             if re.search(READS["mms"][0], clause, re.I) and re.search(
                 r"\b(?:send|sending|work|working|try|test)\b", clause, re.I
             ):
@@ -382,8 +385,6 @@ def requested_steps(text):
             coordinated_speed = speed and re.search(
                 r"(?:\band|,)\s+(?:(?:your|the)\s+)?$", clause[: speed.start()], re.I
             )
-            working = re.search(r"\bwork(?:ing)?\b", clause, re.I)
-            performance = re.search(r"\b(?:slow(?:er)?|fast(?:er)?)\b", clause, re.I)
             try_service = re.search(
                 r"\b(?:try|test)\b", clause, re.I
             ) and not re.search(r"\b(?:on|off|enabled|disabled)\b", clause, re.I)

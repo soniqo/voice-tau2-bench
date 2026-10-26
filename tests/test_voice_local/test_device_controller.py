@@ -519,6 +519,14 @@ def test_describing_the_reported_problem_does_not_request_a_device_setting_read(
         ("Is your internet connection working now?", "run_speed_test"),
         ("Could you please check if your data speed is still slow?", "run_speed_test"),
         ("Is your mobile data still slow?", "run_speed_test"),
+        (
+            "Please let me know if your connection is restored now that Airplane Mode is off.",
+            "run_speed_test",
+        ),
+        (
+            "I am still here. Please let me know if your connection is working now that Airplane Mode is off.",
+            "run_speed_test",
+        ),
     ],
 )
 def test_functional_questions_test_service_rather_than_reading_enabled_setting(
@@ -532,6 +540,38 @@ def test_functional_questions_test_service_rather_than_reading_enabled_setting(
     report = generate(caller, env, history)
     assert "No Connection" in report.content or "cannot" in report.content.lower()
     assert env.user_tools.db.device.airplane_mode is True
+
+
+def test_vpn_question_with_explanatory_connection_speed_keeps_the_requested_topic():
+    env, caller = setup({"vpn_enabled_setting": False, "vpn_connected": False})
+    reply, calls = complete(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user",
+                content="I am not using a VPN. I am asking if you have a VPN active on your phone, as that can sometimes affect your connection speed.",
+            )
+        ],
+    )
+    assert calls == ["check_vpn_status"]
+    assert reply.content == "My VPN is disabled."
+
+
+def test_turn_off_airplane_then_report_if_connection_restored_tests_the_service():
+    env, caller = setup({"airplane_mode": True})
+    _, calls = complete(
+        caller,
+        env,
+        [
+            UserMessage(
+                role="user",
+                content="Please turn off Airplane Mode. This will allow your phone to connect to the network. Could you please let me know if that restores your connection?",
+            )
+        ],
+    )
+    assert calls == ["check_network_status", "toggle_airplane_mode", "run_speed_test"]
+    assert env.user_tools.db.device.airplane_mode is False
 
 
 def test_enabling_data_for_mms_still_changes_the_requested_setting():
