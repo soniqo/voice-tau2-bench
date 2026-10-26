@@ -258,6 +258,89 @@ def test_customer_claim_cannot_supply_a_device_observation():
     assert response.content == "Airplane Mode: ON"
 
 
+@pytest.mark.parametrize("airplane_mode", [False, True])
+@pytest.mark.parametrize("data_enabled", [False, True])
+@pytest.mark.parametrize(
+    "question",
+    [
+        'Since your data is enabled and you haven\'t reached your limit, I can check your network status. Could you please tell me if you are seeing any specific icons like "No Signal" or "Data Disabled" in your status bar?',
+        "Please check your status bar for No Signal or Data Disabled.",
+        "What icons do you see in your status bar, for example Data Disabled or Airplane Mode?",
+    ],
+)
+def test_status_bar_request_reads_the_view_instead_of_example_settings(
+    airplane_mode, data_enabled, question
+):
+    env, caller = setup({"airplane_mode": airplane_mode, "data_enabled": data_enabled})
+    env.user_tools.simulate_network_search()
+    history = [UserMessage(role="user", content="Is mobile data enabled?")]
+    earlier, _ = complete(caller, env, history)
+    history.extend([earlier, UserMessage(role="user", content=question)])
+    before = env.user_tools.db.device.model_dump()
+    reply, calls = complete(caller, env, history)
+    assert calls == ["check_status_bar"]
+    assert reply.content == CustomerDeviceController.status_speech(
+        env.user_tools.check_status_bar()
+    )
+    assert (
+        reply.raw_data["device_grounding"]["observations"][0]["text"]
+        == env.user_tools.check_status_bar()
+    )
+    assert env.user_tools.db.device.model_dump() == before
+
+
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        (
+            "Please check your mobile data and status bar.",
+            ["check_network_status", "check_status_bar"],
+        ),
+        (
+            "Please check your status bar and mobile data.",
+            ["check_status_bar", "check_network_status"],
+        ),
+    ],
+)
+def test_explicit_coordinated_setting_and_status_reads_preserve_both(
+    question, expected
+):
+    env, caller = setup()
+    reply, calls = complete(caller, env, [UserMessage(role="user", content=question)])
+    assert calls == expected
+    assert (
+        CustomerDeviceController.status_speech(env.user_tools.check_status_bar())
+        in reply.content
+    )
+    assert "Mobile Data Enabled" in reply.content
+
+
+@pytest.mark.parametrize(
+    "raw,spoken",
+    [
+        (
+            "Status Bar: ✈️ Airplane Mode | 🔋 80%",
+            "My status bar shows Airplane Mode, battery 80 percent.",
+        ),
+        (
+            "Status Bar: 📶⁴ Excellent | 5G | 📱 Data Enabled | 🔋 80%",
+            "My status bar shows 4 cellular signal bars with Excellent strength, 5G, Data Enabled, battery 80 percent.",
+        ),
+        (
+            "Status Bar: 📶² Poor | 2G | 📱 Data Disabled | 🔋 21%",
+            "My status bar shows 2 cellular signal bars with Poor strength, 2G, Data Disabled, battery 21 percent.",
+        ),
+        (
+            "Status Bar: ❌ No Service | 🔋 99%",
+            "My status bar shows No Service, battery 99 percent.",
+        ),
+        ("The device check failed.", "The device check failed."),
+    ],
+)
+def test_status_speech_preserves_visible_labels_and_values_without_emoji(raw, spoken):
+    assert CustomerDeviceController.status_speech(raw) == spoken
+
+
 def test_service_agent_private_tool_result_is_not_a_customer_observation():
     env, caller = setup({"vpn_enabled_setting": False, "vpn_connected": False})
     history = [

@@ -8,6 +8,7 @@ asking a language model to reconstruct device facts.
 import hashlib
 import json
 import re
+import unicodedata
 import uuid
 from dataclasses import dataclass, field
 
@@ -462,6 +463,27 @@ def requested_steps(text):
                         )
                     )
                 continue
+        status = re.search(READS["status"][0], clause, re.I)
+        if (
+            status
+            and not action
+            and not re.search(
+                r"(?:\band|,)\s+(?:(?:your|the)\s+)?$", clause[: status.start()], re.I
+            )
+        ):
+            # Setting names inside icon examples describe the requested view;
+            # they do not turn a status-bar question into a Boolean setting read.
+            steps.append(Step("status", "check_status_bar", fresh=fresh))
+            remainder = clause[status.end() :]
+            topics = "|".join(setting.topic for setting in SETTINGS)
+            coordinated = re.match(
+                rf"\s*(?:and|,)\s+(?=(?:(?:your|the)\s+)?(?:{topics}))(.+)",
+                remainder,
+                re.I,
+            )
+            if not coordinated:
+                continue
+            clause = "check " + coordinated.group(1)
         found = [
             (match.start(), setting)
             for setting in SETTINGS
@@ -817,8 +839,8 @@ class CustomerDeviceController:
                 step.write, step.arguments, declared, prefix + "act-", context
             )
         # Results may contain a status bar in addition to the requested setting.
-        # Only report the requested setting for Boolean changes; raw checks keep
-        # the actual human-readable tool output.
+        # Only report the requested Boolean setting. Known views use spoken
+        # labels while the original tool output remains in their evidence.
         text = []
         for step, report in zip(steps, reports, strict=True):
             setting = next((item for item in SETTINGS if item.name == step.topic), None)
@@ -830,6 +852,8 @@ class CustomerDeviceController:
                 if step.topic == "vpn"
                 else self.speed_speech(report.text)
                 if step.topic == "speed"
+                else self.status_speech(report.text)
+                if step.topic == "status"
                 else match.group(0)
                 if match
                 else report.text
@@ -839,6 +863,29 @@ class CustomerDeviceController:
             {**context, "observations": [item.evidence() for item in reports]},
             "report",
         )
+
+    @staticmethod
+    def status_speech(text):
+        if not text.startswith("Status Bar:"):
+            return text
+        labels = []
+        for part in text.split(":", 1)[1].split("|"):
+            label = re.sub(
+                r"[^\x20-\x7e]", "", unicodedata.normalize("NFKC", part)
+            ).strip()
+            if not label:
+                continue
+            if "📶" in part:
+                signal = re.fullmatch(r"(\d+)\s+(.+)", label)
+                label = (
+                    f"{signal[1]} cellular signal bars with {signal[2]} strength"
+                    if signal
+                    else f"cellular signal {label}"
+                )
+            elif "🔋" in part:
+                label = "battery " + label.replace("%", " percent")
+            labels.append(label)
+        return "My status bar shows " + ", ".join(labels) + "." if labels else text
 
     @staticmethod
     def speed_speech(text):

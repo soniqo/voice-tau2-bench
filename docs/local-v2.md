@@ -15,7 +15,9 @@ The [device-controller follow-up](validation/grounded-caller.md) records current
 caller validation and held-out pilot progress. The
 [acceptance and spoken-speed follow-up](validation/caller-goals.md) records the
 goal-verification checks. The [setting-direction follow-up](validation/caller-switches.md)
-records the current caller qualification.
+records the preceding caller revision.
+The [status-bar follow-up](validation/caller-views.md) records the latest read-target
+correction and validation.
 
 ## Models
 
@@ -72,9 +74,9 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 74 checks cover completed versus promised work, required follow-ups after a
+The 75 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
-and positive/negative semantic facts. Fifty use the full 30-tool telecom
+and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
 They cover read-before-toggle and no-op behavior, stale facts after a write,
 compound instructions, required parameters, persona reassurance, VPN states,
@@ -145,6 +147,9 @@ Switch directions bind to the requested setting or coordinated setting list:
 “turn off Airplane Mode on your device” requests OFF; the location does not supply
 an ON direction. A reason such as “to restore mobile data” does not request a
 second setting change. Unsupported or contradictory directions require clarification.
+Status-bar questions read the actual status-bar view. Example labels such as
+“Data Disabled” do not replace that view with a cached mobile-data setting.
+Explicit coordinated setting and status-bar reads preserve both observations.
 Tool dispatch, known-number replies and vague follow-ups share the same check of
 who was asked to act. Agent offers such as “Would you like me to check that?”
 stay conversational and cannot become a customer recheck. Follow-ups inspect the
