@@ -1251,6 +1251,48 @@
       "reply": {
         "must_speak": true
       }
+    },
+    {
+      "id": "non-phone-incomplete-identity-question",
+      "scenario": "Known info:\nYou are John Smith.\nTask instructions:\nAsk to change your flight.",
+      "history": [
+        [
+          "user",
+          "Could you please tell me your ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "non-phone-incomplete-product-question",
+      "scenario": "Known info:\nYou have a black shirt.\nTask instructions:\nAsk to return your shirt.",
+      "history": [
+        [
+          "user",
+          "Could you please tell me which item you ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
     }
   ],
   "judge": [

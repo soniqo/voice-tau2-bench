@@ -836,3 +836,28 @@ def test_listener_waits_for_a_question_without_querying_a_model():
     )
     action = caller._compute_turn_taking_action(state)
     assert action.action == "wait"
+
+
+def test_listener_keeps_waiting_during_an_incomplete_turn_audio_gap():
+    from types import SimpleNamespace
+
+    from tau2.user.user_simulator_streaming import VoiceStreamingUserSimulator
+
+    caller = object.__new__(VoiceStreamingUserSimulator)
+    caller.wait_for_complete_agent_turns = True
+    caller.wait_to_respond_threshold_self = 300
+    state = SimpleNamespace(
+        is_talking=False,
+        input_ongoing_speech_duration=lambda: 0,
+        input_from_environment=lambda: False,
+        time_since_last_other_talk=20,
+        input_turn_taking_buffer=[
+            AssistantMessage(
+                role="assistant",
+                content="Could you please tell me your ",
+                is_final_chunk=False,
+            ),
+            AssistantMessage(role="assistant", content=None, contains_speech=False),
+        ],
+    )
+    assert caller._compute_turn_taking_action(state).action == "wait"

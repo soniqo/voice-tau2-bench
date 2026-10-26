@@ -487,6 +487,51 @@ def test_agent_offer_has_no_customer_tools_and_does_not_prioritize_an_old_report
     assert caller.decisions[-1]["customer_tool_route"]["guard"] == "agent_owns_action"
 
 
+@pytest.mark.parametrize(
+    "silence,expected", [(0, ""), (14.95, ""), (15, "Are you still there?")]
+)
+def test_non_phone_caller_waits_for_a_complete_turn_and_retains_check_in(
+    silence, expected
+):
+    backend = Backend([])
+    caller = QualifiedCallerBackend(backend, "Change my flight.")
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(
+                role="user",
+                content="Could you please tell me your ",
+                is_final_chunk=False,
+            )
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=silence,
+        caller_idle_seconds=15,
+    )
+    assert reply.content == expected and not reply.is_tool_call()
+    assert not backend.calls
+
+
+def test_non_phone_caller_can_answer_a_completed_question_during_speech():
+    backend = Backend(["CONTINUE", "My name is John."])
+    caller = QualifiedCallerBackend(backend, "My name is John. Change my flight.")
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(
+                role="user",
+                content="What is your name? While I look up",
+                is_final_chunk=False,
+            )
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=0,
+        caller_idle_seconds=15,
+    )
+    assert reply.content == "My name is John."
+    assert len(backend.calls) == 2
+
+
 def test_terminal_evidence_can_span_streaming_fragments_of_one_heard_turn():
     caller = QualifiedCallerBackend(
         Backend([assessment("COMPLETE", "Your subscription has been cancelled.")]),

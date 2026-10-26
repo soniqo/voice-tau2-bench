@@ -813,7 +813,6 @@ class VoiceStreamingUserSimulator(
         if (
             getattr(self, "wait_for_complete_agent_turns", False)
             and not state.is_talking
-            and state.input_ongoing_speech_duration() > 0
             and not state.input_from_environment()
         ):
             heard = [
@@ -831,7 +830,16 @@ class VoiceStreamingUserSimulator(
                 if not latest.utterance_ids
                 or set(latest.utterance_ids).intersection(m.utterance_ids or [])
             )
-            if latest is not None and not latest.is_final_chunk and not question_heard:
+            if (
+                latest is not None
+                and not latest.is_final_chunk
+                and not question_heard
+                and (
+                    state.input_ongoing_speech_duration() > 0
+                    or state.time_since_last_other_talk
+                    < self.wait_to_respond_threshold_self
+                )
+            ):
                 return TurnTakingAction(
                     action="wait", info="Listening until the agent finishes a request."
                 )

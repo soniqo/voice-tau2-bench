@@ -69,36 +69,23 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 60 checks cover completed versus promised work, required follow-ups after a
-refusal, incomplete answers, customer device tools, unknown identifiers, and
-positive/negative semantic facts. They also check customer/agent role separation,
-goal disclosure, customer claims that lack agent confirmation, partial action
-completion, and device observations that do not establish working connectivity.
-Thirty-eight checks use the full 30-tool telecom customer interface, including real
-airplane-mode and roaming writes in fresh fixture devices, a claimed action that
-never ran, avoiding a repeated toggle after a successful action, an already-off
-setting, an opening greeting that requests no device action, and a persona that
-requires reassurance before rebooting, and a data-saver status request after
-earlier troubleshooting steps and a VPN question split across streaming speech
-fragments, an unknown plan-usage question that belongs to the agent, and a VPN
-question after account discussion and a failed speed test. Further checks cover
-opposite VPN states, spoken reports after real writes, reads before toggles,
-already-correct settings, stale observations after writes, ambiguous modes and
-agent promises that do not request customer actions. Six further checks cover
-unfinished greetings/questions, known and unknown phone numbers, affected-line
-questions and responding to a complete question while speech continues. Two more
-distinguish describing an already-reported symptom from explicitly checking a
-device setting before describing it. Six further checks cover line selection,
-alternate symptom wording, location questions and internet/MMS tests over mobile
-data. Three further cases distinguish an agent offer or promise after a failed
-speed test from a request for the customer to repeat that test. Historical
-32/33/43/49/51/57-check
-reports do not qualify the expanded suite or changed caller condition.
-These fixtures are outside the frozen task
-frame. Passing checks is a preflight requirement, not evidence of domain accuracy
-or complete customer reliability.
-Reply-generation and evaluation exceptions fail qualification even after a valid
-terminal assessment. Error-bearing reports cannot enable a benchmark run.
+The 62 checks cover completed versus promised work, required follow-ups after a
+refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
+and positive/negative semantic facts. Thirty-eight use the full 30-tool telecom
+customer interface, including actual reads and writes in fresh fixture devices.
+They cover read-before-toggle and no-op behavior, stale facts after a write,
+compound instructions, required parameters, persona reassurance, VPN states,
+service-working versus enabled-setting questions, and agent offers that must not
+become customer actions. Streaming cases include incomplete speech and completed
+questions heard during an ongoing turn; two cases exercise callers without a
+phone controller.
+
+These fixtures are outside the frozen task frame. Passing checks is a preflight
+requirement, not evidence of domain accuracy or complete customer reliability.
+Reports from different sources, suites, models or execution conditions do not
+qualify a current run. Reply-generation and evaluation exceptions fail
+qualification even after a valid terminal assessment. Error-bearing reports
+cannot enable a benchmark run.
 
 A model-driven customer controller reads only the customer's scenario and the
 heard dialogue. It decides whether to continue, finish completed work, or finish
@@ -135,10 +122,12 @@ for missing/ambiguous parameters and pauses rebooting for explicit photo-safety
 concerns until the agent reassures the caller. It can only keep a pending device
 exchange open, never manufacture a successful terminal state or reward.
 
-In this condition, speech-frame merging and caller role conversion preserve the
-last frame's utterance boundary. The caller waits on an unfinished phrase, while
+In v2, speech-frame merging and caller role conversion preserve the last frame's
+utterance boundary across airline, retail and telecom. The caller waits on an unfinished phrase, while
 a complete question can still prompt a response during agent speech. After the
-configured idle interval it can ask whether the agent is still there. Phone-number
+configured idle interval it can ask whether the agent is still there. The guard
+also covers gaps inside unfinished speech; a complete question can still permit
+barge-in. The selected behavior is recorded in `settings.json`. Phone-number
 questions use only the number explicitly supplied in the caller's known information;
 an unknown number is reported as unknown, without a device check.
 Agent tool calls remain silent and do not reset the caller's speech timer.

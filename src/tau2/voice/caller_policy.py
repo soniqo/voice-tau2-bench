@@ -398,17 +398,21 @@ class QualifiedCallerBackend:
     def generate(self, model, messages, *, call_name=None, **kwargs):
         if call_name != "user_streaming_response":
             return self.backend.generate(model, messages, call_name=call_name, **kwargs)
+        has_turn_timing = "agent_silence_seconds" in kwargs
+        agent_silence = kwargs.pop("agent_silence_seconds", None)
+        caller_idle = kwargs.pop("caller_idle_seconds", 15)
+        conversation = self.conversation(messages)
         if self.device_controller is not None:
             response = self.device_controller.respond(
-                self.conversation(messages),
+                conversation,
                 kwargs.get("tools") or [],
                 "\n\n".join(
                     message.content or ""
                     for message in messages
                     if isinstance(message, SystemMessage)
                 ),
-                agent_silence_seconds=kwargs.pop("agent_silence_seconds", None),
-                caller_idle_seconds=kwargs.pop("caller_idle_seconds", 15),
+                agent_silence_seconds=agent_silence,
+                caller_idle_seconds=caller_idle,
             )
             if response is not None:
                 if response.is_tool_call():
@@ -422,6 +426,37 @@ class QualifiedCallerBackend:
                     }
                 )
                 return response
+        elif (
+            has_turn_timing
+            and conversation
+            and conversation[-1]["speaker"] != "customer_tool"
+        ):
+            heard = next(
+                (
+                    row
+                    for row in reversed(conversation)
+                    if row["speaker"] == "service_agent"
+                    and (row["content"] or "").strip()
+                ),
+                None,
+            )
+            if heard and not heard["is_final_chunk"] and "?" not in heard["content"]:
+                check_in = agent_silence is not None and agent_silence >= caller_idle
+                action = "silence_check_in" if check_in else "wait_for_agent_turn"
+                self.decisions.append(
+                    {
+                        "decision": "CONTINUE",
+                        "guard": "incomplete_agent_turn",
+                        "action": action,
+                    }
+                )
+                return AssistantMessage(
+                    role="assistant",
+                    content="Are you still there?" if check_in else "",
+                    cost=0,
+                    generation_time_seconds=0,
+                    raw_data={"caller_turn_control": {"action": action}},
+                )
         decision, assessment = self.assess(model, messages)
         if decision != "CONTINUE":
             return AssistantMessage(

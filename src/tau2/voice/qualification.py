@@ -210,6 +210,11 @@ def qualify(backend, profile, provenance):
                     temperature=0,
                     max_tokens=1024,
                     call_name="user_streaming_response",
+                    **{
+                        key: value
+                        for key, value in case.get("caller_timing", {}).items()
+                        if key in ("agent_silence_seconds", "caller_idle_seconds")
+                    },
                 )
                 permitted_read = expected.get("permitted_read") or (
                     "check_notifications"

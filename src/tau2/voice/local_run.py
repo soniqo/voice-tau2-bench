@@ -206,8 +206,7 @@ def run_local_task(
             if sampled.backchannel_min_threshold
             else None,
             interruption_check_interval=40,
-            wait_for_complete_agent_turns=profile.execution.device_grounding
-            and domain == "telecom",
+            wait_for_complete_agent_turns=clock is not None,
         )
         orchestrator_type = LocalV2Orchestrator if clock else FullDuplexOrchestrator
         orchestrator = orchestrator_type(
@@ -243,6 +242,7 @@ def run_local_task(
                     "wall_timeout_seconds": wall_timeout,
                     "clock_mode": profile.execution.mode,
                     "caller_idle_seconds": profile.execution.caller_idle_seconds,
+                    "wait_for_complete_agent_turns": clock is not None,
                     "device_grounding": profile.execution.device_grounding,
                     "qualification": qualification,
                     "complexity": complexity,
