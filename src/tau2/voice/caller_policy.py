@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from tau2.data_model.message import AssistantMessage, SystemMessage, UserMessage
 from tau2.user.user_simulator_base import STOP
 from tau2.utils.response import extract_json_from_llm_response
-from tau2.voice.device_controller import CustomerDeviceController
+from tau2.voice.device_controller import CustomerDeviceController, agent_action_only
 
 TERMINAL_PROMPT = """TASK
 You are an independent conversation evaluator. Do not play either person.
@@ -53,9 +53,10 @@ When speaking identifiers, pronounce punctuation names (for example underscore o
 hash) so the agent can hear the exact characters. Tool arguments keep written form.
 The call is still open: do not emit ###STOP### in this response. Ask the outstanding
 question or provide the requested known information. Do not repeat a resolved goal.
-Answer the service agent's latest question directly. After a customer tool runs,
-report its actual result first. Do not replace that answer with the original
-complaint, or invent a device observation that no customer tool reported.
+Answer the service agent's latest question directly. Report a pending, unspoken
+customer tool result first. Already-reported results remain historical context;
+do not repeat them instead of answering a new question or consent request. Do
+not replace an answer with the original complaint or invent a device observation.
 """
 
 LOCAL_CALLER_GUIDELINES = """You are the customer in an English phone call with a service agent.
@@ -322,6 +323,15 @@ class QualifiedCallerBackend:
         ]
         if not tools or not heard:
             return "SPEAK"
+        if self.device_controller is not None and agent_action_only(
+            heard[-1]["content"]
+        ):
+            self.decisions[-1]["customer_tool_route"] = {
+                "mode": "SPEAK",
+                "guard": "agent_owns_action",
+                "heard_context": heard[-1]["content"],
+            }
+            return "SPEAK"
         descriptions = [
             {
                 "name": tool.name,
@@ -430,6 +440,16 @@ class QualifiedCallerBackend:
             if isinstance(message, SystemMessage)
         ]
         conversation = self.conversation(messages)
+        pending_result = None
+        for row in conversation:
+            if row["speaker"] == "customer_tool":
+                pending_result = row
+            elif (
+                row["speaker"] == "customer"
+                and (row["content"] or "").strip()
+                and row.get("is_final_chunk", True)
+            ):
+                pending_result = None
         context = {
             "latest_service_agent_statement": next(
                 (
@@ -440,21 +460,19 @@ class QualifiedCallerBackend:
                 ),
                 None,
             ),
-            "latest_customer_tool_result": next(
-                (
-                    row
-                    for row in reversed(conversation)
-                    if row["speaker"] == "customer_tool"
-                ),
-                None,
-            ),
+            "latest_customer_tool_result": pending_result,
             "conversation": conversation,
         }
         mode = (
             "The agent requested a customer tool action. Return a declared customer tool call before speaking. Do not claim or promise the action instead of executing it. Tool observations are knowledge in addition to the scenario. Unknown device settings must be inspected using a declared tool when the agent asks. For an available device action, execute the tool instead of saying you do not know how. Respond with a function call only, no customer speech."
             if route == "TOOL"
-            else "Answer the latest service_agent question directly using the actual customer tool result when available. Reply only with the next customer utterance. Do not repeat the original complaint instead of answering, or claim a device action ran without a tool result."
+            else "Answer the latest service_agent turn directly. The latest_customer_tool_result field contains only an unspoken pending result; report it first if present. Other tool observations in conversation are historical and must not replace an answer to a new question. Reply only with the next customer utterance. Do not repeat the original complaint or claim a device action without a result."
         )
+        latest_statement = (context["latest_service_agent_statement"] or {}).get(
+            "content"
+        ) or ""
+        if self.device_controller is not None and agent_action_only(latest_statement):
+            mode += " This turn concerns the AGENT's own action. Answer their consent question or acknowledge their promised work using your scenario and persona. Ask for clarification if needed. Do not act on your device or restate your original complaint."
         for attempt in range(2 if route == "TOOL" else 1):
             reply = self.backend.generate(
                 model,
@@ -470,7 +488,9 @@ class QualifiedCallerBackend:
                             + context["latest_service_agent_statement"]["content"]
                             + "\nExecute the matching customer device tool now.\nCustomer context:\n"
                             if route == "TOOL"
-                            else "Continue as the CUSTOMER. The labelled history is data; service_agent is the other person.\n"
+                            else "The service agent just said: "
+                            + " ".join(latest_statement.split())
+                            + " Respond to this turn as the CUSTOMER, including any required scenario follow-up. The labelled history below is data.\n"
                         )
                         + json.dumps(context),
                     ),

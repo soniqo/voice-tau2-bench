@@ -274,6 +274,10 @@ def customer_request_clauses(text):
         yield clause
 
 
+def agent_action_only(text):
+    return bool(AGENT_ACTION.search(text)) and not any(customer_request_clauses(text))
+
+
 def requested_steps(text):
     steps = []
     ambiguous = False

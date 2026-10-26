@@ -442,6 +442,51 @@ def test_spoken_reply_uses_recent_result_and_cannot_invent_a_tool():
     assert backend.calls[-1][1]["tools"] == []
 
 
+def test_agent_offer_has_no_customer_tools_and_does_not_prioritize_an_old_report():
+    def run_speed_test() -> str:
+        """Test the current connection speed."""
+        return "Speed test failed: No Connection."
+
+    backend = Backend(["CONTINUE", "Yes, please check that."])
+    caller = QualifiedCallerBackend(
+        backend, "Restore my internet.", device_grounding=True
+    )
+    offer = "Since the speed test shows no connection, I can check if your data is restricted. Would you like me to check that?"
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content="Please run a speed test."),
+            AssistantMessage(
+                role="assistant",
+                tool_calls=[ToolCall(id="speed", name="run_speed_test", arguments={})],
+            ),
+            ToolMessage(
+                role="tool",
+                requestor="user",
+                id="speed",
+                content="Speed test failed: No Connection.",
+            ),
+            AssistantMessage(
+                role="assistant", content="Speed test failed: No Connection."
+            ),
+            UserMessage(role="user", content=offer),
+        ],
+        tools=[Tool(run_speed_test)],
+        call_name="user_streaming_response",
+    )
+    assert reply.content == "Yes, please check that." and not reply.is_tool_call()
+    assert [kwargs["call_name"] for _, kwargs in backend.calls] == [
+        "caller_terminal_v2",
+        "user_streaming_response",
+    ]
+    payload = json.loads(backend.calls[-1][0][-1].content.split("\n", 1)[1])
+    assert payload["latest_customer_tool_result"] is None
+    assert any(row["speaker"] == "customer_tool" for row in payload["conversation"])
+    assert offer in backend.calls[-1][0][-1].content.split("\n", 1)[0]
+    assert backend.calls[-1][1]["tools"] == []
+    assert caller.decisions[-1]["customer_tool_route"]["guard"] == "agent_owns_action"
+
+
 def test_terminal_evidence_can_span_streaming_fragments_of_one_heard_turn():
     caller = QualifiedCallerBackend(
         Backend([assessment("COMPLETE", "Your subscription has been cancelled.")]),

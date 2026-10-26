@@ -153,6 +153,11 @@ Tool dispatch, known-number replies and vague follow-ups share the same check of
 who was asked to act. Agent offers such as “Would you like me to check that?”
 stay conversational and cannot become a customer recheck. Follow-ups inspect the
 latest customer request, excluding an agent's own promised work in its preamble.
+Agent-only offers and promises restrict the caller to SPEAK mode before the
+model chooses a response. The local model still decides how to answer using its
+scenario and persona. Already-spoken tool results remain in history, while only
+an unspoken result takes priority over a new question. The next heard agent turn
+is also presented directly before the labelled conversation data.
 
 Other conversation, caller goals, account information, and business decisions still use
 the local caller model. This finite English device adapter is an explicit
