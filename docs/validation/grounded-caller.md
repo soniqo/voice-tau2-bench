@@ -15,16 +15,17 @@ qualification and a separate result cohort.
 
 ## Verified checks
 
-- **596 offline tests** pass, including real fixture-device reads and mutations,
+- **609 offline tests** pass, including real fixture-device reads and mutations,
   opposite initial/desired states, no-op requests, stale observations, compound
   instructions, app permission arguments, APN reset timing and persona concerns.
 - All **64 frozen inputs / 278 tasks** verify. Both upstream replay rewards match,
   and lint passes.
-- Fresh native caller/judge qualification passed **51/51** checks. It includes the
+- Fresh native caller/judge qualification passed **57/57** checks. It includes the
   longer VPN regression, three VPN states, spoken-result checks, read-before-write
   and no-op cases, stale observations after a write, unfinished speech turns and
   affected-line questions, symptom descriptions and explicit checks before
-  describing a result.
+  describing a result, alternate line/symptom/location wording, and functional
+  internet/MMS questions that must not become enabled-setting reads.
 - Three actual voice checks passed for VPN disabled, enabled-but-disconnected,
   and connected. Each executes the real customer read and sends the derived
   answer through VoxCPM2, 8 kHz telephone conversion and full Whisper Large-v3.
@@ -45,7 +46,7 @@ domain model scores.
 
 The complete controlled spoken agent pipeline also passes: the real database
 write scores **1.0** and the wrong-write replay scores **0.0**. It ends with
-`user_stop` after 30.65 simulated seconds / 34.16 wall seconds, with no
+`user_stop` after 31.25 simulated seconds / 34.73 wall seconds, with no
 cancellations or unexplained inference failures. This fixed
 caller functional check contributes no domain score.
 
@@ -100,6 +101,23 @@ descriptions now defer to the conversation model while explicit checks still
 execute. Tool calls remain silent. Both regressions fail on the prior code and
 pass with the fixes; the expanded live qualification also checks the captured
 symptom question. A new spoken diagnostic must use this qualified revision.
+
+## Requested intent and service tests
+
+The subsequent diagnostic also reached the 600-second cap. It completed four
+agent lookups and three customer checks, including actual speed and VPN results
+heard correctly over speech, with no unexplained inference failure. Alternate
+line-selection and symptom wording still caused generic data-setting reads.
+The agent later repeated an app-use question without progressing to device changes.
+That development run remains separate from accepted model-performance results.
+
+The dispatcher now requires a setting-check intent rather than a mention of data.
+Line selection, location and reported symptoms stay conversational. Internet
+working questions and speed tests run the speed test; MMS capability questions
+run the MMS test. Explicit enable/disable requests keep their read-before-write
+behavior. New explicit speed-test requests perform a fresh test, negated test
+requests execute no tool, and coordinated setting/test requests keep both checks.
+Regression tests and the expanded native qualification cover these distinctions.
 
 ## Execution and evidence
 
