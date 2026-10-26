@@ -1431,6 +1431,73 @@
           "Cellular Network Type: none"
         ]
       }
+    },
+    {
+      "id": "full-tools-try-connecting-tests-service",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please try to connect to your mobile data now. Is it working correctly?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-unverified-speed-blocks-closure",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nYou will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+      "toolset": "telecom",
+      "device": {
+        "data_enabled": false,
+        "airplane_mode": false,
+        "network_signal_strength": "excellent"
+      },
+      "history": [
+        [
+          "user",
+          "Your connection is restored. Is there anything else I can help you with?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-verified-excellent-speed-completes",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nYou will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "tool",
+          "Speed Test Result: 200.00 Mbps (Excellent). Connection is very fast.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "My speed test returned excellent internet speed."
+        ],
+        [
+          "user",
+          "Your mobile internet is restored."
+        ]
+      ],
+      "decision": "COMPLETE"
     }
   ],
   "judge": [

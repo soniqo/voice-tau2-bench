@@ -1,5 +1,9 @@
 # Grounded caller validation
 
+This record covers the initial grounded caller revision. See the
+[acceptance and spoken-speed follow-up](caller-goals.md) for current verification
+and the later caller-completion defect.
+
 The experimental local v2 caller derives recognized phone-status answers from
 actual customer tool observations. It also preserves heard speech boundaries,
 distinguishes agent offers from customer actions, and keeps reported results

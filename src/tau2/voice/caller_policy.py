@@ -311,6 +311,17 @@ class QualifiedCallerBackend:
                 proposed_decision=assessment.decision,
                 guard="agent_confirmation_question",
             )
+        if (
+            assessment.decision == "COMPLETE"
+            and self.device_controller is not None
+            and not self.device_controller.goal_verified(payload["conversation"], tools)
+        ):
+            decision = "CONTINUE"
+            record.update(
+                decision=decision,
+                proposed_decision=assessment.decision,
+                guard="caller_goal_result_not_verified",
+            )
         self.decisions.append(record)
         return decision, reply
 
@@ -457,7 +468,7 @@ class QualifiedCallerBackend:
                     generation_time_seconds=0,
                     raw_data={"caller_turn_control": {"action": action}},
                 )
-        decision, assessment = self.assess(model, messages)
+        decision, assessment = self.assess(model, messages, tools=kwargs.get("tools"))
         if decision != "CONTINUE":
             return AssistantMessage(
                 role="assistant",

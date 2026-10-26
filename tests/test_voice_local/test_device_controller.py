@@ -282,7 +282,7 @@ def test_compound_airplane_cycle_executes_requested_order_once_then_tests_speed(
     ]
     assert env.user_tools.db.device.airplane_mode is False
     assert "ON" in response.content and "OFF" in response.content
-    assert "Speed" in response.content
+    assert "speed test" in response.content.lower()
 
 
 def test_write_and_read_in_one_request_does_not_change_the_setting_only_being_checked():
@@ -309,7 +309,7 @@ def test_write_and_read_in_one_request_does_not_change_the_setting_only_being_ch
         (
             "Please check your mobile data and speed test.",
             "run_speed_test",
-            "Speed Test Result",
+            "speed test",
         ),
     ],
 )
@@ -548,6 +548,11 @@ def test_describing_the_reported_problem_does_not_request_a_device_setting_read(
         ("Is your internet connection working now?", "run_speed_test"),
         ("Could you please check if your data speed is still slow?", "run_speed_test"),
         ("Is your mobile data still slow?", "run_speed_test"),
+        (
+            "Please try to connect to your mobile data now. Is it working correctly?",
+            "run_speed_test",
+        ),
+        ("Could you please try to connect to the internet?", "run_speed_test"),
         (
             "Please let me know if your connection is restored now that Airplane Mode is off.",
             "run_speed_test",
@@ -932,3 +937,82 @@ def test_listener_keeps_waiting_during_an_incomplete_turn_audio_gap():
         ],
     )
     assert caller._compute_turn_taking_action(state).action == "wait"
+
+
+EXCELLENT_SPEED_GOAL = "You will consider the issue resolved only when speed test returns excellent internet speed and nothing else."
+
+
+@pytest.mark.parametrize("airplane_mode", [False, True])
+def test_closing_verifies_explicit_speed_goal_from_the_actual_tool(airplane_mode):
+    env, caller = setup({"airplane_mode": airplane_mode}, scenario=EXCELLENT_SPEED_GOAL)
+    env.user_tools.simulate_network_search()
+    history = [
+        UserMessage(
+            role="user", content="Is there anything else I can help you with today?"
+        )
+    ]
+    reply, calls = complete(caller, env, history)
+    assert calls == ["run_speed_test"]
+    assert ("Excellent internet speed" in reply.content) is (not airplane_mode)
+    assert caller.device_controller.goal_verified(
+        caller.conversation(history), env.get_user_tools()
+    ) is (not airplane_mode)
+    assert (
+        reply.raw_data["device_grounding"]["trigger"]
+        == "explicit_caller_acceptance_condition"
+    )
+
+
+def test_closing_does_not_introduce_an_unspecified_acceptance_goal():
+    env, caller = setup(scenario="Fix my phone's signal strength.")
+    assert (
+        caller.device_controller.respond(
+            [
+                {
+                    "speaker": "service_agent",
+                    "content": "Is there anything else I can help with?",
+                }
+            ],
+            env.get_user_tools(),
+        )
+        is None
+    )
+
+
+def test_verified_speed_is_invalidated_by_a_write_and_does_not_repair_the_device():
+    env, caller = setup(scenario=EXCELLENT_SPEED_GOAL)
+    history = [UserMessage(role="user", content="Please run a speed test.")]
+    report, calls = complete(caller, env, history)
+    assert calls == ["run_speed_test"] and "Excellent internet speed" in report.content
+    assert caller.device_controller.goal_verified(
+        caller.conversation(history), env.get_user_tools()
+    )
+    history.extend(
+        [report, UserMessage(role="user", content="Please disable mobile data.")]
+    )
+    report, _ = complete(caller, env, history)
+    assert not caller.device_controller.goal_verified(
+        caller.conversation(history), env.get_user_tools()
+    )
+    history.extend([report, UserMessage(role="user", content="Have a wonderful day!")])
+    report, calls = complete(caller, env, history)
+    assert calls == ["run_speed_test"] and "No Connection" in report.content
+    assert env.user_tools.db.device.data_enabled is False
+
+
+@pytest.mark.parametrize(
+    "quality,rate",
+    [
+        ("Very Poor", "0.50"),
+        ("Poor", "2.00"),
+        ("Fair", "15.00"),
+        ("Good", "80.00"),
+        ("Excellent", "275.00"),
+    ],
+)
+def test_speed_speech_preserves_the_observed_quality_and_rate(quality, rate):
+    source = f"Speed Test Result: {rate} Mbps ({quality}). Connection advice."
+    assert (
+        CustomerDeviceController.speed_speech(source)
+        == f"The speed test reports {quality} internet speed, at {rate} megabits per second."
+    )

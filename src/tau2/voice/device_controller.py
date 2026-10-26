@@ -375,7 +375,8 @@ def requested_steps(text):
         service_topic = re.search(DATA_TOPIC + r"|\binternet\b", clause, re.I) or (
             re.search(r"\bconnection\b", clause, re.I) and (working or performance)
         )
-        if service_topic and not ACTION.search(clause):
+        try_connecting = re.search(r"\btry\s+(?:to\s+)?connect\b", clause, re.I)
+        if service_topic and (not ACTION.search(clause) or try_connecting):
             if re.search(READS["mms"][0], clause, re.I) and re.search(
                 r"\b(?:send|sending|work|working|try|test)\b", clause, re.I
             ):
@@ -389,7 +390,7 @@ def requested_steps(text):
                 r"\b(?:try|test)\b", clause, re.I
             ) and not re.search(r"\b(?:on|off|enabled|disabled)\b", clause, re.I)
             if not coordinated_speed and (
-                speed or working or performance or try_service
+                speed or working or performance or try_service or try_connecting
             ):
                 steps.append(Step("speed", "run_speed_test", fresh=True))
                 continue
@@ -542,6 +543,39 @@ def requested_steps(text):
 class CustomerDeviceController:
     def __init__(self, scenario):
         self.scenario = scenario
+        self.requires_excellent_speed = bool(
+            re.search(
+                r"\bonly when\s+(?:the\s+)?speed test returns?\s+excellent\b",
+                normalized(scenario),
+                re.I,
+            )
+        )
+
+    def goal_verified(self, conversation, tools):
+        if not self.requires_excellent_speed:
+            return True
+        if not tools or not any(tool.name == "run_speed_test" for tool in tools):
+            return False
+        declared = {tool.name for tool in tools}
+        if any(
+            call["name"] not in declared
+            for row in conversation
+            if row["speaker"] == "customer"
+            for call in row.get("tool_calls", [])
+        ):
+            return False
+        observation = Observations(conversation, tools).facts.get(
+            Observations.key("run_speed_test", {})
+        )
+        return bool(
+            observation
+            and observation.tool == "run_speed_test"
+            and re.search(
+                r"^Speed Test Result:\s*\d+(?:\.\d+)?\s+Mbps\s+\(Excellent\)",
+                observation.text,
+                re.I,
+            )
+        )
 
     def respond(
         self,
@@ -636,6 +670,24 @@ class CustomerDeviceController:
                 ]
             elif any(row["speaker"] == "customer_tool" for row in conversation):
                 ambiguous = True
+        if (
+            not steps
+            and not ambiguous
+            and self.requires_excellent_speed
+            and not agent_action_only(statement)
+            and re.search(
+                r"\banything else\b|\bhave (?:a |an )?(?:great|good|wonderful|nice) "
+                r"(?:day|evening|night)\b|\b(?:glad|happy)\b.{0,70}\b(?:working|fixed|resolved|restored)\b",
+                statement,
+                re.I,
+            )
+            and (
+                last["speaker"] == "customer_tool"
+                or not self.goal_verified(conversation, tools)
+            )
+        ):
+            steps = [Step("speed", "run_speed_test", fresh=True)]
+            context["trigger"] = "explicit_caller_acceptance_condition"
         if not steps and not ambiguous:
             if (
                 DEVICE_HINT.search(statement)
@@ -653,11 +705,7 @@ class CustomerDeviceController:
         request_id = hashlib.sha256(
             f"{position}:{normalized(statement)}".encode()
         ).hexdigest()[:12]
-        context = {
-            "policy": "device-observations-v1",
-            "heard_request": statement,
-            "request_id": request_id,
-        }
+        context = {**context, "request_id": request_id}
         declared = {tool.name: tool for tool in tools}
         observations = Observations(conversation, tools)
         if ambiguous:
@@ -742,6 +790,8 @@ class CustomerDeviceController:
             text.append(
                 self.vpn_speech(report.text)
                 if step.topic == "vpn"
+                else self.speed_speech(report.text)
+                if step.topic == "speed"
                 else match.group(0)
                 if match
                 else report.text
@@ -751,6 +801,20 @@ class CustomerDeviceController:
             {**context, "observations": [item.evidence() for item in reports]},
             "report",
         )
+
+    @staticmethod
+    def speed_speech(text):
+        match = re.match(
+            r"Speed Test Result:\s*(\d+(?:\.\d+)?)\s+Mbps\s+\(([^)]+)\)",
+            text,
+            re.I,
+        )
+        if match:
+            return (
+                f"The speed test reports {match.group(2)} internet speed, "
+                f"at {match.group(1)} megabits per second."
+            )
+        return text
 
     @staticmethod
     def vpn_speech(text):
