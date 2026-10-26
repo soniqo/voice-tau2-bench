@@ -330,18 +330,19 @@
     }
   },
   "spoken_diagnostic": {
-    "status": "pending_network_technology_audit",
+    "status": "interrupted_waiting_for_exclusive_runtime",
     "domain": "telecom",
     "task_id": "[mobile_data_issue]airplane_mode_on|user_abroad_roaming_enabled_off[PERSONA:None]",
     "seed": 42,
     "max_seconds": 2400,
     "wall_timeout": 7200,
     "caller_idle_seconds": 15,
-    "scored": false
+    "scored": false,
+    "reason": "External speech inference was active; the diagnostic was stopped and remains unscored."
   },
   "heldout_pilot": {
     "planned_calls": 18,
-    "status": "pending_spoken_diagnostic_audit",
+    "status": "waiting_for_exclusive_runtime_and_spoken_audit",
     "complete": false
   },
   "controlled_spoken_pipeline": {
@@ -582,5 +583,22 @@
     "failed_case": "full-tools-streaming-vpn-question",
     "reason": "A connection-speed explanation incorrectly replaced the requested VPN check.",
     "fixed_in_current_source": true
+  },
+  "execution_conditions": {
+    "exclusive_runtime_verified": false,
+    "external_speech_process_observed_during_diagnostic": true,
+    "timing_scope": "Prior controls establish functionality; their timings were not collected under a verified exclusive model runtime."
+  },
+  "partial_spoken_audit": {
+    "source_sha256": "f2fa1fa08cdecd7a86e8865f76a1c521c77a9514e49ad9aa5f9a15ed95026076",
+    "benchmark_commit": "c93548158625a78b5d9f71b348504e9fbb8fb249",
+    "audio_seconds": 688.2,
+    "ticks": 13764,
+    "customer_tool_calls": 4,
+    "grounded_reports": 5,
+    "controller_clarifications": 0,
+    "scored": false,
+    "scope": "Audited heard requests and actual tool evidence in the saved partial trace; no completed task outcome.",
+    "failed_run_sha256": "71d0ca677c2600a563ee791c2810f17cc3e7b07e0d5c1ef7ca43fd8bd51640a6"
   }
 }

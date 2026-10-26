@@ -33,6 +33,10 @@ fresh qualification and a separate result cohort.
   or unexplained inference failures. This functional check contributes no domain
   model score.
 
+These are functional checks. An external speech process was observed during the
+subsequent diagnostic, so exclusive model execution was not verified. The recorded
+timings are not an uncontended latency measurement.
+
 The first raw `OFF` voice attempt was transcribed as `OF`. The grounded spoken
 form now says “My VPN is disabled,” retaining the original tool result as evidence.
 Enabled-but-disconnected stays distinct from a connected VPN. ASR output is never
@@ -88,9 +92,16 @@ source identities remain in the [validation record](grounded-caller.json) and
 [earlier caller audit](caller-rerun.md); they are excluded from accepted agent
 performance results.
 
-The next generative telecom audit uses the published v2 budget: 2,400 simulated
+The generative telecom audit uses the published v2 budget: 2,400 simulated
 seconds and a 7,200-second wall limit. Earlier 600-second debugging runs remain
 separate. The pilot starts after this audit and retains its nine tasks, two trials
 and seeds 70/71. Functional checks and passing
 qualification establish a preflight floor, not domain accuracy or perfect caller
 reliability. No new aggregate model score is claimed yet.
+
+The latest audit was interrupted after external speech inference was detected.
+The saved 688.2-second partial trace has four real customer reads and five
+grounded reports, including the formerly blocked current-network question. The
+heard requests and their evidence were audited; no completed task outcome is
+claimed. It remains unscored, and the pilot has not started. A fresh
+exclusive-runtime audit is required before collecting the declared pilot.
