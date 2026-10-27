@@ -246,6 +246,54 @@ def test_real_caller_waits_after_answer_without_hiding_completion(
         assert second.raw_data["caller_turn_control"]["cached_assessment"] is True
 
 
+@pytest.mark.parametrize("completed", [False, True])
+def test_real_closing_help_question_does_not_hide_completion_or_pending_work(
+    runtime, tmp_path, completed
+):
+    import json
+
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    scenario = "Upgrade my reservation to business class and add two checked bags. No further requests remain."
+    heard = (
+        "I have successfully updated your reservation to business class and added two checked bags. Is there anything else I can help you with?"
+        if completed
+        else "I have upgraded the reservation to business class. I will add the two checked bags next. Is there anything else I can help you with?"
+    )
+    caller = QualifiedCallerBackend(runtime, scenario)
+    start = len(runtime.events)
+    reply = caller.generate(
+        "gemma4-e4b-it",
+        [
+            UserMessage(role="user", content=heard),
+            AssistantMessage(role="assistant", content="Thank you."),
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+    )
+    destination = Path(os.environ.get("TAU_VOICE_CLOSING_E2E_OUTPUT", str(tmp_path)))
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / f"closing-question-completed-{completed}.json").write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "heard": heard,
+                "reply": reply.model_dump(mode="json"),
+                "assessments": caller.decisions,
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert caller.decisions[-1]["decision"] == ("COMPLETE" if completed else "CONTINUE")
+    assert reply.content == ("###STOP###" if completed else "")
+    assert runtime.events[start:]
+
+
 @pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
 def test_real_tool_history_uses_changed_result_instead_of_a_previous_answer(
     runtime, tmp_path, model

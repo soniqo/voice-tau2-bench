@@ -471,6 +471,59 @@ def test_completed_action_with_following_question_can_still_end_call():
     assert decision == "COMPLETE"
 
 
+@pytest.mark.parametrize(
+    "confirmation",
+    [
+        "I have successfully updated your reservation to business class and added two checked bags. Is there anything else I can help you with?",
+        "Your subscription has been cancelled. Is there anything else that we can assist you with?",
+        "Your subscription has been cancelled! Is there anything else I can do for you?",
+    ],
+)
+def test_completed_action_with_closing_help_offer_preserves_model_stop(confirmation):
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", confirmation)]), "Complete the requested work."
+    )
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content=confirmation),
+            AssistantMessage(role="assistant", content="Thank you."),
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+    )
+    assert reply.content == "###STOP###"
+    assert caller.decisions[-1]["decision"] == "COMPLETE"
+    assert "guard" not in caller.decisions[-1]
+
+
+@pytest.mark.parametrize(
+    "evidence",
+    [
+        "I will cancel your subscription. Is there anything else I can help you with?",
+        "I have updated your reservation. I will add the bags now. Is there anything else I can help you with?",
+        "I have updated your reservation. Is there a bag I can add for you?",
+    ],
+)
+def test_closing_question_does_not_hide_actual_pending_work(evidence):
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", evidence)]), "Complete the requested work."
+    )
+    decision, _ = caller.assess("model", [UserMessage(role="user", content=evidence)])
+    assert decision == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "pending_agent_offer"
+
+
+def test_closing_help_question_alone_cannot_prove_completion():
+    evidence = "Is there anything else I can help you with?"
+    caller = QualifiedCallerBackend(
+        Backend([assessment("COMPLETE", evidence)]), "Cancel my subscription."
+    )
+    decision, _ = caller.assess("model", [UserMessage(role="user", content=evidence)])
+    assert decision == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "agent_confirmation_question"
+
+
 def set_mobile_data(enabled: bool) -> str:
     """Set mobile data on the customer's phone."""
     return str(enabled)

@@ -40,6 +40,14 @@ The qualification suite adds separate non-phone waiting and check-in cases,
 bringing it to 79 checks. The frozen 64 inputs, 278 tasks, domain tools,
 policies, model pins and reward rules retain their original contents.
 
+The first focused rerun reached both successful reservation writes but exposed
+a separate terminal guard defect: it interpreted a final “Is there anything else
+I can help you with?” as unfinished work despite three valid model proposals to
+end the call. The [closing-question follow-up](closing-question.md) records that
+fix and extends qualification to 81 checks. The baggage write also incorrectly
+charged for two free bags; independent database replay fails even apart from the
+call cap. These are separate caller and agent-policy errors.
+
 ## Validation
 
 - 781 offline tests passed, with lint, frozen-input verification and both replay

@@ -1648,6 +1648,32 @@
           "Are you still there?"
         ]
       }
+    },
+    {
+      "id": "completed-action-before-closing-help-question",
+      "scenario": "Upgrade my reservation to business class and add two checked bags. No further requests remain.",
+      "history": [
+        [
+          "user",
+          "I have successfully updated your reservation to business class and added two checked bags. Is there anything else I can help you with?"
+        ],
+        [
+          "assistant",
+          "No, thank you."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "pending-action-before-closing-help-question",
+      "scenario": "Upgrade my reservation to business class and add two checked bags.",
+      "history": [
+        [
+          "user",
+          "I have upgraded the reservation to business class. I will add the two checked bags next. Is there anything else I can help you with?"
+        ]
+      ],
+      "decision": "CONTINUE"
     }
   ],
   "judge": [
