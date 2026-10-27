@@ -2,72 +2,57 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-A [Soniqo](https://github.com/soniqo) mantém este benchmark independente de τ-Voice para medir o **desempenho de agentes de voz locais** no Apple Silicon. Executamos o agente, o interlocutor simulado, os modelos de fala e o avaliador semântico com [speech-swift](https://github.com/soniqo/speech-swift).
+A [Soniqo](https://github.com/soniqo) mantém este benchmark para medir se agentes de voz concluem tarefas por meio de conversas faladas e ferramentas. O conjunto inglês congelado contém **278 tarefas**: aviação **50**, varejo **114**, telecomunicações **114**.
 
-## Documentação
+[Configuração](docs/runtime-setup.md) · [Pontuação](docs/evaluation.md) · [Comparação de modelos e limites](docs/model-comparison.md)
 
-- [Configuração e arquivos dos modelos](docs/runtime-setup.md)
-- [Avaliação e pontuação](docs/evaluation.md)
-- [Implementação](docs/local-voice-extraction.md)
-- [Registro da execução](docs/results/gemma4-e4b-local-600.json)
-- [Execução do Gemma 4 12B e parâmetros validados](docs/validation/gemma4-12b-voice-e2e.md)
+## Modelos e sistemas
 
-## O que medimos
+| Agente ou sistema | Suporte atual |
+| --- | --- |
+| Gemma 4 12B IT, INT4 | Perfil local v2 testado |
+| Gemma 4 E4B IT, INT4 | Runtime local compatível; comparação v2 em condições equivalentes pendente |
+| OpenAI GPT-Live + um agente backend identificado | Requer adaptador |
+| OpenAI Realtime | Requer adaptador |
+| Gemini Live | Requer adaptador |
+| ElevenLabs Agents | Requer adaptador |
 
-Medimos se um agente de voz conclui tarefas de atendimento ao cliente por meio de conversa e uso de ferramentas. As recompensas verificam o estado final exigido da base de dados e as informações comunicadas.
+A pilha local usa [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principais do VoxCPM2 FP16 / AudioVAE FP32, Silero VAD e Gemma E4B como interlocutor, auxiliares de escuta e avaliador. Os sistemas em nuvem não foram integrados nem avaliados aqui.
 
-O conjunto inglês fixo `voice-v1` contém **278 tarefas**: aéreo **50**, varejo **114**, telecomunicações **114**. Tarefas, políticas, ferramentas, bancos de dados e recompensas mantêm suas referências originais.
+## Métricas de comparação
 
-## Modelos testados e resultados
+| Métrica | O que mede |
+| --- | --- |
+| Sucesso da tarefa, pass^1 | Estado final exigido do banco de dados e comunicação |
+| Cobertura e falhas | Tentativas avaliadas/planejadas, encerramentos normais e erros de inferência sem pontuação |
+| Latência, p50 / p95 | Execução do LLM e ASR do agente; tempo de TTS até o primeiro áudio |
+| Atraso de resposta de voz | Fim da fala do interlocutor até o primeiro áudio do agente; resumo padronizado pendente |
+| Taxa de erro das ferramentas | Chamadas do agente com falha ou rejeitadas / chamadas tentadas |
+| Tempo de conclusão | Tempo simulado da chamada e tempo real medido, separadamente |
+| Pico de memória | Memória física do processo nativo, com escopo de medição |
+| Custo de API | USD por tentativa e por tentativa bem-sucedida; incluir falhas |
 
-| Função | Modelo | Precisão |
-| --- | --- | --- |
-| Agente | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
-| Chamador, escuta e juiz semântico | Gemma 4 E4B IT | INT4 |
-| Vozes do agente e do chamador | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
-| Reconhecimento de voz | Whisper Large-v3 (full, CoreML) | FP16 |
-| Detecção de fala | Silero VAD (CoreML) | Native |
+Compare as mesmas tarefas, sementes, limites, condições acústicas e configuração do interlocutor/avaliador. Mantenha a pilha de voz fixa ao comparar LLMs locais. Agentes de áudio nativo e gerenciados devem identificar a pilha completa. Os tempos dos componentes são separados da latência de resposta de voz de ponta a ponta.
 
-Amostra de desenvolvimento: primeira tarefa fixa por domínio, **3 tarefas** no total, **1 tentativa**, semente **42**, prazo de conversa de **600 segundos**, telefonia limpa `control`. Hardware: **Apple M5 Pro, 48 GB de memória unificada**. O sucesso avalia toda a pilha acima.
+## Diagnóstico local registrado
 
-`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
+| Agente | Avaliadas / planejadas | Pass^1 | Erros de ferramentas | LLM p50 / p95 | Primeiro áudio TTS p50 / p95 | Custo API / tentativa |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
 
-| Modelo do agente | Aéreo | Varejo | Telecom | pass^1 geral |
-| --- | --- | --- | --- | --- |
-| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
-| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
-
-Esta amostra pequena e determinista usa chamador e juiz locais. Não representa a pontuação das 278 tarefas nem uma classificação oficial. Timeout vale zero; exceções de inferência ficam sem pontuação.
-
-A amostra de 12B está incompleta: telecomunicações teve um erro de inferência nativa e ficou sem pontuação. Teste de voz controlado com 12B: **1.0** para a escrita correta na base de dados e **0.0** na reavaliação de uma escrita incorreta. [Parâmetros validados](docs/validation/gemma4-12b-voice-e2e.md). A entrada do chamador é fixa; este teste não contribui para a pontuação do benchmark. As execuções por domínio usam o chamador generativo e os relatórios ligados registam cada revisão do runtime.
-
-Diagnóstico local v2 de desenvolvimento anterior: **Gemma 4 12B IT (INT4), resultados brutos: aviação 0/1, varejo 0/1, telecomunicações 0/1**. Três tarefas que exigem mudança de estado, uma tentativa por tarefa, semente **70**; todas as chamadas atingiram o **limite de 300 segundos simulados** (**900 segundos de tempo real**). Esses resultados abreviados abrangem somente as três tarefas selecionadas. [Resultados e parâmetros testados](docs/validation/development-smoke.md).
-
-Estes diagnósticos são anteriores às [correções do histórico de ferramentas e do ritmo do interlocutor](docs/validation/tool-history-and-pacing.md). A nova validação funcional passou em **84/84** verificações do interlocutor e do avaliador: **1.0** para uma escrita por voz controlada e **0.0** na reprodução de uma escrita incorreta.
-
-`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
+Tarefa de aviação 12, uma tentativa, semente 70, v2; máximo de **600 segundos simulados / 1.200 segundos reais**. A chamada terminou normalmente após **312,9 segundos simulados / 554,4 segundos reais medidos**. Hardware: Apple M5 Pro, 48 GB, estação compartilhada. É uma tentativa de desenvolvimento; a classificação de vários modelos em condições equivalentes ainda está pendente. [Dados e definições de medição](docs/results/gemma4-12b-local-v2-airline.json).
 
 ## Execução local
 
-Use Python **3.12/3.13**, Apple Silicon e **macOS 15+**. Inicie o [serviço local](docs/runtime-setup.md#serve) antes de executar tarefas.
+Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Siga a [configuração](docs/runtime-setup.md) e a [execução v2](docs/local-v2.md) para iniciar o serviço local, qualificar o interlocutor/avaliador e executar tarefas.
 
 ```bash
-git clone https://github.com/soniqo/voice-tau2-bench.git
-cd voice-tau2-bench
 uv sync --frozen --extra dev
 uv run --frozen tau-voice verify
 ```
 
-```bash
-uv run --frozen tau-voice batch \
-  --domain all --num-tasks 1 --trials 1 --seed 42 \
-  --max-seconds 600 --complexity control \
-  --base-url http://127.0.0.1:8787 \
-  --output data/simulations/local-baseline
-```
-
-Cada tarefa salva trajetória, ferramentas, recompensas, dois WAV, tempos, configurações e impressões das fontes/modelos. Continue o mesmo lote com `--resume`. Omita `--num-tasks` para avaliar as 278 tarefas.
+Limite a execução com `--num-tasks`, `--trials`, `--max-seconds` e `--wall-timeout`. Adaptadores de nuvem e um teto de gastos em USD **não estão implementados**. A inferência atual é local e não exige chave de API de nuvem.
 
 Verificações: `make test` · `make lint` · `make verify`.
 
-Fonte: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [Artigo do τ-Voice](https://arxiv.org/abs/2603.13686) · [Licença MIT](LICENSE).
+Origem: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice](https://arxiv.org/abs/2603.13686) · [MIT](LICENSE).

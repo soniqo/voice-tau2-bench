@@ -1,7 +1,8 @@
 # Three-task local v2 development run
 
-This historical run predates the [tool-history and caller-pacing fixes](tool-history-and-pacing.md).
-Its zero rewards remain raw development diagnostics, with the original artifacts preserved.
+This is a historical development run. Its original artifacts and zero rewards
+remain preserved. See the [current comparison protocol](../model-comparison.md)
+and [measured local record](../results/gemma4-12b-local-v2-airline.json).
 
 All three selected calls completed on 2026-10-27 with the qualified local stack.
 Each reached its 300-second simulated call cap. The total measured trial wall

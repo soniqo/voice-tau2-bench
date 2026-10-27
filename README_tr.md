@@ -2,72 +2,57 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo), Apple Silicon üzerinde **yerel sesli ajan performansını** ölçmek için bu bağımsız τ-Voice kıyaslamasını sürdürüyor. Ajanı, simüle edilen arayanı, konuşma modellerini ve anlamsal değerlendiriciyi [speech-swift](https://github.com/soniqo/speech-swift) ile çalıştırıyoruz.
+[Soniqo](https://github.com/soniqo), sesli ajanların konuşma ve araç kullanımıyla görevleri tamamlayıp tamamlamadığını ölçmek için bu kıyaslamayı sürdürür. Sabit İngilizce küme **278 görev** içerir: havayolu **50**, perakende **114**, telekom **114**.
 
-## Belgeler
+[Kurulum](docs/runtime-setup.md) · [Puanlama](docs/evaluation.md) · [Model karşılaştırması ve sınırlar](docs/model-comparison.md)
 
-- [Kurulum ve model dosyaları](docs/runtime-setup.md)
-- [Değerlendirme ve puanlama](docs/evaluation.md)
-- [Uygulama](docs/local-voice-extraction.md)
-- [Model çalıştırma kaydı](docs/results/gemma4-e4b-local-600.json)
-- [Gemma 4 12B çalıştırması ve doğrulanan parametreler](docs/validation/gemma4-12b-voice-e2e.md)
+## Modeller ve sistemler
 
-## Neyi ölçüyoruz
+| Ajan veya sistem | Mevcut destek |
+| --- | --- |
+| Gemma 4 12B IT, INT4 | Test edilmiş yerel v2 profili |
+| Gemma 4 E4B IT, INT4 | Yerel çalışma zamanı destekliyor; eş koşullu v2 karşılaştırması bekliyor |
+| OpenAI GPT-Live + adı belirtilmiş bir arka uç ajanı | Adaptör gerekiyor |
+| OpenAI Realtime | Adaptör gerekiyor |
+| Gemini Live | Adaptör gerekiyor |
+| ElevenLabs Agents | Adaptör gerekiyor |
 
-Sesli bir ajanın konuşma ve araç kullanımı yoluyla müşteri hizmetleri görevlerini tamamlayıp tamamlamadığını ölçüyoruz. Görev ödülleri, gerekli son veritabanı durumunu ve iletilen bilgileri denetler.
+Yerel yapı [speech-swift](https://github.com/soniqo/speech-swift) kullanır: tam Whisper Large-v3 FP16, VoxCPM2 ana ağırlıkları FP16 / AudioVAE FP32, Silero VAD ve arayan/dinleme yardımcıları/değerlendirici için Gemma E4B. Bulut sistemleri burada henüz entegre edilmedi veya kıyaslanmadı.
 
-Sabit İngilizce `voice-v1` çerçevesi **278 görev** içerir: havayolu **50**, perakende **114**, telekom **114**. Görevler, politikalar, araçlar, veritabanları ve ödül ölçütleri özgün içerik bağlarını korur.
+## Karşılaştırma metrikleri
 
-## Test edilen modeller ve sonuçlar
+| Metrik | Neyi ölçer |
+| --- | --- |
+| Görev başarısı, pass^1 | Gerekli son veritabanı durumu ve iletişim |
+| Kapsam ve hatalar | Puanlanan/planlanan denemeler, normal bitişler ve puanlanmayan çıkarım hataları |
+| Gecikme, p50 / p95 | Ajan LLM ve ASR yürütmesi; TTS ilk ses süresi |
+| Sesli yanıt gecikmesi | Arayanın konuşmasının bitişinden ajanın ilk sesine kadar; standart özet bekliyor |
+| Araç hata oranı | Başarısız veya reddedilmiş ajan çağrıları / denenen çağrılar |
+| Tamamlanma süresi | Simülasyon çağrı süresi ve ölçülen gerçek süre ayrı ayrı |
+| Tepe bellek | Ölçüm kapsamıyla birlikte yerel sürecin fiziksel bellek kullanımı |
+| API maliyeti | Deneme ve başarılı deneme başına USD; başarısız denemeler dahil |
 
-| Rol | Model | Hassasiyet |
-| --- | --- | --- |
-| Ajan | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
-| Arayan, dinleme yardımcıları, anlamsal hakem | Gemma 4 E4B IT | INT4 |
-| Ajan ve arayan konuşması | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
-| Konuşma tanıma | Whisper Large-v3 (full, CoreML) | FP16 |
-| Konuşma algılama | Silero VAD (CoreML) | Native |
+Aynı görevleri, seed değerlerini, süre sınırlarını, akustik koşulları ve arayan/değerlendirici ayarlarını karşılaştırın. Yerel LLM karşılaştırmalarında konuşma yapısını sabit tutun. Yerel ses işleyen ve yönetilen ajanlar bütün yapıyı belirtmelidir. Bileşen süreleri, uçtan uca sesli yanıt gecikmesinden ayrıdır.
 
-Geliştirme örneklemi: her alanda sabit sıradaki ilk görev, toplam **3 görev**, **1 deneme**, tohum **42**, **600 saniye görüşme sınırı**, temiz `control` telefon sesi. Donanım: **Apple M5 Pro, 48 GB birleşik bellek**. Başarı, yukarıdaki tüm model yığınını ölçer.
+## Kaydedilmiş yerel tanılama
 
-`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
+| Ajan | Puanlanan / planlanan | Pass^1 | Araç hataları | LLM p50 / p95 | TTS ilk ses p50 / p95 | API maliyeti / deneme |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
 
-| Ajan modeli | Havayolu | Perakende | Telekom | Toplam pass^1 |
-| --- | --- | --- | --- | --- |
-| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
-| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
-
-Bu küçük ve belirlenimci örneklem yerel arayan ve hakem kullanır. Tüm 278 görevin puanını veya özgün sıralamayı temsil etmez. Zaman aşımı sıfır puandır; çıkarım istisnaları puanlanmaz.
-
-12B örneklemi tamamlanmadı: telekom denemesi yerel çıkarım hatası verdi ve puanlanmadı. Kontrollü 12B ses testi: doğru veritabanı yazımı için **1.0**, yanlış yazımın yeniden değerlendirilmesi için **0.0**. [Doğrulanan parametreler](docs/validation/gemma4-12b-voice-e2e.md). Arayanın girdisi sabittir; bu test kıyaslama puanına katılmaz. Alan denemeleri üretken arayanı kullanır ve bağlantılı raporlar her çalışma zamanı sürümünü kaydeder.
-
-Önceki yerel v2 geliştirme tanılaması: **Gemma 4 12B IT (INT4), ham sonuçlar: havayolu 0/1, perakende 0/1, telekom 0/1**. Durum değişikliği gerektiren üç görev, görev başına bir deneme, seed **70**; tüm çağrılar **300 saniyelik simülasyon sınırına** ulaştı (**gerçek zaman sınırı 900 saniye**). Bu kısaltılmış sonuçlar yalnızca seçilen üç görevi kapsar. [Sonuçlar ve denenmiş parametreler](docs/validation/development-smoke.md).
-
-Bu tanılama sonuçları, [araç geçmişi ve arayanın konuşma zamanlaması düzeltmelerinden](docs/validation/tool-history-and-pacing.md) öncesine aittir. Yeni işlevsel doğrulama, arayan/değerlendirici kontrollerinin **84/84** tanesini geçti; kontrollü sesli yazma **1.0**, hatalı yazmanın yeniden oynatılması **0.0** aldı.
-
-`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
+Havayolu görevi 12, bir deneme, seed 70, v2; en fazla **600 simülasyon saniyesi / 1.200 gerçek saniye**. Çağrı **312,9 simülasyon saniyesi / 554,4 ölçülen gerçek saniye** sonra normal bitti. Donanım: Apple M5 Pro, 48 GB, paylaşılan iş istasyonu. Bu tek bir geliştirme denemesidir; eş koşullu çok modelli sıralama henüz yoktur. [Veriler ve ölçüm tanımları](docs/results/gemma4-12b-local-v2-airline.json).
 
 ## Yerel çalıştırma
 
-Python **3.12/3.13**, Apple Silicon ve **macOS 15+** kullanın. Görevlerden önce [yerel model servisini](docs/runtime-setup.md#serve) başlatın.
+Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Yerel hizmeti başlatmak, arayan/değerlendiriciyi doğrulamak ve görevleri çalıştırmak için [kurulum](docs/runtime-setup.md) ve [v2 çalıştırma](docs/local-v2.md) belgelerini izleyin.
 
 ```bash
-git clone https://github.com/soniqo/voice-tau2-bench.git
-cd voice-tau2-bench
 uv sync --frozen --extra dev
 uv run --frozen tau-voice verify
 ```
 
-```bash
-uv run --frozen tau-voice batch \
-  --domain all --num-tasks 1 --trials 1 --seed 42 \
-  --max-seconds 600 --complexity control \
-  --base-url http://127.0.0.1:8787 \
-  --output data/simulations/local-baseline
-```
-
-Her görev araç/konuşma akışını, ödül bileşenlerini, iki WAV dosyasını, süreleri, ayarları ve kaynak/model parmak izlerini saklar. Aynı grubu `--resume` ile sürdürün. Tüm 278 görev için `--num-tasks` seçeneğini kaldırın.
+Çalıştırmayı `--num-tasks`, `--trials`, `--max-seconds` ve `--wall-timeout` ile sınırlayın. Bulut adaptörleri ve USD harcama sınırı **uygulanmış değildir**. Mevcut çıkarım yereldir ve bulut API anahtarı gerektirmez.
 
 Kontroller: `make test` · `make lint` · `make verify`.
 
-Kaynak: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice makalesi](https://arxiv.org/abs/2603.13686) · [MIT lisansı](LICENSE).
+Kaynak: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice](https://arxiv.org/abs/2603.13686) · [MIT](LICENSE).

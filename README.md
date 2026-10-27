@@ -2,71 +2,56 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo) maintains this standalone τ-Voice benchmark to measure **local voice-agent performance** on Apple Silicon. We run the agent, simulated caller, speech models, and semantic judge through [speech-swift](https://github.com/soniqo/speech-swift).
+[Soniqo](https://github.com/soniqo) maintains this benchmark to measure whether voice agents complete tasks through spoken conversation and tool use. The frozen English frame has **278 tasks**: airline **50**, retail **114**, telecom **114**.
 
-## Documentation
+[Setup](docs/runtime-setup.md) · [Scoring](docs/evaluation.md) · [Model comparison and limits](docs/model-comparison.md)
 
-- [Setup and model files](docs/runtime-setup.md)
-- [Evaluation and scoring](docs/evaluation.md)
-- [Implementation](docs/local-voice-extraction.md)
-- [Recorded model run](docs/results/gemma4-e4b-local-600.json)
-- [Gemma 4 12B run and working parameters](docs/validation/gemma4-12b-voice-e2e.md)
+## Models and systems
 
-## What we measure
+| Agent or system | Current support |
+| --- | --- |
+| Gemma 4 12B IT, INT4 | Tested local v2 profile |
+| Gemma 4 E4B IT, INT4 | Local runtime supported; matched v2 comparison pending |
+| OpenAI GPT-Live + a named backend agent | Adapter required |
+| OpenAI Realtime | Adapter required |
+| Gemini Live | Adapter required |
+| ElevenLabs Agents | Adapter required |
 
-We measure whether a voice agent completes customer-service tasks through conversation and tool use. Task rewards check the required final database state and communication.
+The local stack uses [speech-swift](https://github.com/soniqo/speech-swift): full Whisper Large-v3 FP16, VoxCPM2 FP16 main weights / FP32 AudioVAE, Silero VAD, and Gemma E4B for caller/listener/judge. Cloud systems have not been integrated or benchmarked here.
 
-The frozen English `voice-v1` frame contains **278 tasks**: airline **50**, retail **114**, telecom **114**. Tasks, policies, tools, databases, and reward criteria retain their upstream pins.
+## Comparison metrics
 
-## Models tested and results
+| Metric | What it measures |
+| --- | --- |
+| Task success, pass^1 | Required final database state and communication |
+| Coverage and failures | Scored/planned trials, normal stops, unscored inference errors |
+| Latency, p50 / p95 | Agent LLM and ASR execution; TTS time to first audio |
+| Voice response delay | Caller end of speech to first agent audio; standardized summary pending |
+| Tool error rate | Failed or rejected agent calls / attempted calls |
+| Completion time | Simulated call time and measured wall time, separately |
+| Peak memory | Native process physical footprint, with measurement scope |
+| API cost | USD per trial and per successful trial; include failed attempts |
 
-| Role | Model | Precision |
-| --- | --- | --- |
-| Agent | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
-| Caller, listening helpers, semantic judge | Gemma 4 E4B IT | INT4 |
-| Agent and caller speech | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
-| Speech recognition | Whisper Large-v3 (full, CoreML) | FP16 |
-| Speech detection | Silero VAD (CoreML) | Native |
+Compare the same tasks, seeds, call limits, acoustics and caller/judge configuration. Keep the speech stack fixed when comparing local LLMs. Audio-native and managed agents must name their complete stack. Component timings are separate from end-to-end voice response delay.
 
-Development slice: the first frozen task in each domain, **3 tasks total**, **1 trial**, seed **42**, **600-second conversation deadline**, clean `control` telephony. Hardware: **Apple M5 Pro, 48 GB unified memory**. Task success measures the complete stack above.
+## Recorded local diagnostic
 
-`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
+| Agent | Scored / planned | Pass^1 | Tool errors | LLM p50 / p95 | TTS first audio p50 / p95 | API cost / trial |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
 
-| Agent model | Airline | Retail | Telecom | Overall pass^1 |
-| --- | --- | --- | --- | --- |
-| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
-| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
-
-This small deterministic slice is a custom local profile with a local caller and judge. It does not establish a full 278-task score or an upstream leaderboard result. Timeouts score zero; inference exceptions remain unscored.
-
-The 12B slice is incomplete: Telecom returned a native inference error and remains unscored. Controlled 12B voice check: **1.0** for the correct database write and **0.0** for a wrong-write replay. [Working parameters](docs/validation/gemma4-12b-voice-e2e.md). The caller input is fixed; this check contributes no benchmark score. Domain runs use the generative caller, and the linked reports record each runtime revision.
-
-Earlier local v2 development diagnostic: **Gemma 4 12B IT (INT4), raw outcomes: airline 0/1, retail 0/1, telecom 0/1**. Three state-changing tasks, one trial each, seed **70**; all calls reached the **300-second simulated call limit** (**900-second wall watchdog**). These shortened results cover only the three selected tasks. [Results and tested parameters](docs/validation/development-smoke.md).
-
-These diagnostics predate the [tool-history and caller-pacing fixes](docs/validation/tool-history-and-pacing.md). Fresh functional validation passed **84/84** caller/judge checks, with **1.0** for a controlled spoken write and **0.0** for its wrong-write replay.
-
-`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
+Airline task 12, one trial, seed 70, v2; **600 simulated seconds / 1,200 wall seconds** maximum. The call ended normally after **312.9 simulated seconds / 554.4 measured wall seconds**. Hardware: Apple M5 Pro, 48 GB, shared workstation. This is one development trial; a matched multi-model ranking remains pending. [Data and measurement definitions](docs/results/gemma4-12b-local-v2-airline.json).
 
 ## Run locally
 
-Use Python **3.12/3.13** and Apple Silicon with **macOS 15+**. Start the [local model service](docs/runtime-setup.md#serve) before running tasks.
+Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Follow [setup](docs/runtime-setup.md) and [v2 execution](docs/local-v2.md) to start the local service, qualify the caller/judge, and run tasks.
 
 ```bash
-git clone https://github.com/soniqo/voice-tau2-bench.git
-cd voice-tau2-bench
 uv sync --frozen --extra dev
 uv run --frozen tau-voice verify
 ```
 
-```bash
-uv run --frozen tau-voice batch \
-  --domain all --num-tasks 1 --trials 1 --seed 42 \
-  --max-seconds 600 --complexity control \
-  --base-url http://127.0.0.1:8787 \
-  --output data/simulations/local-baseline
-```
-
-Each task saves its tool/transcript trajectory, reward components, caller/agent WAV files, timings, settings, and source/model fingerprints. Resume the same batch with `--resume`. Omit `--num-tasks` to evaluate all 278 tasks.
+Limit execution with `--num-tasks`, `--trials`, `--max-seconds` and `--wall-timeout`. Cloud adapters and a USD spending cap are **not implemented**. Current inference is local and needs no cloud API key.
 
 Checks: `make test` · `make lint` · `make verify`.
 

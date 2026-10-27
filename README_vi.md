@@ -2,72 +2,57 @@
 
 [English](README.md) · [简体中文](README_zh.md) · [日本語](README_ja.md) · [한국어](README_ko.md) · [Español](README_es.md) · [Deutsch](README_de.md) · [Français](README_fr.md) · [हिन्दी](README_hi.md) · [Português](README_pt.md) · [Русский](README_ru.md) · [العربية](README_ar.md) · [ไทย](README_th.md) · [Türkçe](README_tr.md) · [Tiếng Việt](README_vi.md)
 
-[Soniqo](https://github.com/soniqo) duy trì bộ đánh giá τ-Voice độc lập này để đo **hiệu suất tác tử giọng nói cục bộ** trên Apple Silicon. Chúng tôi chạy tác tử, người gọi mô phỏng, các mô hình tiếng nói và bộ chấm ngữ nghĩa qua [speech-swift](https://github.com/soniqo/speech-swift).
+[Soniqo](https://github.com/soniqo) duy trì benchmark này để đo liệu tác nhân giọng nói có hoàn thành nhiệm vụ qua hội thoại và công cụ hay không. Bộ tiếng Anh cố định gồm **278 tác vụ**: hàng không **50**, bán lẻ **114**, viễn thông **114**.
 
-## Tài liệu
+[Thiết lập](docs/runtime-setup.md) · [Chấm điểm](docs/evaluation.md) · [So sánh mô hình và giới hạn](docs/model-comparison.md)
 
-- [Thiết lập và tệp mô hình](docs/runtime-setup.md)
-- [Đánh giá và chấm điểm](docs/evaluation.md)
-- [Triển khai](docs/local-voice-extraction.md)
-- [Bản ghi lần chạy mô hình](docs/results/gemma4-e4b-local-600.json)
-- [Lần chạy Gemma 4 12B và tham số đã kiểm chứng](docs/validation/gemma4-12b-voice-e2e.md)
+## Mô hình và hệ thống
 
-## Chúng tôi đo gì
+| Tác nhân hoặc hệ thống | Hỗ trợ hiện tại |
+| --- | --- |
+| Gemma 4 12B IT, INT4 | Hồ sơ v2 cục bộ đã kiểm thử |
+| Gemma 4 E4B IT, INT4 | Runtime cục bộ hỗ trợ; chưa so sánh v2 trong điều kiện tương đương |
+| OpenAI GPT-Live + tác nhân backend được chỉ định | Cần bộ điều hợp |
+| OpenAI Realtime | Cần bộ điều hợp |
+| Gemini Live | Cần bộ điều hợp |
+| ElevenLabs Agents | Cần bộ điều hợp |
 
-Chúng tôi đo xem tác tử giọng nói có hoàn thành tác vụ chăm sóc khách hàng bằng hội thoại và công cụ hay không. Điểm thưởng kiểm tra trạng thái cơ sở dữ liệu cuối cùng theo yêu cầu và thông tin đã truyền đạt.
+Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 đầy đủ FP16, trọng số chính VoxCPM2 FP16 / AudioVAE FP32, Silero VAD và Gemma E4B cho người gọi, trợ lý nghe và bộ chấm. Các hệ thống đám mây chưa được tích hợp hay đo trong benchmark này.
 
-Khung tiếng Anh `voice-v1` cố định gồm **278 tác vụ**: hàng không **50**, bán lẻ **114**, viễn thông **114**. Tác vụ, chính sách, công cụ, cơ sở dữ liệu và tiêu chí thưởng giữ nguyên dấu vân tay của bản gốc.
+## Chỉ số so sánh
 
-## Mô hình đã thử và kết quả
+| Chỉ số | Nội dung đo |
+| --- | --- |
+| Thành công tác vụ, pass^1 | Trạng thái cơ sở dữ liệu cuối cùng và thông tin giao tiếp bắt buộc |
+| Độ bao phủ và lỗi | Lượt được chấm/dự kiến, kết thúc bình thường và lỗi suy luận không chấm điểm |
+| Độ trễ, p50 / p95 | Thời gian thực thi LLM, ASR của tác nhân; TTS đến âm thanh đầu tiên |
+| Độ trễ trả lời bằng giọng nói | Từ khi người gọi nói xong đến âm thanh đầu tiên của tác nhân; chưa có tổng hợp chuẩn |
+| Tỷ lệ lỗi công cụ | Lệnh gọi tác nhân thất bại hoặc bị từ chối / tổng lần thử gọi |
+| Thời gian hoàn thành | Thời gian cuộc gọi mô phỏng và thời gian thực đo được, tách riêng |
+| Bộ nhớ đỉnh | Bộ nhớ vật lý của tiến trình native, kèm phạm vi đo |
+| Chi phí API | USD mỗi lượt và mỗi lượt thành công; gồm cả lượt thất bại |
 
-| Vai trò | Mô hình | Độ chính xác số |
-| --- | --- | --- |
-| Tác nhân | Gemma 4 E4B IT / Gemma 4 12B IT | INT4 |
-| Người gọi, quyết định lắng nghe, giám khảo ngữ nghĩa | Gemma 4 E4B IT | INT4 |
-| Giọng của tác nhân và người gọi | VoxCPM2 | FP16 main weights; FP32 AudioVAE |
-| Nhận dạng tiếng nói | Whisper Large-v3 (full, CoreML) | FP16 |
-| Phát hiện lời nói | Silero VAD (CoreML) | Native |
+So sánh cùng tác vụ, seed, giới hạn, điều kiện âm thanh và cấu hình người gọi/bộ chấm. Giữ nguyên hệ thống giọng nói khi so sánh LLM cục bộ. Tác nhân âm thanh native và dịch vụ được quản lý phải nêu đầy đủ hệ thống. Thời gian từng thành phần khác với độ trễ trả lời bằng giọng nói từ đầu đến cuối.
 
-Mẫu phát triển: tác vụ đầu theo thứ tự cố định của mỗi miền, tổng **3 tác vụ**, **1 lần thử**, seed **42**, hạn hội thoại **600 giây**, âm thanh điện thoại sạch `control`. Phần cứng: **Apple M5 Pro, bộ nhớ hợp nhất 48 GB**. Thành công đánh giá toàn bộ cấu hình trên.
+## Chẩn đoán cục bộ đã ghi nhận
 
-`soniqo-local-v1` · `soniqo-local-gemma12b-v1` · `2026-10-23`
+| Tác nhân | Đã chấm / dự kiến | Pass^1 | Lỗi công cụ | LLM p50 / p95 | Âm thanh TTS đầu p50 / p95 | Chi phí API / lượt |
+| --- | --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
 
-| Mô hình tác nhân | Hàng không | Bán lẻ | Viễn thông | pass^1 tổng |
-| --- | --- | --- | --- | --- |
-| [Gemma 4 E4B IT (INT4)](docs/results/gemma4-e4b-local-600.json) | 0/1 | 0/1 | 0/1 | 0.0% (0/3) |
-| [Gemma 4 12B IT (INT4)](docs/results/gemma4-12b-local-600.json) | 0/1 | 0/1 | — | 0.0% (0/2) |
-
-Mẫu nhỏ xác định này dùng người gọi và giám khảo cục bộ. Nó không xác lập điểm toàn bộ 278 tác vụ hay thứ hạng gốc. Hết giờ nhận điểm không; ngoại lệ suy luận không được chấm.
-
-Mẫu 12B chưa hoàn tất: tác vụ viễn thông gặp lỗi suy luận native nên chưa được chấm điểm. Kiểm tra giọng nói 12B có kiểm soát: **1.0** cho lần ghi cơ sở dữ liệu đúng và **0.0** khi chấm lại một lần ghi sai. [Tham số đã kiểm chứng](docs/validation/gemma4-12b-voice-e2e.md). Đầu vào người gọi được cố định; kiểm tra này không tính vào điểm đánh giá. Các lần chạy theo miền dùng người gọi sinh văn bản và báo cáo liên kết ghi lại từng phiên bản runtime.
-
-Chẩn đoán phát triển local v2 trước đây: **Gemma 4 12B IT (INT4), kết quả thô: hàng không 0/1, bán lẻ 0/1, viễn thông 0/1**. Ba tác vụ cần thay đổi trạng thái, mỗi tác vụ chạy một lần, seed **70**; tất cả cuộc gọi đạt **giới hạn mô phỏng 300 giây** (**giới hạn thời gian thực 900 giây**). Kết quả chạy rút gọn này chỉ áp dụng cho ba tác vụ đã chọn. [Kết quả và tham số đã kiểm tra](docs/validation/development-smoke.md).
-
-Các kết quả chẩn đoán này có trước [bản sửa lịch sử công cụ và nhịp nói của người gọi](docs/validation/tool-history-and-pacing.md). Lần kiểm tra chức năng mới đạt **84/84** kiểm tra người gọi/bộ chấm: **1.0** cho thao tác ghi qua giọng nói có kiểm soát và **0.0** khi phát lại thao tác ghi sai.
-
-`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
+Tác vụ hàng không 12, một lượt, seed 70, v2; tối đa **600 giây mô phỏng / 1.200 giây thực**. Cuộc gọi kết thúc bình thường sau **312,9 giây mô phỏng / 554,4 giây thực đo được**. Phần cứng: Apple M5 Pro, 48 GB, máy dùng chung. Đây là một lượt phát triển; chưa có xếp hạng nhiều mô hình trong điều kiện tương đương. [Dữ liệu và định nghĩa phép đo](docs/results/gemma4-12b-local-v2-airline.json).
 
 ## Chạy cục bộ
 
-Dùng Python **3.12/3.13**, Apple Silicon và **macOS 15+**. Khởi động [dịch vụ mô hình cục bộ](docs/runtime-setup.md#serve) trước khi chạy tác vụ.
+Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Theo [thiết lập](docs/runtime-setup.md) và [chạy v2](docs/local-v2.md) để khởi động dịch vụ cục bộ, xác nhận người gọi/bộ chấm rồi chạy tác vụ.
 
 ```bash
-git clone https://github.com/soniqo/voice-tau2-bench.git
-cd voice-tau2-bench
 uv sync --frozen --extra dev
 uv run --frozen tau-voice verify
 ```
 
-```bash
-uv run --frozen tau-voice batch \
-  --domain all --num-tasks 1 --trials 1 --seed 42 \
-  --max-seconds 600 --complexity control \
-  --base-url http://127.0.0.1:8787 \
-  --output data/simulations/local-baseline
-```
-
-Mỗi tác vụ lưu diễn tiến công cụ/hội thoại, các thành phần thưởng, WAV hai phía, thời gian, cấu hình và dấu vân tay nguồn/mô hình. Tiếp tục cùng đợt bằng `--resume`. Bỏ `--num-tasks` để đánh giá đủ 278 tác vụ.
+Giới hạn thực thi bằng `--num-tasks`, `--trials`, `--max-seconds` và `--wall-timeout`. Bộ điều hợp đám mây và trần chi phí USD **chưa được triển khai**. Suy luận hiện chạy cục bộ, không cần khóa API đám mây.
 
 Kiểm tra: `make test` · `make lint` · `make verify`.
 
-Nguồn: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [Bài báo τ-Voice](https://arxiv.org/abs/2603.13686) · [Giấy phép MIT](LICENSE).
+Nguồn: [τ²-Bench](https://github.com/sierra-research/tau2-bench) (`05736c27219b769d0be507574dd3135010916644`) · [τ-Voice](https://arxiv.org/abs/2603.13686) · [MIT](LICENSE).

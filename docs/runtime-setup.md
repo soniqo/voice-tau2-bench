@@ -19,6 +19,7 @@ The release build includes compiled MLX Metal shaders. In the benchmark checkout
 ```bash
 uv sync --frozen --extra dev
 python3 scripts/prepare_speech_swift_models.py \
+  --agent-model gemma4-12b-it \
   --runtime-source ../speech-swift \
   --output data/simulations/local-runtime/models.json
 ```
@@ -63,6 +64,29 @@ python3 scripts/run_speech_swift_guarded.py \
 Models load once. Heavy inference requests run sequentially; VAD keeps separate lightweight stream state. The launcher samples native-process physical footprint and stops its child above 24 GiB or below 2 GiB free disk. Run one benchmark process at a time.
 
 ## Run and inspect
+
+The current tested configuration is the 12B v2 agent with a local E4B caller,
+listener and judge. Qualify this source/runtime combination, then run one task
+into a fresh directory:
+
+```bash
+uv run --frozen tau-voice qualify \
+  --profile configs/voice/soniqo-local-gemma12b-v2.json \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/local-v2-qualification.json
+
+uv run --frozen tau-voice run --domain airline --task-id 12 \
+  --profile configs/voice/soniqo-local-gemma12b-v2.json \
+  --qualification data/simulations/local-v2-qualification.json \
+  --base-url http://127.0.0.1:8787 --seed 70 --complexity control \
+  --max-seconds 600 --wall-timeout 1200 \
+  --output data/simulations/local-v2-airline
+```
+
+See [model comparison and limits](model-comparison.md) for available systems,
+metric definitions, and the [recorded local diagnostic](results/gemma4-12b-local-v2-airline.json).
+The v1 examples below reproduce historical profiles and should not be mixed
+with v2 results.
 
 For the experimental simulated-clock profile, caller/judge qualification, and
 the predeclared 18-call pilot, follow [local v2 execution](local-v2.md). It uses
