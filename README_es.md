@@ -41,9 +41,9 @@ Esta muestra pequeña y determinista usa interlocutor y juez locales. No estable
 
 La muestra de 12B está incompleta: telecomunicaciones tuvo un error de inferencia nativa y no recibió puntuación. Prueba de voz controlada con 12B: **1.0** para la escritura correcta en la base de datos y **0.0** al reevaluar una escritura incorrecta. [Parámetros probados](docs/validation/gemma4-12b-voice-e2e.md). La entrada del interlocutor es fija y esta prueba no aporta puntuación al benchmark. Las ejecuciones por dominio usan el interlocutor generativo; los informes enlazados registran cada revisión del runtime.
 
-La versión local v2 responde ahora a las preguntas sobre el dispositivo de telecomunicaciones usando observaciones reales de las herramientas del teléfono. Sus diagnósticos y el avance del piloto reservado se informan por separado de las puntuaciones históricas v1. [Validación y parámetros actuales](docs/validation/grounded-caller.md).
+Último diagnóstico local v2 de desarrollo: **Gemma 4 12B IT (INT4), resultados brutos: aerolínea 0/1, comercio 0/1, telecomunicaciones 0/1**. Tres tareas que requieren cambiar el estado, un ensayo por tarea, semilla **70**; todas las llamadas alcanzaron el **límite simulado de 300 segundos** (**900 segundos de tiempo real**). Estos resultados abreviados cubren solo las tres tareas seleccionadas. [Resultados y parámetros probados](docs/validation/development-smoke.md).
 
-`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Ejecución local
 

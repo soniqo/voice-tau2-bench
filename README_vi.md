@@ -41,9 +41,9 @@ Mẫu nhỏ xác định này dùng người gọi và giám khảo cục bộ. 
 
 Mẫu 12B chưa hoàn tất: tác vụ viễn thông gặp lỗi suy luận native nên chưa được chấm điểm. Kiểm tra giọng nói 12B có kiểm soát: **1.0** cho lần ghi cơ sở dữ liệu đúng và **0.0** khi chấm lại một lần ghi sai. [Tham số đã kiểm chứng](docs/validation/gemma4-12b-voice-e2e.md). Đầu vào người gọi được cố định; kiểm tra này không tính vào điểm đánh giá. Các lần chạy theo miền dùng người gọi sinh văn bản và báo cáo liên kết ghi lại từng phiên bản runtime.
 
-v2 cục bộ hiện trả lời các câu hỏi về thiết bị viễn thông từ kết quả quan sát thực tế của công cụ điện thoại. Kết quả chẩn đoán và tiến độ thử nghiệm giữ riêng được báo cáo tách biệt với điểm v1 trước đây. [Xác minh và tham số hiện tại](docs/validation/grounded-caller.md).
+Chẩn đoán phát triển local v2 mới nhất: **Gemma 4 12B IT (INT4), kết quả thô: hàng không 0/1, bán lẻ 0/1, viễn thông 0/1**. Ba tác vụ cần thay đổi trạng thái, mỗi tác vụ chạy một lần, seed **70**; tất cả cuộc gọi đạt **giới hạn mô phỏng 300 giây** (**giới hạn thời gian thực 900 giây**). Kết quả chạy rút gọn này chỉ áp dụng cho ba tác vụ đã chọn. [Kết quả và tham số đã kiểm tra](docs/validation/development-smoke.md).
 
-`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Chạy cục bộ
 

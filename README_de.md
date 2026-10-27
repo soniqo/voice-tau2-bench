@@ -41,9 +41,9 @@ Diese kleine deterministische Stichprobe nutzt lokale Anrufer- und Bewertungsmod
 
 Die 12B-Stichprobe ist unvollständig: Beim Telekommunikationstest trat ein nativer Inferenzfehler auf; er bleibt unbewertet. Kontrollierter 12B-Sprachtest: **1.0** für den korrekten Datenbankeintrag und **0.0** bei erneuter Bewertung eines falschen Eintrags. [Geprüfte Parameter](docs/validation/gemma4-12b-voice-e2e.md). Die Anrufereingabe ist fest vorgegeben; dieser Test zählt nicht zum Benchmark-Ergebnis. Domänenläufe verwenden den generativen Anrufer. Die verlinkten Berichte enthalten die jeweilige Runtime-Revision.
 
-Lokales v2 beantwortet Fragen zum Telekommunikationsgerät jetzt anhand tatsächlicher Beobachtungen der Telefonwerkzeuge. Diagnoseergebnisse und der Fortschritt des zurückgehaltenen Piloten werden getrennt von historischen v1-Werten berichtet. [Aktuelle Validierung und Parameter](docs/validation/grounded-caller.md).
+Neuester lokaler v2-Entwicklungstest: **Gemma 4 12B IT (INT4), Rohwerte: Flug 0/1, Handel 0/1, Telekom 0/1**. Drei Aufgaben mit erforderlicher Zustandsänderung, jeweils ein Durchlauf, Startwert **70**; alle Anrufe erreichten das **Limit von 300 simulierten Sekunden** (**900 Sekunden reale Zeitgrenze**). Diese verkürzten Ergebnisse gelten nur für die drei ausgewählten Aufgaben. [Ergebnisse und getestete Parameter](docs/validation/development-smoke.md).
 
-`soniqo-local-gemma12b-v2` · `--max-seconds 600 --wall-timeout 1200`
+`soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Lokal ausführen
 

@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "scope": "Raw shortened development diagnostics covering only three selected tasks. Keep separate from full-frame and historical v1 scores.",
+  "accepted_model_score": false,
+  "standard_leaderboard": false,
+  "completed_trials": 3,
+  "planned_trials": 3,
+  "unscored_trials": 0,
+  "raw_passes": 0,
+  "raw_overall_pass1": 0.0,
+  "all_terminations": "max_steps",
+  "benchmark_git_head": "176cddbf97ee024283c82a5210ccca8a80c03e04",
+  "benchmark_source_sha256": "8548dfaee24b21eeb75e8364567b4973945f6a89ef8550b57ba95c4f06266924",
+  "source_pull_request": "https://github.com/soniqo/voice-tau2-bench/pull/13",
+  "profile": "configs/voice/soniqo-local-gemma12b-v2.json",
+  "task_plan": "configs/pilots/local-v2-development.json",
+  "task_plan_sha256": "de623f9e06d57a15e32c1406c12ac3684d0d914ef22f73085e2aae54b37e6bcf",
+  "trials_per_task": 1,
+  "seed": 70,
+  "complexity": "control",
+  "max_seconds": 300,
+  "wall_timeout_seconds": 900,
+  "caller_idle_seconds": 15,
+  "hardware": "Apple M5 Pro, 48 GB unified memory",
+  "shared_workstation": true,
+  "exclusive_latency_claim": false,
+  "models": {
+    "agent": {
+      "model_id": "gemma4-12b-it",
+      "engine": "speech-swift/gemma4-unified",
+      "precision": "int4",
+      "features": [
+        "tool_calls",
+        "tool_history",
+        "cancel"
+      ]
+    },
+    "caller": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "tool_calls",
+        "tool_history",
+        "json_output"
+      ]
+    },
+    "listener": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": []
+    },
+    "judge": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output"
+      ]
+    },
+    "agent_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": [
+        "streaming",
+        "cancel"
+      ]
+    },
+    "caller_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": []
+    },
+    "asr": {
+      "model_id": "whisper-large-v3",
+      "engine": "speech-swift/whisper",
+      "precision": "fp16",
+      "features": []
+    },
+    "vad": {
+      "model_id": "silero-vad",
+      "engine": "speech-swift/silero",
+      "features": [
+        "streaming"
+      ]
+    }
+  },
+  "native_runtime": {
+    "binary_sha256": "cc538f99363f066888436e953a64042421b40806ffcdd6e5dfa5f7e4e577dbbb",
+    "metallib_sha256": "bfe0a61faf15d9429387ec7699f5f7ea5b2ecf096f07c9fa502907ee21cf6aff",
+    "manifest_sha256": "44e2329eb8337dd75713854cefdb868d9ab20d1ca1c170b1a75edf0b2b14705c",
+    "model_pins": {
+      "agent": {
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "voxcpm2_parameter_elements": {
+      "float16": 2290009216,
+      "float32": 93786817
+    },
+    "tts_precision": "FP16 main parameters; FP32 AudioVAE",
+    "revision": "03e525fc7a42d71dafa5777dfe59264689c2b7cf+source-sha256:c8e7b9077752b9eea56ddbdbb4752db83ab2cf1a65d9d57a9dc555fcbf7f0caa"
+  },
+  "qualification": {
+    "passed": true,
+    "checks": 77,
+    "report_sha256": "b5bd45f35b2910957b98050e2464165447859bb7034e81cd2747c8d36ea88380"
+  },
+  "total_trial_wall_seconds": 1390.9716371679679,
+  "unhandled_inference_errors": 0,
+  "unexpected_native_cancellations": 0,
+  "artifact_integrity_errors": 0,
+  "device_report_evidence_mismatches": 0,
+  "trials": [
+    {
+      "domain": "airline",
+      "task_id": "12",
+      "seed": 70,
+      "trial": 0,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 300.0,
+      "wall_seconds": 484.3147947919788,
+      "agent_tool_calls": {
+        "get_user_details": 1,
+        "get_reservation_details": 1
+      },
+      "caller_action_counts": {
+        "model": 11
+      },
+      "posthoc_environment_reward": 0.0,
+      "posthoc_db_match": false,
+      "posthoc_env_assertions": [],
+      "replay_warnings": [],
+      "device_reports": 0,
+      "device_report_evidence_mismatches": 0,
+      "simulation_sha256": "b14eb964bae2d741ba7170a24123e631fd76378eb37c59efa3fd231fe19038d4"
+    },
+    {
+      "domain": "retail",
+      "task_id": "40",
+      "seed": 70,
+      "trial": 0,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 300.0,
+      "wall_seconds": 462.3072995839757,
+      "agent_tool_calls": {
+        "find_user_id_by_email": 1,
+        "get_user_details": 2,
+        "get_order_details": 2
+      },
+      "caller_action_counts": {
+        "model": 11
+      },
+      "posthoc_environment_reward": 0.0,
+      "posthoc_db_match": false,
+      "posthoc_env_assertions": [],
+      "replay_warnings": [],
+      "device_reports": 0,
+      "device_report_evidence_mismatches": 0,
+      "simulation_sha256": "300c50079dda825cb501c9194589a1d13bc6c8a499ce7d2732b8f41c5a2363f9"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mobile_data_issue]data_saver_mode_on|user_abroad_roaming_enabled_off[PERSONA:Easy]",
+      "seed": 70,
+      "trial": 0,
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "audio_seconds": 300.0,
+      "wall_seconds": 444.3495427920134,
+      "agent_tool_calls": {
+        "get_customer_by_phone": 1,
+        "get_details_by_id": 4,
+        "get_data_usage": 1,
+        "run_speed_test": 1,
+        "check_network_status": 1
+      },
+      "caller_action_counts": {
+        "model": 4,
+        "known_phone": 2,
+        "silence_check_in": 2,
+        "tool": 5,
+        "report": 4,
+        "clarify": 1
+      },
+      "posthoc_environment_reward": 0.0,
+      "posthoc_db_match": false,
+      "posthoc_env_assertions": [
+        false,
+        false
+      ],
+      "replay_warnings": [],
+      "device_reports": 5,
+      "device_report_evidence_mismatches": 0,
+      "simulation_sha256": "f9ea0c53f6b8a21462281dbd76a03b68ae308bcce1944a2ea0e798cbc8dbd366"
+    }
+  ],
+  "caller_format_recovery": {
+    "retail_reproduced_prior_malformed_response": true,
+    "retail_reassessment_validated": "CONTINUE",
+    "rejected_response_retained": true
+  },
+  "airline_transport_audit": {
+    "successful_tool_responses_present_in_native_agent_request": 2,
+    "matched_tool_call_ids": true,
+    "native_codec_or_model_understanding_proven": false
+  },
+  "run_command": "uv run --frozen tau-voice batch --domain all --task-plan configs/pilots/local-v2-development.json --trials 1 --seed 70 --complexity control --max-seconds 300 --wall-timeout 900 --profile configs/voice/soniqo-local-gemma12b-v2.json --qualification data/simulations/local-v2-qualification.json --base-url http://127.0.0.1:8787 --output data/simulations/local-v2-development",
+  "generation": {
+    "agent": {
+      "temperature": 0,
+      "max_tokens": 1024
+    },
+    "caller": {
+      "temperature": 0,
+      "max_tokens": 1024
+    },
+    "terminal_assessment": {
+      "temperature": 0,
+      "max_tokens": 384
+    },
+    "turn_taking": {
+      "temperature": 0,
+      "max_tokens": 16
+    },
+    "judge": {
+      "temperature": 0,
+      "max_tokens": 1024
+    }
+  },
+  "diagnostic_findings": {
+    "airline_successful_lookups_then_reported_failure": true,
+    "retail_missing_order_id_prefix": "#",
+    "retail_repeated_failed_order_lookups": 2,
+    "telecom_rejected_customer_only_tool_calls": 2,
+    "telecom_executed_customer_writes": [
+      "toggle_data_saver_mode"
+    ],
+    "telecom_device_report_evidence_checked": 5
+  }
+}
