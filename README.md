@@ -41,9 +41,9 @@ This small deterministic slice is a custom local profile with a local caller and
 
 The 12B slice is incomplete: Telecom returned a native inference error and remains unscored. Controlled 12B voice check: **1.0** for the correct database write and **0.0** for a wrong-write replay. [Working parameters](docs/validation/gemma4-12b-voice-e2e.md). The caller input is fixed; this check contributes no benchmark score. Domain runs use the generative caller, and the linked reports record each runtime revision.
 
-Latest local v2 development diagnostic: **Gemma 4 12B IT (INT4), raw outcomes: airline 0/1, retail 0/1, telecom 0/1**. Three state-changing tasks, one trial each, seed **70**; all calls reached the **300-second simulated call limit** (**900-second wall watchdog**). These shortened results cover only the three selected tasks. [Results and tested parameters](docs/validation/development-smoke.md).
+Earlier local v2 development diagnostic: **Gemma 4 12B IT (INT4), raw outcomes: airline 0/1, retail 0/1, telecom 0/1**. Three state-changing tasks, one trial each, seed **70**; all calls reached the **300-second simulated call limit** (**900-second wall watchdog**). These shortened results cover only the three selected tasks. [Results and tested parameters](docs/validation/development-smoke.md).
 
-These diagnostics predate the [tool-history and caller-pacing fixes](docs/validation/tool-history-and-pacing.md). Fresh functional validation passed **79/79** caller/judge checks, with **1.0** for a controlled spoken write and **0.0** for its wrong-write replay.
+These diagnostics predate the [tool-history and caller-pacing fixes](docs/validation/tool-history-and-pacing.md). Fresh functional validation passed **84/84** caller/judge checks, with **1.0** for a controlled spoken write and **0.0** for its wrong-write replay.
 
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 

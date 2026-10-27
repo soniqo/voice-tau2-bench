@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-27",
+  "scope": "Current caller spending-constraint revision: local component/qualification checks and one focused development trial; no full-frame model pass rate.",
+  "benchmark": {
+    "git_head": "34a74633cab4648fbd631297435ecb0534e819f2",
+    "source_sha256": "1f289d040cabb2fe25c12529a74d02bcacf990b26339fbc2c50abe584d27c6ac"
+  },
+  "native": {
+    "git_head": "35299ba6c168f5cd6e8c1862433c3d4a7e55087b",
+    "runtime_revision": "35299ba6c168f5cd6e8c1862433c3d4a7e55087b+source-sha256:a94d201a72066f27706b155e47a98038d198c545763afc6fb684a45a9694f4cc",
+    "server_sha256": "c46e21aa2d564a04e8be2050f88e3f4f096c21c720b08f2a8eb8e97a434e7181"
+  },
+  "validation": {
+    "offline_tests": 788,
+    "native_release_tests": 27,
+    "http_native_functional_tests": 15,
+    "frozen_inputs": 64,
+    "frozen_tasks": 278,
+    "lint_passed": true,
+    "replay_controls_passed": true,
+    "caller_judge_qualification": {
+      "passed": true,
+      "passed_cases": 84,
+      "total_cases": 84,
+      "suite_sha256": "040b4a60de4d78d57546b2b5742f59022fdd2ad12f0c7f3f37295d5ba01a9069"
+    }
+  },
+  "spoken_control": {
+    "caller_mode": "controlled_spoken_input",
+    "reward": 1.0,
+    "db_match": true,
+    "termination": "user_stop",
+    "trial_wall_seconds": 33.18388408300234,
+    "audio_ticks": 598,
+    "wrong_write_reward": 0.0,
+    "wrong_write_db_match": false,
+    "accepted_domain_score": false
+  },
+  "captured_context_replay": {
+    "same_input_hashes": true,
+    "tool_only_control_matches": true,
+    "false_account_lookup_claim_persists_after_garbled_followup": true,
+    "accepted_domain_score": false
+  },
+  "models": {
+    "agent": {
+      "repository": "mlx-community/gemma-4-12B-it-4bit",
+      "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+    },
+    "gemma": {
+      "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+      "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+    },
+    "tokenizer": {
+      "repository": "openai/whisper-large-v3",
+      "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+    },
+    "vad": {
+      "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+      "revision": "523876545a57961474fee9df913e833e130560b8"
+    },
+    "vox": {
+      "repository": "aufklarer/VoxCPM2-MLX-bf16",
+      "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+    },
+    "whisper": {
+      "repository": "argmaxinc/whisperkit-coreml",
+      "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+    }
+  },
+  "artifact_sha256": {
+    "spending-constraints/qualification-fixed.json": "32f516d4f007b46b1d0ef3375c544fa6a28ec074a64214715f3d934d2e7f46e2",
+    "spending-constraints/full-validation/native-functional.xml": "831aae4e71ef443e3c06fe08727b0de2ac23a825c51e15ffe6fb2e718f31176e",
+    "spending-constraints/full-validation/spoken-control/simulation.json": "0997344d4d2ba0485bfd1a20cf39833a940d7717de0d409eac64f9352fff9310",
+    "spending-constraints/full-validation/spoken-control/negative-control.json": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad",
+    "runtime-fixed-provenance.json": "c58de34320071392e665a629844db67f40f87eeefc193c7f17e5d6119f1c6e21",
+    "spending-constraints/full-validation/airline-run/simulation.json": "cac972646a7a4043016118009982caf3bdcd71e18222e849485a8b3e05aa466d",
+    "spending-constraints/airline-environment-replay.json": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad",
+    "spending-constraints/airline-artifact-audit.json": "42d6f871b07078864c5fe7f1085f91f3661c4d4440651ad26a1fc94f3563ac3b"
+  },
+  "spending_microchecks": {
+    "passed": 4,
+    "before_change_failed": 2,
+    "before_change_passed": 2,
+    "scope": "Opening states the cap; unknown price triggers a cost question; over-budget quote triggers the permitted alternative; known in-limit completion can stop."
+  },
+  "previous_focused_diagnostics": [
+    {
+      "benchmark_source_sha256": "2a701460f9362d34b5be02eb62a29986438706878434c6cdc60e9596b745a1d8",
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "max_simulated_seconds": 300,
+      "trial_wall_seconds": 453.46414995903615,
+      "caller_validity_failed": true,
+      "issues": [
+        "spending cap omitted",
+        "closing help question incorrectly blocks terminal proposal",
+        "incorrect baggage charge"
+      ]
+    },
+    {
+      "benchmark_source_sha256": "806dfa22124aa1ee7609b04125f8a55d65dd20816361fc31a8eb2bbee7d9b642",
+      "raw_reward": 0.0,
+      "termination": "max_steps",
+      "max_simulated_seconds": 300,
+      "trial_wall_seconds": 451.9498578750063,
+      "caller_validity_failed": true,
+      "issues": [
+        "spending cap omitted",
+        "call cap before final confirmation",
+        "incorrect baggage charge"
+      ]
+    }
+  ],
+  "focused_domain_diagnostic": {
+    "status": "complete",
+    "domain": "airline",
+    "task_id": "12",
+    "seed": 70,
+    "trials": 1,
+    "max_simulated_seconds": 600,
+    "wall_watchdog_seconds": 1200,
+    "complexity": "control",
+    "accepted_model_score": false,
+    "raw_reward": 0.0,
+    "termination": "user_stop",
+    "trial_wall_seconds": 554.4228812920046,
+    "audio_seconds": 312.90000000000003,
+    "db_match": false,
+    "strict_environment_replay_reward": 0.0,
+    "inference_failures": 0,
+    "native_cancellations": 0,
+    "tool_calls": 6,
+    "failed_lookup_recovered": true,
+    "successful_database_writes": 2,
+    "caller_spending_cap_heard": true,
+    "earlier_unpriced_consent": true,
+    "price_requested_before_writes": true,
+    "quoted_total": 100,
+    "actual_test_database_charges": {
+      "upgrade": 1200,
+      "bags": 100
+    },
+    "all_amounts_are_fictional": true,
+    "caller_validity_scope": "Budget heard and priced consent before writes; early unpriced general go-ahead remains a limitation. Not a full-frame accuracy estimate."
+  },
+  "cloud_inference_calls": 0,
+  "focused_domain_artifact_sha256": {
+    "agent.wav": "2a4033ac6ebdbccbe254689c509b9e364be6e5d6f8b5e6e5f167680d5ad1a255",
+    "inference.json": "bcd0ee615c3c40948f9ce2359857b7c31b47dc6ecc8e6e15c5f37d039249a587",
+    "profile.json": "7023015f31350d085a56247e91dc8cc11dd8ca5ecb0ee66de7668e286e72f26f",
+    "provenance.json": "0bcbac7470841011a7f696cef4e8638b27d1b5b4943014d07f6b1641fda3f348",
+    "runtime.json": "7c84e408210d11f6cb4ce3d05294c7e469fee3262da4aee18d6fce7b890352e7",
+    "settings.json": "43a545f968afae203f5aa69e15c1789cffda81c0b70697eadc5b90fca78c66af",
+    "simulation.json": "cac972646a7a4043016118009982caf3bdcd71e18222e849485a8b3e05aa466d",
+    "user.wav": "4e07b042f1a7a08f0c7a170588f6d16f10b2bf8b31d3178383ecd88e8234d465"
+  }
+}

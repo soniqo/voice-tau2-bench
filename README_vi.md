@@ -41,9 +41,9 @@ Mẫu nhỏ xác định này dùng người gọi và giám khảo cục bộ. 
 
 Mẫu 12B chưa hoàn tất: tác vụ viễn thông gặp lỗi suy luận native nên chưa được chấm điểm. Kiểm tra giọng nói 12B có kiểm soát: **1.0** cho lần ghi cơ sở dữ liệu đúng và **0.0** khi chấm lại một lần ghi sai. [Tham số đã kiểm chứng](docs/validation/gemma4-12b-voice-e2e.md). Đầu vào người gọi được cố định; kiểm tra này không tính vào điểm đánh giá. Các lần chạy theo miền dùng người gọi sinh văn bản và báo cáo liên kết ghi lại từng phiên bản runtime.
 
-Chẩn đoán phát triển local v2 mới nhất: **Gemma 4 12B IT (INT4), kết quả thô: hàng không 0/1, bán lẻ 0/1, viễn thông 0/1**. Ba tác vụ cần thay đổi trạng thái, mỗi tác vụ chạy một lần, seed **70**; tất cả cuộc gọi đạt **giới hạn mô phỏng 300 giây** (**giới hạn thời gian thực 900 giây**). Kết quả chạy rút gọn này chỉ áp dụng cho ba tác vụ đã chọn. [Kết quả và tham số đã kiểm tra](docs/validation/development-smoke.md).
+Chẩn đoán phát triển local v2 trước đây: **Gemma 4 12B IT (INT4), kết quả thô: hàng không 0/1, bán lẻ 0/1, viễn thông 0/1**. Ba tác vụ cần thay đổi trạng thái, mỗi tác vụ chạy một lần, seed **70**; tất cả cuộc gọi đạt **giới hạn mô phỏng 300 giây** (**giới hạn thời gian thực 900 giây**). Kết quả chạy rút gọn này chỉ áp dụng cho ba tác vụ đã chọn. [Kết quả và tham số đã kiểm tra](docs/validation/development-smoke.md).
 
-Các kết quả chẩn đoán này có trước [bản sửa lịch sử công cụ và nhịp nói của người gọi](docs/validation/tool-history-and-pacing.md). Lần kiểm tra chức năng mới đạt **79/79** kiểm tra người gọi/bộ chấm: **1.0** cho thao tác ghi qua giọng nói có kiểm soát và **0.0** khi phát lại thao tác ghi sai.
+Các kết quả chẩn đoán này có trước [bản sửa lịch sử công cụ và nhịp nói của người gọi](docs/validation/tool-history-and-pacing.md). Lần kiểm tra chức năng mới đạt **84/84** kiểm tra người gọi/bộ chấm: **1.0** cho thao tác ghi qua giọng nói có kiểm soát và **0.0** khi phát lại thao tác ghi sai.
 
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
