@@ -40,3 +40,7 @@ selection was changed in response to a model outcome. A new source requires
 fresh qualification and a separate output directory; old errors and partial
 results remain preserved. Shortened-run scores must stay separate from the
 original 18-call pilot.
+
+The [completed three-task rerun](development-smoke.md) recovered the same malformed
+retail response and finished all three calls. It records raw outcomes and their
+trace analysis separately from the partial pre-fix run.

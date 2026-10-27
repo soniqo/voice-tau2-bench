@@ -23,6 +23,8 @@ qualification and the completed development-call audit. See
 [pilot grading coverage](validation/pilot-grading.md) for reporting groups.
 The [terminal-JSON follow-up](validation/terminal-json.md) records the shortened
 run's caller-format failure, bounded reassessment fix and native controls.
+The [completed development run](validation/development-smoke.md) records all three
+short calls, their raw outcomes and the remaining agent/runtime investigation.
 
 ## Faster development runs
 
