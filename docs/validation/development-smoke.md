@@ -1,5 +1,8 @@
 # Three-task local v2 development run
 
+This historical run predates the [tool-history and caller-pacing fixes](tool-history-and-pacing.md).
+Its zero rewards remain raw development diagnostics, with the original artifacts preserved.
+
 All three selected calls completed on 2026-10-27 with the qualified local stack.
 Each reached its 300-second simulated call cap. The total measured trial wall
 time was **23 minutes 11 seconds**. These raw diagnostic outcomes cover the
@@ -29,8 +32,11 @@ recorded inference accounting.
   it could not locate the account and repeatedly asked for its ID. Subsequent
   recognition also changed the spoken identifier. The final archived native
   agent request contains both successful tool results with matching call IDs.
-  This verifies delivery to the native endpoint; native prompt rendering and
-  model use of the history still need investigation. No state-changing call ran.
+  This verifies delivery to the native endpoint. Subsequent investigation found
+  an unclosed native model turn before a following user message and a caller
+  that repeated an already answered identity question. Correcting the native
+  boundary alone still reproduces the false account-failure claim on the
+  captured garbled follow-up. No state-changing call ran in this original trial.
 - **Retail:** account lookup succeeded, but the agent omitted the required `#`
   from an order ID in two order lookups. Both returned `Order not found`.
   The frozen tool and its argument rules remain unchanged.

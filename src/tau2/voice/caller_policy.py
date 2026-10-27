@@ -130,6 +130,7 @@ class QualifiedCallerBackend:
         self.backend = backend
         self.scenario = scenario
         self.decisions = []
+        self._waiting_assessment_context = None
         self.device_controller = (
             CustomerDeviceController(scenario) if device_grounding else None
         )
@@ -418,6 +419,42 @@ class QualifiedCallerBackend:
                 f"Invalid customer tool response: {error}"
             ) from error
 
+    @staticmethod
+    def awaiting_agent_reply(conversation):
+        for row in reversed(conversation):
+            if row["speaker"] == "customer_tool":
+                return False
+            if row["tool_calls"] or not (row["content"] or "").strip():
+                continue
+            return row["speaker"] == "customer" and row["is_final_chunk"]
+        return False
+
+    def _wait_for_agent_reply(self, agent_silence, caller_idle, assessment=None):
+        check_in = agent_silence is not None and agent_silence >= caller_idle
+        control = {
+            "guard": "answered_agent_turn",
+            "action": "silence_check_in" if check_in else "wait_for_agent_turn",
+            "cached_assessment": assessment is None,
+        }
+        self.decisions.append(
+            {
+                "decision": "CONTINUE",
+                "reasoning": "Wait for a new heard agent turn after the customer's completed response.",
+                "agent_evidence": None,
+                "caller_turn_control": control,
+            }
+        )
+        return AssistantMessage(
+            role="assistant",
+            content="Are you still there?" if check_in else "",
+            cost=assessment.cost if assessment is not None else 0,
+            usage=assessment.usage if assessment is not None else None,
+            generation_time_seconds=(
+                assessment.generation_time_seconds if assessment is not None else 0
+            ),
+            raw_data={"caller_turn_control": control},
+        )
+
     def generate(self, model, messages, *, call_name=None, **kwargs):
         if call_name != "user_streaming_response":
             return self.backend.generate(model, messages, call_name=call_name, **kwargs)
@@ -480,6 +517,30 @@ class QualifiedCallerBackend:
                     generation_time_seconds=0,
                     raw_data={"caller_turn_control": {"action": action}},
                 )
+        waiting_context = None
+        if has_turn_timing and self.awaiting_agent_reply(conversation):
+            waiting_context = json.dumps(
+                {
+                    "model": model,
+                    "scenario": self.scenario,
+                    "conversation": [
+                        row
+                        for row in conversation
+                        if (row["content"] or "").strip()
+                        or row["tool_calls"]
+                        or row["speaker"] == "customer_tool"
+                    ],
+                    "tools": [
+                        tool.openai_schema["function"]
+                        for tool in kwargs.get("tools") or []
+                    ],
+                },
+                sort_keys=True,
+            )
+            # Silence frames cannot change a validated continuing assessment.
+            # Reuse only while the same caller-visible input is awaiting a reply.
+            if waiting_context == self._waiting_assessment_context:
+                return self._wait_for_agent_reply(agent_silence, caller_idle)
         decision, assessment = self.assess(model, messages, tools=kwargs.get("tools"))
         if decision != "CONTINUE":
             return AssistantMessage(
@@ -490,6 +551,9 @@ class QualifiedCallerBackend:
                 generation_time_seconds=assessment.generation_time_seconds,
                 raw_data={"caller_policy": "terminal-v2", "decision": decision},
             )
+        if waiting_context is not None:
+            self._waiting_assessment_context = waiting_context
+            return self._wait_for_agent_reply(agent_silence, caller_idle, assessment)
         tools = kwargs.get("tools") or []
         route = self.tool_route(model, messages, tools)
         systems = [

@@ -177,6 +177,75 @@ def test_real_caller_reassesses_malformed_json_without_inventing_a_stop(
         assert caller.decisions[-1]["agent_evidence"] in heard
 
 
+@pytest.mark.parametrize("completed", [False, True])
+def test_real_caller_waits_after_answer_without_hiding_completion(
+    runtime, tmp_path, completed
+):
+    import json
+
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    caller = QualifiedCallerBackend(runtime, "Cancel my subscription.")
+    history = [
+        UserMessage(
+            role="user",
+            content=(
+                "Your subscription has been cancelled."
+                if completed
+                else "Could you provide your user ID?"
+            ),
+        ),
+        AssistantMessage(
+            role="assistant",
+            content="Thank you." if completed else "My user ID is account_7.",
+        ),
+    ]
+    start = len(runtime.events)
+    first = caller.generate(
+        "gemma4-e4b-it",
+        history,
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+        caller_idle_seconds=15,
+    )
+    first_events = len(runtime.events) - start
+    second = None
+    if not completed:
+        second = caller.generate(
+            "gemma4-e4b-it",
+            [*history, UserMessage(role="user", content=None)],
+            call_name="user_streaming_response",
+            agent_silence_seconds=15,
+            caller_idle_seconds=15,
+        )
+    destination = Path(os.environ.get("TAU_VOICE_PACING_E2E_OUTPUT", str(tmp_path)))
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / f"caller-wait-completed-{completed}.json").write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "first": first.model_dump(mode="json"),
+                "second": second.model_dump(mode="json") if second else None,
+                "assessments": caller.decisions,
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert first_events >= 1
+    if completed:
+        assert first.content == "###STOP###"
+    else:
+        assert first.content == "" and second.content == "Are you still there?"
+        assert len(runtime.events) - start == first_events
+        assert second.cost == 0 and second.generation_time_seconds == 0
+        assert second.raw_data["caller_turn_control"]["cached_assessment"] is True
+
+
 @pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
 def test_real_tool_history_uses_changed_result_instead_of_a_previous_answer(
     runtime, tmp_path, model

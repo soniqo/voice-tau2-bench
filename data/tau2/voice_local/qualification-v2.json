@@ -1602,6 +1602,52 @@
         "arguments": {},
         "spoken_result": "My status bar shows Airplane Mode, battery 80 percent."
       }
+    },
+    {
+      "id": "non-phone-answered-identity-wait",
+      "scenario": "Known info:\nYour user ID is sam_taylor_1234.\nTask instructions:\nAsk to add a checked bag to your next flight.",
+      "history": [
+        [
+          "user",
+          "Could you please provide your user ID?"
+        ],
+        [
+          "assistant",
+          "My user ID is sam_taylor_1234."
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "non-phone-answered-identity-check-in",
+      "scenario": "Known info:\nYour user ID is sam_taylor_1234.\nTask instructions:\nAsk to add a checked bag to your next flight.",
+      "history": [
+        [
+          "user",
+          "Could you please provide your user ID?"
+        ],
+        [
+          "assistant",
+          "My user ID is sam_taylor_1234."
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 15,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Are you still there?"
+        ]
+      }
     }
   ],
   "judge": [

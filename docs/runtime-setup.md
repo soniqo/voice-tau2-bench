@@ -27,6 +27,13 @@ Setup downloads model assets once and records their immutable revisions and cont
 
 Rebuild and regenerate the manifest together after native source changes. Keep the generated manifest and model caches local; their machine-specific directories are recorded in each run's provenance.
 
+For histories containing a user turn after tool results, use speech-swift
+`35299ba6c168f5cd6e8c1862433c3d4a7e55087b` or a descendant containing the
+[Gemma turn-boundary fix](https://github.com/soniqo/speech-swift/pull/539).
+The native formatter must close the previous model turn before opening that
+user turn. Qualify again after rebuilding; a previous runtime's qualification
+does not cover the changed native source.
+
 To diagnose a native chat failure, add
 `--failure-capture-directory /absolute/path/to/private-failures` when staging.
 A matching speech-swift build then writes failed request bodies and, for
