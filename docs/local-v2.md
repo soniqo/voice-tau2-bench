@@ -25,6 +25,8 @@ The [terminal-JSON follow-up](validation/terminal-json.md) records the shortened
 run's caller-format failure, bounded reassessment fix and native controls.
 The [completed development run](validation/development-smoke.md) records all three
 short calls, their raw outcomes and the remaining agent/runtime investigation.
+The [tool-history and caller-pacing follow-up](validation/tool-history-and-pacing.md)
+records the integration defects found in those traces and the validation of their fixes.
 
 ## Faster development runs
 
@@ -85,8 +87,13 @@ another response early merely because its background worker has already finished
 Interruptions discard superseded speech and tools while preserving recognition
 of speech already heard.
 
-The local v2 customer waits 15 simulated seconds after their own speech before
-repeating a request into silence. V1 retains its five-second setting. This common
+After a completed answer, the local v2 customer waits for a new heard agent turn.
+At 15 simulated seconds of silence, it asks whether the agent is still there
+instead of repeating an identifier or instruction. Completion and refusal are
+assessed before waiting. A validated continuing assessment is reused only while
+the meaningful caller-visible history, scenario, model and tool schemas remain
+identical; empty audio frames cannot trigger another assessment. The silence
+clock still determines when to check in. V1 retains its five-second setting. This common
 local condition gives the ASR/LLM/TTS cascade time to begin responding; all agent
 execution time still counts, and every model uses the same patience setting.
 The selected value is recorded in the profile and per-trial settings. It changes
@@ -107,7 +114,7 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 77 checks cover completed versus promised work, required follow-ups after a
+The 79 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
 and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
@@ -115,8 +122,8 @@ They cover read-before-toggle and no-op behavior, stale facts after a write,
 compound instructions, required parameters, persona reassurance, VPN states,
 service-working and data-speed questions versus enabled settings, and agent offers that must not
 become customer actions. Streaming cases include incomplete speech and completed
-questions heard during an ongoing turn; two cases exercise callers without a
-phone controller.
+questions heard during an ongoing turn; four cases exercise callers without a
+phone controller, including waiting and checking in after an answered identity question.
 Two judge cases exercise the actual NL-assertion prompt in addition to the six
 communication cases. NL results must cover every requested assertion with a
 Boolean value. A judge-model mismatch fails qualification before inference.

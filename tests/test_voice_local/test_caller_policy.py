@@ -115,6 +115,155 @@ def test_continue_preserves_dialogue_and_coalesces_caller_system_instructions():
     assert args["tools"] == []
 
 
+@pytest.mark.parametrize("grounding", [False, True])
+@pytest.mark.parametrize("empty_frame", [False, True])
+@pytest.mark.parametrize(
+    "silence,text,action",
+    [(1, "", "wait_for_agent_turn"), (15, "Are you still there?", "silence_check_in")],
+)
+def test_answered_turn_waits_instead_of_repeating_the_answer(
+    grounding, empty_frame, silence, text, action
+):
+    backend = Backend(["CONTINUE", "My user ID is account_7."])
+    caller = QualifiedCallerBackend(
+        backend, "Change my flight.", device_grounding=grounding
+    )
+    history = [
+        UserMessage(role="user", content="Could you provide your user ID?"),
+        AssistantMessage(role="assistant", content="My user ID is account_7."),
+    ]
+    if empty_frame:
+        history.append(UserMessage(role="user", content=None, is_final_chunk=False))
+    reply = caller.generate(
+        "model",
+        history,
+        tools=[],
+        call_name="user_streaming_response",
+        agent_silence_seconds=silence,
+        caller_idle_seconds=15,
+    )
+    assert reply.content == text
+    control = (
+        reply.raw_data.get("caller_turn_control") or reply.raw_data["device_grounding"]
+    )
+    assert control["action"] == action
+    assert len(backend.calls) == (0 if grounding and not empty_frame else 1)
+
+
+def test_answered_turn_wait_reuses_only_an_unchanged_visible_assessment():
+    backend = Backend(["CONTINUE", "My user ID is account_7."])
+    caller = QualifiedCallerBackend(backend, "Change my flight.")
+    history = [
+        UserMessage(role="user", content="Your user ID?"),
+        AssistantMessage(role="assistant", content="account_7"),
+    ]
+    first = caller.generate(
+        "model", history, call_name="user_streaming_response", agent_silence_seconds=1
+    )
+    second = caller.generate(
+        "model",
+        [*history, UserMessage(role="user", content=None)],
+        call_name="user_streaming_response",
+        agent_silence_seconds=15,
+    )
+    assert first.content == "" and second.content == "Are you still there?"
+    assert len(backend.calls) == 1
+    assert second.cost == 0 and second.generation_time_seconds == 0
+    assert second.raw_data["caller_turn_control"]["cached_assessment"] is True
+
+
+@pytest.mark.parametrize("terminal", ["COMPLETE", "REFUSED"])
+def test_answered_turn_still_checks_terminal_state_after_customer_acknowledgment(
+    terminal,
+):
+    evidence = (
+        "Your subscription has been cancelled."
+        if terminal == "COMPLETE"
+        else "Policy prohibits cancellation."
+    )
+    backend = Backend([assessment(terminal, evidence)])
+    caller = QualifiedCallerBackend(backend, "Cancel my subscription.")
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content=evidence),
+            AssistantMessage(role="assistant", content="Thank you."),
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+    )
+    assert reply.content == "###STOP###" and len(backend.calls) == 1
+
+
+def test_answered_turn_wait_preserves_assessment_accounting():
+    backend = Backend(
+        [
+            assessment(
+                "CONTINUE",
+                cost=0.2,
+                usage={"completion_tokens": 5},
+                generation_time_seconds=1.25,
+            ),
+            "repeat",
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "Change my flight.")
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content="Your user ID?"),
+            AssistantMessage(role="assistant", content="account_7"),
+        ],
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+    )
+    assert reply.content == "" and reply.cost == 0.2
+    assert (
+        reply.usage == {"completion_tokens": 5}
+        and reply.generation_time_seconds == 1.25
+    )
+
+
+def test_new_heard_turn_after_wait_is_assessed_and_can_complete():
+    evidence = "Your subscription has been cancelled."
+    backend = Backend(["CONTINUE", assessment("COMPLETE", evidence)])
+    caller = QualifiedCallerBackend(backend, "Cancel my subscription.")
+    history = [
+        UserMessage(role="user", content="Your user ID?"),
+        AssistantMessage(role="assistant", content="account_7"),
+    ]
+    first = caller.generate(
+        "model", history, call_name="user_streaming_response", agent_silence_seconds=1
+    )
+    reply = caller.generate(
+        "model",
+        [*history, UserMessage(role="user", content=evidence)],
+        call_name="user_streaming_response",
+        agent_silence_seconds=0,
+    )
+    assert first.content == "" and reply.content == "###STOP###"
+    assert len(backend.calls) == 2
+
+
+def test_answered_turn_does_not_hide_a_pending_customer_tool_result():
+    backend = Backend(["CONTINUE", "The device check returned off."])
+    caller = QualifiedCallerBackend(backend, "Restore my connection.")
+    reply = caller.generate(
+        "model",
+        [
+            UserMessage(role="user", content="Please check your device."),
+            AssistantMessage(role="assistant", content="Okay."),
+            ToolMessage(
+                role="tool", requestor="user", id="read-1", content="The device is off."
+            ),
+        ],
+        tools=[],
+        call_name="user_streaming_response",
+        agent_silence_seconds=1,
+    )
+    assert reply.content == "The device check returned off." and len(backend.calls) == 2
+
+
 def test_premature_caller_stop_invalidates_trial():
     caller = QualifiedCallerBackend(Backend(["CONTINUE", "###STOP###"]), "scenario")
     with pytest.raises(CallerPolicyError, match="outstanding"):
