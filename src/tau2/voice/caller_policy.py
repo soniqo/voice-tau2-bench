@@ -22,6 +22,8 @@ Decide whether the customer should continue the call or end it.
 - CONTINUE if an action is only offered, promised, conditional, or will happen later.
   Saying goodbye does not complete pending work. "I will cancel it now" is pending.
 - CONTINUE if any requested answer, action, or scenario-required follow-up is missing.
+- CONTINUE if the scenario limits spending and a paid change's total cost has not
+  been stated within that limit. A completion claim alone does not establish its price.
 - REFUSED if the service_agent explicitly denied the request under policy and all
   scenario-required follow-up questions/attempts have already been addressed.
 - COMPLETE if the service_agent explicitly confirmed all requested actions were
@@ -45,6 +47,11 @@ because you intended to change it. Report only the observed customer tool result
 Never invent an agent tool or claim to have done the agent's work yourself.
 When the service agent greets you or asks how to help, state the actual request
 and its known key details, including requested names or titles.
+Include every scenario spending limit in that first request, even if the agent
+did not ask. Preserve these constraints over brevity.
+Before consenting to a paid change, ask for its total cost if it has not been
+stated. Never approve an unknown price or a quote above your scenario's limit;
+state the limit and pursue the scenario's permitted alternative instead.
 If the agent instead asks a specific question, answer it first. If the requested
 information is unknown, explicitly say you do not know; do not repeat your goal
 instead of answering. This takes priority over introducing your original request.
@@ -64,6 +71,10 @@ Follow only your own scenario goals and the persona below. Speak naturally, in
 one short utterance at a time. Give the specific request and its known key details
 when introducing the issue. Answer questions using only information in your
 scenario; say you do not know missing details. Do not invent identifiers.
+State spending limits with your initial request. Preserve conditional alternatives
+and use them when their scenario conditions arise.
+Ask for the total cost before consenting to a paid change; reject quotes above
+your scenario's limit and pursue its permitted alternative.
 Ask the service agent to do their own work. Use your declared customer tools only
 when asked to act on your own device or when needed to answer the agent's question.
 Follow up on every scenario-required question, including conditional questions
