@@ -8,25 +8,13 @@ Changing the caller policy and clock creates a separate experimental condition;
 v2 results must not be combined with v1 scores or presented as official τ-Voice
 leaderboard results.
 
-See [validation results and working parameters](validation/local-v2.md) for the
-spoken pipeline checks, qualification results, and known limits. The
-[native cache follow-up](validation/native-prefill.md) verifies the newer runtime.
-The [device-controller follow-up](validation/grounded-caller.md) records current
-caller validation and held-out pilot progress. The
-[acceptance and spoken-speed follow-up](validation/caller-goals.md) records the
-goal-verification checks. The [setting-direction follow-up](validation/caller-switches.md)
-records the preceding caller revision.
-The [status-bar follow-up](validation/caller-views.md) records the latest read-target
-correction and validation.
-The [NL-judge follow-up](validation/nl-judge.md) records preceding whole-source
-qualification and the completed development-call audit. See
-[pilot grading coverage](validation/pilot-grading.md) for reporting groups.
-The [terminal-JSON follow-up](validation/terminal-json.md) records the shortened
-run's caller-format failure, bounded reassessment fix and native controls.
-The [completed development run](validation/development-smoke.md) records all three
-short calls, their raw outcomes and the remaining agent/runtime investigation.
-The [tool-history and caller-pacing follow-up](validation/tool-history-and-pacing.md)
-records the integration defects found in those traces and the validation of their fixes.
+See [runtime setup](runtime-setup.md), [scoring](evaluation.md), and the
+[model comparison protocol](model-comparison.md) for supported systems, metrics
+and execution limits. The [current measured record](results/gemma4-12b-local-v2-airline.json)
+covers one completed development call. Full-frame validation and a matched
+multi-model comparison remain pending. Historical runs retain their original
+source and settings. [Pilot grading coverage](validation/pilot-grading.md)
+describes the predeclared reporting groups.
 
 ## Faster development runs
 
@@ -126,8 +114,7 @@ questions heard during an ongoing turn; four cases exercise callers without a
 phone controller, including waiting and checking in after an answered identity question.
 Two further cases distinguish completed work followed by a closing help question
 from an actual pending action followed by the same question.
-Three spending cases check an opening price limit, the permitted alternative
-after an over-budget quote, and completion with a known fee inside the limit.
+Additional cases cover material caller constraints and their conditional follow-ups.
 Two judge cases exercise the actual NL-assertion prompt in addition to the six
 communication cases. NL results must cover every requested assertion with a
 Boolean value. A judge-model mismatch fails qualification before inference.
@@ -149,9 +136,7 @@ only of an English confirmation question. A completed-action statement followed
 by a question is still eligible for a terminal decision. These guards
 exclude a final courtesy question such as “Is there anything else I can help you
 with?” from the future-offer check while checking all preceding quoted evidence.
-A courtesy question alone still cannot prove completion. The
-[closing-question follow-up](validation/closing-question.md) records the captured
-false continuation and its regression coverage. These guards
+A courtesy question alone still cannot prove completion. These guards
 cannot generate a stop. A terminal proposal with malformed JSON syntax, invalid
 control-field values (such as a misspelled decision enum), or without a supporting agent quote gets
 at most one model reassessment using the same caller-visible
@@ -163,12 +148,11 @@ reassessment above; this does not add another retry after a rejected quote.
 Every rejected response is retained, and no decision or
 evidence is filled in by the runtime.
 
-The caller states scenario spending limits in its opening request, asks for an
-unknown total before consenting to a paid change, and follows the scenario's
-alternative when a quote exceeds its limit. A completion claim with an unknown
-price does not establish that an explicit spending limit was respected. These
-are caller instructions; the agent learns them only through ordinary spoken
-dialogue. See the [spending-constraint checks](validation/spending-constraints.md).
+The caller must preserve the private scenario's material constraints and required
+follow-ups. The agent learns those facts only through ordinary spoken dialogue.
+Trace audits remain necessary because a passing qualification suite does not
+establish perfect caller adherence. See the [comparison protocol](model-comparison.md).
+
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
 The v2 profile explicitly enables `execution.device_grounding`. For telecom,

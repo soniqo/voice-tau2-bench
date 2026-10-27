@@ -1,0 +1,189 @@
+{
+  "schema_version": 1,
+  "record_type": "single_task_development_diagnostic",
+  "date": "2026-10-27",
+  "agent": {
+    "model_id": "gemma4-12b-it",
+    "engine": "speech-swift/gemma4-unified",
+    "precision": "int4",
+    "features": [
+      "cancel",
+      "tool_calls",
+      "tool_history"
+    ]
+  },
+  "cohort": {
+    "profile": "soniqo-local-gemma12b-v2",
+    "domain": "airline",
+    "task_ids": [
+      "12"
+    ],
+    "trials_per_task": 1,
+    "seed": 70,
+    "clock_mode": "simulation-v2",
+    "max_simulated_seconds": 600,
+    "wall_watchdog_seconds": 1200,
+    "acoustics": "control",
+    "hardware": "Apple M5 Pro, 48 GB unified memory",
+    "shared_workstation": true
+  },
+  "supporting_models": {
+    "caller": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output",
+        "tool_calls",
+        "tool_history"
+      ]
+    },
+    "listener": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": []
+    },
+    "judge": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output"
+      ]
+    },
+    "agent_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": [
+        "cancel",
+        "streaming"
+      ]
+    },
+    "caller_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": []
+    },
+    "asr": {
+      "model_id": "whisper-large-v3",
+      "engine": "speech-swift/whisper",
+      "precision": "fp16",
+      "features": []
+    },
+    "vad": {
+      "model_id": "silero-vad",
+      "engine": "speech-swift/silero",
+      "precision": null,
+      "features": [
+        "streaming"
+      ]
+    }
+  },
+  "metrics": {
+    "planned_trials": 1,
+    "scored_trials": 1,
+    "unscored_trials": 0,
+    "successful_trials": 0,
+    "pass_1": 0.0,
+    "normal_completions": 1,
+    "termination": "user_stop",
+    "inference_failures": 0,
+    "agent_tool_attempts": 6,
+    "agent_tool_errors": 1,
+    "agent_tool_error_rate": 0.16666666666666666,
+    "agent_llm_execution": {
+      "samples": 17,
+      "p50_seconds": 7.003807207976934,
+      "p95_seconds": 11.128174708818548
+    },
+    "agent_asr_execution": {
+      "samples": 13,
+      "p50_seconds": 1.123371916997712,
+      "p95_seconds": 2.335257533378899
+    },
+    "agent_tts_first_audio": {
+      "samples": 11,
+      "p50_seconds": 1.2186085830326192,
+      "p95_seconds": 1.6992526670219377
+    },
+    "simulated_call_seconds": 312.90000000000003,
+    "measured_trial_wall_seconds": 554.4228812920046,
+    "api_cost_usd": 0.0,
+    "api_cost_per_trial_usd": 0.0,
+    "api_cost_per_successful_trial_usd": null
+  },
+  "measurement": {
+    "percentiles": "Linear interpolation at (n-1)*p over successful requests only.",
+    "agent_llm_execution": "Agent chat execution_seconds; queue_seconds excluded and retained separately in the source trajectory.",
+    "agent_asr_execution": "Agent ASR execution_seconds.",
+    "agent_tts_first_audio": "Backend speech request start to first audio chunk; not end-of-caller-turn to first reply.",
+    "tool_errors": "Failed or rejected agent calls / attempted agent calls. Incorrect successful writes are captured by task reward.",
+    "api_cost": "No cloud inference; hardware and energy costs are not included.",
+    "agent_prefix_cache": {
+      "cold_requests": 1,
+      "reused_prefix_requests": 16,
+      "native_budget_bytes": 1073741824
+    },
+    "service_preflight_before_trial": true
+  },
+  "limits": [
+    "One task and one trial, not a matched multi-model comparison or a 278-task accuracy estimate.",
+    "Caller and judge quality can affect outcomes; domain trace audits are required.",
+    "Component latency percentiles are per request, not conversation response latency."
+  ],
+  "validation": {
+    "offline_tests": 788,
+    "native_functional_checks": 15,
+    "caller_judge_qualification_passed": 84,
+    "caller_judge_qualification_total": 84,
+    "controlled_spoken_write_reward": 1.0,
+    "wrong_write_replay_reward": 0.0,
+    "strict_database_replay_reward": 0.0,
+    "native_process_peak": {
+      "physical_footprint_bytes": 18644644680,
+      "scope": "Whole native validation session: functional checks, caller/judge qualification and this trial. Not a per-agent or per-trial memory measurement."
+    }
+  },
+  "provenance": {
+    "benchmark_commit": "34a74633cab4648fbd631297435ecb0534e819f2",
+    "benchmark_source_sha256": "1f289d040cabb2fe25c12529a74d02bcacf990b26339fbc2c50abe584d27c6ac",
+    "native_runtime_revision": "35299ba6c168f5cd6e8c1862433c3d4a7e55087b+source-sha256:a94d201a72066f27706b155e47a98038d198c545763afc6fb684a45a9694f4cc",
+    "model_revisions": {
+      "agent": {
+        "repository": "mlx-community/gemma-4-12B-it-4bit",
+        "revision": "73bcf09092aa277861d5a191b989b666f7f32e8f"
+      },
+      "gemma": {
+        "repository": "aufklarer/gemma-4-E4B-it-MLX-4bit",
+        "revision": "561d32b215dea1fd2747e5367b094581813588b3"
+      },
+      "tokenizer": {
+        "repository": "openai/whisper-large-v3",
+        "revision": "06f233fe06e710322aca913c1bc4249a0d71fce1"
+      },
+      "vad": {
+        "repository": "aufklarer/Silero-VAD-v6.2.1-CoreML",
+        "revision": "523876545a57961474fee9df913e833e130560b8"
+      },
+      "vox": {
+        "repository": "aufklarer/VoxCPM2-MLX-bf16",
+        "revision": "6ab24e43c00cb54e129ef93b77edbb8e33190a65"
+      },
+      "whisper": {
+        "repository": "argmaxinc/whisperkit-coreml",
+        "revision": "0f63a7800b00dd0226abd051b906c246e1907482"
+      }
+    },
+    "artifact_sha256": {
+      "simulation.json": "cac972646a7a4043016118009982caf3bdcd71e18222e849485a8b3e05aa466d",
+      "inference.json": "bcd0ee615c3c40948f9ce2359857b7c31b47dc6ecc8e6e15c5f37d039249a587",
+      "settings.json": "43a545f968afae203f5aa69e15c1789cffda81c0b70697eadc5b90fca78c66af",
+      "profile.json": "7023015f31350d085a56247e91dc8cc11dd8ca5ecb0ee66de7668e286e72f26f",
+      "runtime.json": "7c84e408210d11f6cb4ce3d05294c7e469fee3262da4aee18d6fce7b890352e7",
+      "provenance.json": "0bcbac7470841011a7f696cef4e8638b27d1b5b4943014d07f6b1641fda3f348"
+    }
+  }
+}

@@ -1,0 +1,112 @@
+# Comparing voice agents
+
+Compare complete spoken task execution: can the agent hear the caller, use the
+domain tools correctly, and reach the required result? The frozen evaluator
+checks final state and selected communication requirements. See [scoring](evaluation.md).
+
+## Available agents and possible adapters
+
+The current implementation binds inference to the loopback speech-swift service.
+Gemma 4 12B IT INT4 has a tested v2 profile. Gemma 4 E4B IT INT4 is supported by the
+runtime and has a historical v1 profile; an equivalent v2 agent profile and a
+matched run are still needed before comparing it with the current 12B result.
+
+The following are possible integration targets, with no adapter or cloud run
+implemented in this repository:
+
+| System | What a comparison must identify |
+| --- | --- |
+| [GPT-Live](https://developers.openai.com/api/docs/guides/live) | Voice model **and** delegated reasoning/tool backend |
+| [OpenAI Realtime](https://developers.openai.com/api/docs/guides/realtime) | Speech-to-speech model, tools, turn detection and audio settings |
+| [Gemini Live](https://ai.google.dev/gemini-api/docs/live-api) | Live model, tool handling and audio settings |
+| [ElevenLabs Agents](https://elevenlabs.io/docs/eleven-agents/libraries/web-sockets) | Agent configuration, underlying LLM, voice and client tools |
+
+GPT-Live separates spoken conversation from delegated task execution. Its client
+delegation can connect an application-managed backend. A future adapter could
+use a local backend, but the cloud voice session would still have its own usage.
+Realtime and Gemini Live can handle audio and tool calls within their voice
+sessions. ElevenLabs Agents is a configured agent system rather than a TTS model
+alone. A model supporting speech does not by itself make it a benchmark adapter.
+
+## Metrics and definitions
+
+Always publish trial counts alongside rates, including incomplete coverage and
+inference failures. A timeout receives the frozen zero reward. An inference or
+invalid-caller exception remains unscored and must stay visible in coverage.
+
+| Metric | Definition | Current evidence |
+| --- | --- | --- |
+| Task success, pass^1 | Average trial success under the frozen task reward | Trial reward and batch summary |
+| Coverage | Scored trials / planned trials; unscored errors separately | Batch summary or explicit diagnostic count |
+| Normal completion | Calls ending through ordinary caller/agent stop / attempted calls | `termination_reason` |
+| LLM latency p50 / p95 | Successful **agent** chat request `execution_seconds` | `simulation.info.inference_accounting` |
+| ASR latency p50 / p95 | Successful **agent** ASR request `execution_seconds` | Same accounting records |
+| TTS first audio p50 / p95 | Speech request start to first returned audio chunk | Successful agent `stream_speech` events in `inference.json` |
+| Voice response delay p50 / p95 | Caller end of speech to first agent audio | Standardized aggregate pending; inspect saved ticks |
+| Tool error rate | Failed or rejected agent calls / all agent attempts | `simulation.info.tool_metrics.assistant` |
+| Completion time | Simulated audio duration and measured trial wall duration | Ticks and `simulation.duration` |
+| Peak memory | Maximum sampled physical footprint of the native process | Guard's `memory.jsonl`; state sampling interval and measured phase |
+| API cost / trial | All billed provider usage / attempted trials | Local API cost is zero; provider accounting is not integrated |
+| API cost / successful trial | All billed usage, including failures / reward-1 trials | Undefined when no trial passes |
+
+For percentile values, filter by actor and operation, retain successful requests,
+sort the samples, and linearly interpolate at index `(n - 1) * p`. Publish the
+number of samples. Keep queue time separate from execution time; do not silently
+drop cancelled or failed requests from failure reporting.
+Report cache state and budget too: the current LLM sample contains one cold
+request and sixteen requests with a reused system/tool prefix, with a 1 GiB
+native prefix-cache budget. Functional checks and qualification preceded the call.
+
+TTS first-audio latency starts at the synthesis request. End-to-end voice response
+delay starts when the caller stops speaking and includes recognition, reasoning,
+tools, queuing and synthesis. The saved tick trajectory supports investigation,
+but a standardized aggregate for that response delay is not currently exported.
+Do not label component latency as whole-agent voice response latency.
+
+A successful tool execution can still produce the wrong business result. Tool
+error rate therefore complements task success. Audio quality, WER and MOS are
+not automatically included in this task benchmark's reward.
+
+Memory measurements cover the local service, including its loaded supporting
+models. A full-validation-session peak also includes qualification and functional
+checks. Cloud client memory is not the provider's model memory and must be
+labelled separately. API cost excludes local hardware and energy.
+
+## Matched comparison protocol
+
+1. Declare task IDs, trial seeds, acoustics and limits before execution. Use the
+   same state-changing development subset for each model before expanding.
+2. Hold caller, listener, judge and interaction settings fixed. For local LLM
+   comparisons, keep ASR, TTS, VAD and hardware fixed too.
+3. Qualify the caller/judge against the current source and runtime. Audit caller
+   adherence on domain traces; qualification does not establish perfect fidelity.
+4. Run sequentially, preserve errors and report coverage. Do not retry a failed
+   trial silently or replace the agent's heard audio with gold text.
+5. Report pass^1 first, then latency, tool errors, completion time, memory and
+   measured API cost. Publish source/model revisions and the complete stack.
+
+The [current measured record](results/gemma4-12b-local-v2-airline.json) is a single
+12B development call. It ended normally and failed its final-state check. It is
+not a matched comparison with the older E4B or 12B v1 runs. Their historical
+records remain in `docs/results/` under their original settings.
+
+## Execution and provider costs
+
+Current batch controls are `--num-tasks` or an explicit `--task-plan`, `--trials`,
+`--max-seconds` and `--wall-timeout`. The v2 clock distinguishes simulated call
+seconds from a wall watchdog. The watchdog is checked between ticks; an in-flight
+request can delay it. These controls bound execution, with no provider-dollar
+budget guard implemented. Current inference stays local.
+
+Before enabling any paid adapter, add explicit opt-in, a run/trial budget, usage
+metering, request/output limits, and session/backend cancellation. Record the
+provider's final usage and the pricing revision used to compute cost. Reserve
+for in-flight usage and verify provider-side enforcement before promising a
+hard monetary ceiling. A duration cap alone does not establish such a ceiling.
+
+For [GPT-Live costs](https://developers.openai.com/api/docs/guides/voice-latency-cost?api=live),
+include voice-session duration while talking, silent or waiting for the backend,
+plus separately billed backend model/tool usage and reconnections. Closing or
+cancelling a spoken response alone is not the same as closing every billable
+session and stopping delegated work. The cost of a configured managed agent must
+likewise include its backend. No cloud calls were made for these local results.

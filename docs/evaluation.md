@@ -38,3 +38,7 @@ Batch summaries exclude incomplete tasks until all requested trials finish. Resu
 Saved WAV files, recognition output, interruptions, inference timings, and estimated delivered-text alignment help explain task failures. They are separate diagnostics; audio quality or speed is not itself the task reward. Successful database changes do not override a conversation timeout.
 
 These results use custom local caller, voice, and judge models. They must be reported separately from upstream leaderboard results, with the recorded source and model provenance.
+
+For latency, tool errors, coverage, memory and API-cost definitions, use the
+[model comparison protocol](model-comparison.md). Keep these diagnostics alongside
+task success and report the same cohort and complete stack for every model.
