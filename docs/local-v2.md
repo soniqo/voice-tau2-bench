@@ -114,7 +114,7 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 79 checks cover completed versus promised work, required follow-ups after a
+The 81 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
 and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
@@ -124,6 +124,8 @@ service-working and data-speed questions versus enabled settings, and agent offe
 become customer actions. Streaming cases include incomplete speech and completed
 questions heard during an ongoing turn; four cases exercise callers without a
 phone controller, including waiting and checking in after an answered identity question.
+Two further cases distinguish completed work followed by a closing help question
+from an actual pending action followed by the same question.
 Two judge cases exercise the actual NL-assertion prompt in addition to the six
 communication cases. NL results must cover every requested assertion with a
 Boolean value. A judge-model mismatch fails qualification before inference.
@@ -143,6 +145,11 @@ heard from the service agent. A conservative English-language guard keeps the
 call open if that quote merely offers or promises a future action, or consists
 only of an English confirmation question. A completed-action statement followed
 by a question is still eligible for a terminal decision. These guards
+exclude a final courtesy question such as “Is there anything else I can help you
+with?” from the future-offer check while checking all preceding quoted evidence.
+A courtesy question alone still cannot prove completion. The
+ [closing-question follow-up](validation/closing-question.md) records the captured
+false continuation and its regression coverage. These guards
 cannot generate a stop. A terminal proposal with malformed JSON syntax, invalid
 control-field values (such as a misspelled decision enum), or without a supporting agent quote gets
 at most one model reassessment using the same caller-visible
