@@ -216,9 +216,7 @@ class QualifiedCallerBackend:
                     extract_json_from_llm_response(reply.content or "")
                 )
             except ValueError as error:
-                if isinstance(error, ValidationError) and all(
-                    item["type"] != "json_invalid" for item in error.errors()
-                ):
+                if isinstance(error, ValidationError):
                     rejected.append(
                         {"invalid_response": reply.content, "error": str(error)}
                     )
@@ -230,7 +228,8 @@ class QualifiedCallerBackend:
                         payload["feedback"] = (
                             "Reassess the same heard conversation and return valid JSON "
                             "matching required_schema. The previous response had invalid "
-                            "control fields. Use exactly CONTINUE, COMPLETE, or REFUSED; "
+                            "JSON syntax or control fields. Quote every JSON property "
+                            "name and string value. Use exactly CONTINUE, COMPLETE, or REFUSED; "
                             "a terminal decision still needs an exact heard agent quote. "
                             "Do not invent evidence or call tools."
                         )

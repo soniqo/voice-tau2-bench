@@ -114,6 +114,69 @@ def test_real_gemma_native_tool_call_and_result_history(runtime, model):
     assert "record" in result.content.lower()
 
 
+@pytest.mark.parametrize("completed", [False, True])
+def test_real_caller_reassesses_malformed_json_without_inventing_a_stop(
+    runtime, tmp_path, completed
+):
+    """Inject the format defect once; the actual model must reassess heard facts."""
+    import json
+
+    from tau2.voice.caller_policy import QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+
+    malformed = '```json\n{\nen: "The conversation is ongoing.",\nagent_evidence: null,\ndecision: "CONTINUE"\n}\n```'
+
+    class InjectMalformedOnce:
+        def __init__(self):
+            self.calls = []
+
+        def generate(self, model, messages, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 1:
+                return AssistantMessage(role="assistant", content=malformed)
+            return runtime.generate(model, messages, **kwargs)
+
+    backend = InjectMalformedOnce()
+    caller = QualifiedCallerBackend(backend, "Cancel my subscription.")
+    heard = (
+        "Your subscription has been cancelled."
+        if completed
+        else "I can cancel your subscription. Would you like me to proceed?"
+    )
+    start = len(runtime.events)
+    decision, reply = caller.assess(
+        "gemma4-e4b-it", [UserMessage(role="user", content=heard)]
+    )
+    destination = Path(os.environ.get("TAU_VOICE_TERMINAL_E2E_OUTPUT", str(tmp_path)))
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / f"malformed-terminal-completed-{completed}.json").write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "first_response_injected": True,
+                "injected_response": malformed,
+                "heard": heard,
+                "decision": decision,
+                "assessment": caller.decisions,
+                "reply": reply.model_dump(mode="json"),
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    assert decision == ("COMPLETE" if completed else "CONTINUE")
+    assert len(backend.calls) == 2
+    assert len(runtime.events[start:]) == 1
+    assert (
+        caller.decisions[-1]["rejected_assessments"][0]["invalid_response"] == malformed
+    )
+    if completed:
+        assert caller.decisions[-1]["agent_evidence"] in heard
+
+
 @pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
 def test_real_tool_history_uses_changed_result_instead_of_a_previous_answer(
     runtime, tmp_path, model

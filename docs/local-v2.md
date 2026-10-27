@@ -18,9 +18,37 @@ goal-verification checks. The [setting-direction follow-up](validation/caller-sw
 records the preceding caller revision.
 The [status-bar follow-up](validation/caller-views.md) records the latest read-target
 correction and validation.
-The [NL-judge follow-up](validation/nl-judge.md) records current whole-source
+The [NL-judge follow-up](validation/nl-judge.md) records preceding whole-source
 qualification and the completed development-call audit. See
 [pilot grading coverage](validation/pilot-grading.md) for reporting groups.
+The [terminal-JSON follow-up](validation/terminal-json.md) records the shortened
+run's caller-format failure, bounded reassessment fix and native controls.
+
+## Faster development runs
+
+Use the separate three-task plan for one state-changing task per domain, one
+trial each, and a shorter call budget. After starting the pinned native service
+and qualifying the current source, run:
+
+```bash
+uv run --frozen tau-voice batch --domain all \
+  --task-plan configs/pilots/local-v2-development.json \
+  --trials 1 --seed 70 --complexity control \
+  --max-seconds 300 --wall-timeout 900 \
+  --profile configs/voice/soniqo-local-gemma12b-v2.json \
+  --qualification data/simulations/local-v2-qualification.json \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/local-v2-development
+```
+
+The CLI flags set the budgets; the plan's recommendation fields are descriptive.
+Each call has five simulated minutes and a fifteen-minute wall watchdog. Inspect
+tool calls, heard speech, caller decisions and errors after each trial. A timeout
+is a zero under the frozen grader, but the shortened limit may prevent a valid
+longer solution. Inference and caller-control errors remain unscored and stop
+the batch. Keep these results separate from the 18-call pilot and full-frame
+scores. Preserve an interrupted pilot and resume it only with its original
+source, models and settings.
 
 ## Models
 
@@ -106,14 +134,15 @@ heard from the service agent. A conservative English-language guard keeps the
 call open if that quote merely offers or promises a future action, or consists
 only of an English confirmation question. A completed-action statement followed
 by a question is still eligible for a terminal decision. These guards
-cannot generate a stop. A terminal proposal with invalid control-field values
-(such as a misspelled decision enum) or without a supporting agent quote gets
+cannot generate a stop. A terminal proposal with malformed JSON syntax, invalid
+control-field values (such as a misspelled decision enum), or without a supporting agent quote gets
 at most one model reassessment using the same caller-visible
 scenario and conversation. The rejected proposal is recorded. The reassessment
 must pass the same evidence checks; a second unsupported proposal leaves the
-trial unscored. Invalid JSON syntax, assessment tool calls and inference errors
-propagate immediately; typed control-field errors receive the single bounded
-schema repair above. Every rejected response is retained, and no decision or
+trial unscored. Assessment tool calls and inference errors propagate immediately.
+JSON syntax and typed control-field errors share the single bounded schema
+reassessment above; this does not add another retry after a rejected quote.
+Every rejected response is retained, and no decision or
 evidence is filled in by the runtime.
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.

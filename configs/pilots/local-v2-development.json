@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "name": "local-v2-development-three-domain",
+  "selection_method": "First state-change-required task per domain in the predeclared held-out pilot reporting-group order. Fixed before development execution.",
+  "scope": "Shortened development smoke run; keep its results separate from the full held-out pilot.",
+  "complexity": "control",
+  "recommended_trials": 1,
+  "recommended_seed": 70,
+  "recommended_max_seconds": 300,
+  "recommended_wall_timeout_seconds": 900,
+  "tasks": [
+    {"domain": "airline", "task_id": "12"},
+    {"domain": "retail", "task_id": "40"},
+    {"domain": "telecom", "task_id": "[mobile_data_issue]data_saver_mode_on|user_abroad_roaming_enabled_off[PERSONA:Easy]"}
+  ]
+}

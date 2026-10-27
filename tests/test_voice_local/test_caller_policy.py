@@ -63,15 +63,30 @@ def test_only_model_assessed_terminal_state_emits_caller_stop(decision):
         "",
         "probably done",
         "COMPLETE because it is done",
-        AssistantMessage(
-            role="assistant", tool_calls=[ToolCall(name="write", arguments={})]
-        ),
     ],
 )
 def test_malformed_terminal_assessment_propagates_without_fallback(reply):
-    caller = QualifiedCallerBackend(Backend([reply]), "scenario")
+    backend = Backend([reply, reply])
+    caller = QualifiedCallerBackend(backend, "scenario")
     with pytest.raises(CallerPolicyError, match="Invalid caller terminal"):
         caller.assess("model", [])
+    assert len(backend.calls) == 2
+    assert not caller.decisions
+
+
+def test_assessment_tool_calls_fail_immediately_without_reassessment():
+    backend = Backend(
+        [
+            AssistantMessage(
+                role="assistant", tool_calls=[ToolCall(name="write", arguments={})]
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="assessment cannot call tools"):
+        caller.assess("model", [])
+    assert len(backend.calls) == 1
+    assert not caller.decisions
 
 
 def test_continue_preserves_dialogue_and_coalesces_caller_system_instructions():
@@ -234,15 +249,14 @@ def test_reassessment_may_stop_only_with_heard_agent_evidence_and_counts_both_ca
     assert len(backend.calls) == 2
 
 
-@pytest.mark.parametrize("invalid", ["not JSON", RuntimeError("native failed")])
 @pytest.mark.parametrize("during_reassessment", [False, True])
-def test_malformed_or_failed_inference_is_not_retried(invalid, during_reassessment):
+def test_failed_inference_is_not_retried(during_reassessment):
+    invalid = RuntimeError("native failed")
     backend = Backend(
         [assessment("COMPLETE"), invalid] if during_reassessment else [invalid]
     )
     caller = QualifiedCallerBackend(backend, "scenario")
-    expected = CallerPolicyError if isinstance(invalid, str) else RuntimeError
-    with pytest.raises(expected):
+    with pytest.raises(RuntimeError, match="native failed"):
         caller.assess("model", [])
     assert len(backend.calls) == 1 + during_reassessment
     assert not caller.decisions
@@ -630,6 +644,69 @@ def test_repeated_invalid_control_fields_remain_unscored():
         caller.assess("model", [])
     assert len(backend.calls) == 2
     assert not caller.decisions
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        '```json\n{\nen: "The conversation is ongoing.",\nagent_evidence: null,\ndecision: "CONTINUE"\n}\n```',
+        '{"reasoning": "pending", "agent_evidence": null, "decision":',
+        "not JSON",
+        "",
+    ],
+)
+def test_json_syntax_error_gets_one_strict_reassessment(invalid):
+    backend = Backend([invalid, "CONTINUE"])
+    caller = QualifiedCallerBackend(backend, "private scenario")
+    decision, _ = caller.assess(
+        "model", [UserMessage(role="user", content="I am checking your account.")]
+    )
+    assert decision == "CONTINUE" and len(backend.calls) == 2
+    initial = json.loads(backend.calls[0][0][-1].content)
+    retry = json.loads(backend.calls[1][0][-1].content)
+    assert retry["scenario"] == initial["scenario"]
+    assert retry["conversation"] == initial["conversation"]
+    assert retry["required_schema"]["additionalProperties"] is False
+    assert retry["rejected_assessment"]["invalid_response"] == invalid
+    assert (
+        caller.decisions[-1]["rejected_assessments"][0]["invalid_response"] == invalid
+    )
+    assert backend.calls[1][1]["call_name"] == "caller_terminal_v2_repair"
+
+
+@pytest.mark.parametrize("first", ['{unquoted: "CONTINUE"}', assessment("COMPLETE")])
+def test_json_syntax_reassessment_never_exceeds_two_total_calls(first):
+    backend = Backend([first, '{still_unquoted: "COMPLETE"}'])
+    caller = QualifiedCallerBackend(backend, "scenario")
+    with pytest.raises(CallerPolicyError, match="rejected assessments"):
+        caller.assess("model", [])
+    assert len(backend.calls) == 2 and not caller.decisions
+
+
+def test_json_syntax_reassessment_accounts_for_rejected_inference():
+    backend = Backend(
+        [
+            AssistantMessage(
+                role="assistant",
+                content="{unquoted: true}",
+                cost=0.1,
+                usage={"completion_tokens": 3},
+                generation_time_seconds=0.2,
+            ),
+            assessment(
+                "CONTINUE",
+                cost=0.2,
+                usage={"completion_tokens": 5},
+                generation_time_seconds=0.3,
+            ),
+        ]
+    )
+    caller = QualifiedCallerBackend(backend, "scenario")
+    decision, reply = caller.assess("model", [])
+    assert decision == "CONTINUE"
+    assert reply.cost == pytest.approx(0.3)
+    assert reply.usage == {"completion_tokens": 8}
+    assert reply.generation_time_seconds == pytest.approx(0.5)
 
 
 @pytest.mark.parametrize(
