@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "scope": "Caller/pipeline validation and partial shortened development results; no accepted aggregate model score.",
+  "benchmark_source_sha256": "8548dfaee24b21eeb75e8364567b4973945f6a89ef8550b57ba95c4f06266924",
+  "frozen_inputs": 64,
+  "frozen_tasks": 278,
+  "offline_tests": 767,
+  "lint_passed": true,
+  "upstream_replay_rewards": [
+    1,
+    0
+  ],
+  "qualification": {
+    "passed": true,
+    "checks": 77,
+    "report_sha256": "b5bd45f35b2910957b98050e2464165447859bb7034e81cd2747c8d36ea88380"
+  },
+  "native_checks": {
+    "malformed_terminal_reassessment": [
+      {
+        "artifact": "malformed-terminal-completed-False.json",
+        "sha256": "11ce2e492cad989cdcd1bedbd59a0f4e1e93fd9b1d2b06bd288921227f536294",
+        "expected": "CONTINUE",
+        "first_response_injected": true
+      },
+      {
+        "artifact": "malformed-terminal-completed-True.json",
+        "sha256": "8da2d6358b4140124e05844ff1cef2d8098de1f0f13bb5f1ba26bbc95b6f3c10",
+        "expected": "COMPLETE",
+        "first_response_injected": true
+      }
+    ],
+    "controlled_spoken": {
+      "caller": "scripted functional control",
+      "reward": 1,
+      "wrong_write_reward": 0,
+      "audio_seconds": 31.85,
+      "wall_seconds": 35.72425450000446,
+      "simulation_sha256": "d8838d79c35f67bd0c26428cdae5fc05d10aedceeed4b5b97f0667d94770b3c7",
+      "negative_control_sha256": "aae7e7c11cc9b05541f2011c0f015cef636e490c28521316ccb97b38a2da6bad"
+    }
+  },
+  "previous_development_run": {
+    "benchmark_source_sha256": "627814e336a6f472f825ff5e45308526bf412fa21fe2ce4a5d57cd5de043f29b",
+    "completed_trials": 1,
+    "planned_trials": 3,
+    "airline": {
+      "task_id": "12",
+      "raw_reward": 0,
+      "termination": "max_steps",
+      "audio_seconds": 300,
+      "wall_seconds": 457.5765217500157
+    },
+    "retail": {
+      "task_id": "40",
+      "scored": false,
+      "error": "CallerPolicyError: malformed JSON terminal assessment",
+      "audio_seconds": 64.75
+    },
+    "telecom": {
+      "attempted": false
+    },
+    "accepted_aggregate_model_score": false
+  },
+  "development_plan": {
+    "path": "configs/pilots/local-v2-development.json",
+    "sha256": "de623f9e06d57a15e32c1406c12ac3684d0d914ef22f73085e2aae54b37e6bcf",
+    "tasks": 3,
+    "trials_per_task": 1,
+    "seed": 70,
+    "max_seconds": 300,
+    "wall_timeout_seconds": 900,
+    "mixed_with_full_pilot": false
+  }
+}
