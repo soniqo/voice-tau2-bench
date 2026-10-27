@@ -43,6 +43,8 @@ L’échantillon 12B est incomplet : le test télécom a rencontré une erreur d
 
 Dernier diagnostic local v2 de développement : **Gemma 4 12B IT (INT4), résultats bruts : aérien 0/1, commerce 0/1, télécoms 0/1**. Trois tâches exigeant un changement d’état, un essai chacune, graine **70** ; tous les appels ont atteint la **limite de 300 secondes simulées** (**900 secondes de temps réel**). Ces résultats abrégés concernent uniquement les trois tâches sélectionnées. [Résultats et paramètres testés](docs/validation/development-smoke.md).
 
+Ces diagnostics précèdent les [corrections de l’historique des outils et du rythme de l’appelant](docs/validation/tool-history-and-pacing.md). La nouvelle validation fonctionnelle a réussi **79/79** contrôles appelant/juge : **1.0** pour une écriture vocale contrôlée et **0.0** pour la relecture d’une écriture incorrecte.
+
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Exécution locale

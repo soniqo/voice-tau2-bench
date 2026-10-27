@@ -43,6 +43,8 @@ Die 12B-Stichprobe ist unvollständig: Beim Telekommunikationstest trat ein nati
 
 Neuester lokaler v2-Entwicklungstest: **Gemma 4 12B IT (INT4), Rohwerte: Flug 0/1, Handel 0/1, Telekom 0/1**. Drei Aufgaben mit erforderlicher Zustandsänderung, jeweils ein Durchlauf, Startwert **70**; alle Anrufe erreichten das **Limit von 300 simulierten Sekunden** (**900 Sekunden reale Zeitgrenze**). Diese verkürzten Ergebnisse gelten nur für die drei ausgewählten Aufgaben. [Ergebnisse und getestete Parameter](docs/validation/development-smoke.md).
 
+Diese Diagnosen stammen aus der Zeit vor den [Korrekturen am Werkzeugverlauf und Sprechablauf](docs/validation/tool-history-and-pacing.md). Die neue Funktionsprüfung bestand **79/79** Anrufer-/Bewerterprüfungen: **1.0** für einen kontrollierten Schreibvorgang per Sprache und **0.0** beim Wiederholen eines falschen Schreibvorgangs.
+
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Lokal ausführen

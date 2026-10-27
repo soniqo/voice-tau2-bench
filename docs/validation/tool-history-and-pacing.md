@@ -51,6 +51,11 @@ policies, model pins and reward rules retain their original contents.
   changed tool-result reads, and the full spoken database-write pipeline.
 - The controlled spoken write scored 1.0; changing its successful write in the
   separate replay scored 0.0. This scripted-caller check produces no domain score.
+- Fresh qualification passed all 79 caller/judge cases with the updated caller
+  source and native runtime, without failing or error-bearing cases.
+
+The [machine-readable validation record](tool-history-and-pacing.json) retains
+source identities, model revisions, control outcomes and artifact hashes.
 
 The stack remains Gemma 4 12B INT4 for the agent, E4B INT4 for caller/helpers/judge,
 VoxCPM2 FP16 main weights with FP32 AudioVAE, full Whisper Large-v3 CoreML FP16,

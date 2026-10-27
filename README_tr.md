@@ -43,6 +43,8 @@ Bu küçük ve belirlenimci örneklem yerel arayan ve hakem kullanır. Tüm 278 
 
 Son yerel v2 geliştirme tanılaması: **Gemma 4 12B IT (INT4), ham sonuçlar: havayolu 0/1, perakende 0/1, telekom 0/1**. Durum değişikliği gerektiren üç görev, görev başına bir deneme, seed **70**; tüm çağrılar **300 saniyelik simülasyon sınırına** ulaştı (**gerçek zaman sınırı 900 saniye**). Bu kısaltılmış sonuçlar yalnızca seçilen üç görevi kapsar. [Sonuçlar ve denenmiş parametreler](docs/validation/development-smoke.md).
 
+Bu tanılama sonuçları, [araç geçmişi ve arayanın konuşma zamanlaması düzeltmelerinden](docs/validation/tool-history-and-pacing.md) öncesine aittir. Yeni işlevsel doğrulama, arayan/değerlendirici kontrollerinin **79/79** tanesini geçti; kontrollü sesli yazma **1.0**, hatalı yazmanın yeniden oynatılması **0.0** aldı.
+
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Yerel çalıştırma

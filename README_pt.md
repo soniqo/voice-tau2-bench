@@ -43,6 +43,8 @@ A amostra de 12B está incompleta: telecomunicações teve um erro de inferênci
 
 Diagnóstico local v2 de desenvolvimento mais recente: **Gemma 4 12B IT (INT4), resultados brutos: aviação 0/1, varejo 0/1, telecomunicações 0/1**. Três tarefas que exigem mudança de estado, uma tentativa por tarefa, semente **70**; todas as chamadas atingiram o **limite de 300 segundos simulados** (**900 segundos de tempo real**). Esses resultados abreviados abrangem somente as três tarefas selecionadas. [Resultados e parâmetros testados](docs/validation/development-smoke.md).
 
+Estes diagnósticos são anteriores às [correções do histórico de ferramentas e do ritmo do interlocutor](docs/validation/tool-history-and-pacing.md). A nova validação funcional passou em **79/79** verificações do interlocutor e do avaliador: **1.0** para uma escrita por voz controlada e **0.0** na reprodução de uma escrita incorreta.
+
 `soniqo-local-gemma12b-v2` · `2026-10-27` · `--max-seconds 300 --wall-timeout 900`
 
 ## Execução local
