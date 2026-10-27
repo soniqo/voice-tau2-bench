@@ -1674,6 +1674,65 @@
         ]
       ],
       "decision": "CONTINUE"
+    },
+    {
+      "id": "spending-cap-in-opening",
+      "scenario": "Instructions:\n\tDomain: airline\n\tReason for call:\n\t\tYou have an upcoming flight from Boston to Minneapolis under reservation ID YAX4DR.\n\n\t\tYou want to change your class for all passengers to business.\n\n\t\tYou also want to add 2 checked bags under your name using your Gold membership even if the upgrade is not possible.\n\tKnown info:\n\t\tYour name is Chen Lee.\n\n\t\tYour user id is chen_lee_6825.\n\tTask instructions:\n\t\tYou are willing to pay a fee for the business class changes, up to $650.\n\n\t\tIf the costs are greater than that for the upgrade, then try to upgrade your companion Noah to business under the constraints.",
+      "history": [
+        [
+          "user",
+          "Hi, thanks for calling. How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "650"
+        ]
+      }
+    },
+    {
+      "id": "spending-cap-rejects-over-budget-consent",
+      "scenario": "Instructions:\n\tDomain: airline\n\tReason for call:\n\t\tYou have an upcoming flight from Boston to Minneapolis under reservation ID YAX4DR.\n\n\t\tYou want to change your class for all passengers to business.\n\n\t\tYou also want to add 2 checked bags under your name using your Gold membership even if the upgrade is not possible.\n\tKnown info:\n\t\tYour name is Chen Lee.\n\n\t\tYour user id is chen_lee_6825.\n\tTask instructions:\n\t\tYou are willing to pay a fee for the business class changes, up to $650.\n\n\t\tIf the costs are greater than that for the upgrade, then try to upgrade your companion Noah to business under the constraints.",
+      "history": [
+        [
+          "assistant",
+          "Please upgrade both passengers, but my limit is $650. If that is too expensive, try upgrading Noah only."
+        ],
+        [
+          "user",
+          "The total upgrade fee for both passengers is $1200. Shall I proceed?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Noah"
+        ]
+      }
+    },
+    {
+      "id": "spending-cap-completed-with-quoted-total",
+      "scenario": "Cancel my subscription and refund the remaining balance. I will pay at most $20 as a cancellation fee. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel and refund my subscription. The fee must be no more than $20."
+        ],
+        [
+          "user",
+          "The total cancellation fee is $10. May I proceed?"
+        ],
+        [
+          "assistant",
+          "Yes, please proceed."
+        ],
+        [
+          "user",
+          "Your subscription has been cancelled. I have refunded the remaining balance and charged only the agreed total fee of $10."
+        ]
+      ],
+      "decision": "COMPLETE"
     }
   ],
   "judge": [

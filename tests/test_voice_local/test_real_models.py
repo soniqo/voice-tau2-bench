@@ -294,6 +294,88 @@ def test_real_closing_help_question_does_not_hide_completion_or_pending_work(
     assert runtime.events[start:]
 
 
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "spending-cap-in-opening",
+        "spending-cap-rejects-over-budget-consent",
+        "spending-cap-completed-with-quoted-total",
+        "spending-cap-asks-for-unknown-price",
+    ],
+)
+def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
+    import json
+
+    from tau2.data_model.persona import PersonaConfig
+    from tau2.user.prompts import build_user_system_prompt
+    from tau2.voice.caller_policy import LOCAL_CALLER_GUIDELINES, QualifiedCallerBackend
+    from tau2.voice.provenance import benchmark_sources
+    from tau2.voice.qualification import fixture_history, qualification_suite
+
+    cases = {case["id"]: case for case in qualification_suite()["caller"]}
+    if case_id == "spending-cap-asks-for-unknown-price":
+        case = dict(cases["spending-cap-in-opening"])
+        case["history"] = [
+            ["assistant", "Please upgrade both passengers, but my limit is $650."],
+            ["user", "I can upgrade your reservation. Would you like me to proceed?"],
+        ]
+    else:
+        case = cases[case_id]
+    system = build_user_system_prompt(
+        instructions=case["scenario"],
+        persona_config=PersonaConfig(),
+        mode="voice",
+        guidelines=LOCAL_CALLER_GUIDELINES,
+    )
+    caller = QualifiedCallerBackend(runtime, case["scenario"])
+    start = len(runtime.events)
+    reply = caller.generate(
+        "gemma4-e4b-it",
+        [
+            SystemMessage(role="system", content=system),
+            *fixture_history(case["history"]),
+        ],
+        tools=[],
+        temperature=0,
+        max_tokens=1024,
+        call_name="user_streaming_response",
+    )
+    destination = Path(os.environ.get("TAU_VOICE_SPENDING_E2E_OUTPUT", str(tmp_path)))
+    destination.mkdir(parents=True, exist_ok=True)
+    (destination / (case_id + ".json")).write_text(
+        json.dumps(
+            {
+                "functional_check_only": True,
+                "reply": reply.model_dump(mode="json"),
+                "assessments": caller.decisions,
+                "inference": runtime.events[start:],
+                "benchmark": benchmark_sources(),
+                "native": runtime.provenance(),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    if case_id == "spending-cap-completed-with-quoted-total":
+        assert reply.content == "###STOP###"
+    else:
+        assert reply.content != "###STOP###" and not reply.is_tool_call()
+        for word in (
+            case.get("reply", {}).get("must_contain", [])
+            if case_id != "spending-cap-asks-for-unknown-price"
+            else []
+        ):
+            assert word.lower() in reply.content.lower(), reply.content
+        if case_id != "spending-cap-in-opening":
+            assert not re.match(
+                r"^\s*(?:yes|sure|absolutely)\b", reply.content, re.I
+            ), reply.content
+        if case_id == "spending-cap-asks-for-unknown-price":
+            assert re.search(
+                r"\b(?:price|cost|fee|charge)|how much", reply.content, re.I
+            ), reply.content
+
+
 @pytest.mark.parametrize("model", ["gemma4-e4b-it", "gemma4-12b-it"])
 def test_real_tool_history_uses_changed_result_instead_of_a_previous_answer(
     runtime, tmp_path, model

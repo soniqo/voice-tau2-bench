@@ -114,7 +114,7 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 81 checks cover completed versus promised work, required follow-ups after a
+The 84 checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
 and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
@@ -126,6 +126,8 @@ questions heard during an ongoing turn; four cases exercise callers without a
 phone controller, including waiting and checking in after an answered identity question.
 Two further cases distinguish completed work followed by a closing help question
 from an actual pending action followed by the same question.
+Three spending cases check an opening price limit, the permitted alternative
+after an over-budget quote, and completion with a known fee inside the limit.
 Two judge cases exercise the actual NL-assertion prompt in addition to the six
 communication cases. NL results must cover every requested assertion with a
 Boolean value. A judge-model mismatch fails qualification before inference.
@@ -148,7 +150,7 @@ by a question is still eligible for a terminal decision. These guards
 exclude a final courtesy question such as “Is there anything else I can help you
 with?” from the future-offer check while checking all preceding quoted evidence.
 A courtesy question alone still cannot prove completion. The
- [closing-question follow-up](validation/closing-question.md) records the captured
+[closing-question follow-up](validation/closing-question.md) records the captured
 false continuation and its regression coverage. These guards
 cannot generate a stop. A terminal proposal with malformed JSON syntax, invalid
 control-field values (such as a misspelled decision enum), or without a supporting agent quote gets
@@ -160,6 +162,13 @@ JSON syntax and typed control-field errors share the single bounded schema
 reassessment above; this does not add another retry after a rejected quote.
 Every rejected response is retained, and no decision or
 evidence is filled in by the runtime.
+
+The caller states scenario spending limits in its opening request, asks for an
+unknown total before consenting to a paid change, and follows the scenario's
+alternative when a quote exceeds its limit. A completion claim with an unknown
+price does not establish that an explicit spending limit was respected. These
+are caller instructions; the agent learns them only through ordinary spoken
+dialogue. See the [spending-constraint checks](validation/spending-constraints.md).
 Customer device tool results are observations, and a setting change or strong
 signal alone does not prove that the requested service works end to end.
 The v2 profile explicitly enables `execution.device_grounding`. For telecom,
