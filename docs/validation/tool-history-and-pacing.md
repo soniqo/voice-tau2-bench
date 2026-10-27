@@ -48,7 +48,7 @@ fix and extends qualification to 81 checks. The baggage write also incorrectly
 charged for two free bags; independent database replay fails even apart from the
 call cap. These are separate caller and agent-policy errors.
 
-## Validation
+## Initial validation
 
 - 781 offline tests passed, with lint, frozen-input verification and both replay
   controls passing.
@@ -59,11 +59,21 @@ call cap. These are separate caller and agent-policy errors.
   changed tool-result reads, and the full spoken database-write pipeline.
 - The controlled spoken write scored 1.0; changing its successful write in the
   separate replay scored 0.0. This scripted-caller check produces no domain score.
+- Fresh qualification passed all 79 caller/judge cases with the updated caller
+  source and native runtime, without failing or error-bearing cases.
+
+The [machine-readable validation record](tool-history-and-pacing.json) retains
+source identities, model revisions, control outcomes and artifact hashes.
 
 The stack remains Gemma 4 12B INT4 for the agent, E4B INT4 for caller/helpers/judge,
 VoxCPM2 FP16 main weights with FP32 AudioVAE, full Whisper Large-v3 CoreML FP16,
 and Silero VAD. Qualification and domain trials must match the new runtime and
 caller source fingerprints.
+
+The later [spending-constraint revision](spending-constraints.md) passes 788
+offline tests, 15 native functional checks and fresh 84/84 caller/judge
+qualification. Its model assets and native formatter are the same; its caller
+instructions have a separate source fingerprint and domain output.
 
 ## Reproduce a short check
 
