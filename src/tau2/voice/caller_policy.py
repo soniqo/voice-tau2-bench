@@ -119,6 +119,12 @@ PENDING_EVIDENCE = re.compile(
     re.IGNORECASE,
 )
 
+CLOSING_HELP_QUESTION = re.compile(
+    r"(?:^|(?<=[.!]))\s*is there anything else (?:that )?(?:i|we) can "
+    r"(?:help (?:you )?with|assist (?:you )?with|do for you)\s*\?\s*$",
+    re.IGNORECASE,
+)
+
 QUESTION_ONLY_EVIDENCE = re.compile(
     r"^\s*(?:is|are|am|was|were|do|does|did|have|has|had|can|could|would|will|shall|should|what|where|when|how|why|who|which)\b[^.!?]*\?\s*$",
     re.IGNORECASE,
@@ -293,9 +299,10 @@ class QualifiedCallerBackend:
         decision = assessment.decision
         # A future-tense offer is not evidence that an action has already run.
         # This can only keep the call open; it never manufactures a stop.
-        if decision != "CONTINUE" and PENDING_EVIDENCE.search(
-            assessment.agent_evidence or ""
-        ):
+        # A final courtesy question is not a promise of unfinished work. Keep
+        # checking the preceding evidence, including any actual future action.
+        action_evidence = CLOSING_HELP_QUESTION.sub("", assessment.agent_evidence or "")
+        if decision != "CONTINUE" and PENDING_EVIDENCE.search(action_evidence):
             decision = "CONTINUE"
             record.update(
                 decision=decision,
