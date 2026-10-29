@@ -27,7 +27,7 @@ from loguru import logger
 
 from tau2.data_model.usage import SessionUsage, UsageRecord, aggregate_usage
 
-PRICING_VERSION = "2026-10-29"
+PRICING_VERSION = "2026-10-30"
 
 
 @dataclass(frozen=True)
@@ -57,6 +57,28 @@ PRICING: Dict[Tuple[str, str], Rates] = {
         output_audio=12.00,
     ),
     # --- OpenAI Realtime (verified: developers.openai.com/api/docs/pricing) ---
+    ("openai", "gpt-realtime-2.1"): Rates(
+        input_text=4.00,
+        input_audio=32.00,
+        output_text=24.00,
+        output_audio=64.00,
+        cached_input_text=0.40,
+        cached_input_audio=0.40,
+    ),
+    ("openai", "gpt-realtime-2.1-mini"): Rates(
+        input_text=0.60,
+        input_audio=10.00,
+        output_text=2.40,
+        output_audio=20.00,
+        cached_input_text=0.06,
+        cached_input_audio=0.30,
+    ),
+    ("openai", "gpt-live-1"): Rates(per_audio_input_minute=0.05),
+    ("openai", "gpt-6-luna"): Rates(
+        input_text=0.10,
+        cached_input_text=0.01,
+        output_text=0.50,
+    ),
     ("openai", "gpt-realtime-1.5"): Rates(
         input_text=4.00,
         input_audio=32.00,
@@ -76,6 +98,12 @@ PRICING: Dict[Tuple[str, str], Rates] = {
     # --- Gemini Live API (verified: ai.google.dev/gemini-api/docs/pricing).
     # No cached-token discount published for Live models: cached tokens are
     # charged at the full input rate (conservative). ---
+    ("gemini", "gemini-3.8-live"): Rates(
+        input_text=0.75,
+        input_audio=3.00,
+        output_text=4.50,
+        output_audio=12.00,
+    ),
     ("gemini", "gemini-3.1-flash-live-preview"): Rates(
         input_text=0.75,
         input_audio=3.00,

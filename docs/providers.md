@@ -1,0 +1,205 @@
+# Optional voice-provider adapters
+
+`tau-voice-provider` connects OpenAI Realtime, GPT-Live with a named Responses
+backend, Gemini Live, or a configured ElevenLabs Agent to the existing voice
+runner. These experimental adapters have **offline integration tests**. Real
+provider validation and domain scores are pending. The recorded Nova score
+uses the separate [validated Nova runner](nova.md).
+
+The default `tau-voice` command stays local. Install the optional transport only
+when using these adapters:
+
+```bash
+uv sync --frozen --extra dev --extra cloud-voice
+```
+
+## Shared setup and a first task
+
+Start the loopback service using [runtime setup](runtime-setup.md). The provider
+supplies the agent's conversational audio and reasoning. Caller, listener,
+judge and caller TTS remain local; the fixed opening greeting uses VoxCPM2.
+The runner checks these four native roles rather than requiring local agent
+ASR/LLM/TTS. All adapters use the real-time v6 condition.
+
+Qualify the caller/judge against the **current working source** and native
+runtime. Source changes invalidate older qualifications. This operation uses
+local inference only:
+
+```bash
+uv run --frozen tau-voice-provider --qualify-only \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/provider-qualification.json
+```
+
+After setting the provider's credential in your shell, this explicit opt-in
+starts a paid Realtime conversation. Never put a credential value in a command
+argument, repository file or result artifact:
+
+```bash
+uv run --frozen --extra cloud-voice tau-voice-provider \
+  --allow-cloud --provider openai-realtime \
+  --model gpt-realtime-2.1-mini --voice marin \
+  --domain mock --task-id create_task_1 --seed 70 \
+  --qualification data/simulations/provider-qualification.json \
+  --max-seconds 90 --budget-usd 1 --stop-usd 0.25 \
+  --budget-ledger data/simulations/provider-budget.json \
+  --output data/simulations/realtime-control
+```
+
+The expected mock task creates an ordinary record through `create_task`. Its
+frozen grader checks the actual write. This is an integration check, not a
+domain pass rate. For development coverage, replace the mock selection with
+`--domain all --task-plan configs/pilots/state-change-development-3.json` and
+choose fresh output. A verified ElevenLabs preset covers one domain at a time.
+`--num-tasks`, `--trials`, and `--resume` work through the existing sequential
+batch runner. A single `--task-id` is a fresh, one-domain, one-trial run.
+
+## OpenAI Realtime
+
+Use `--provider openai-realtime --model gpt-realtime-2.1-mini --voice marin`
+or explicitly select `gpt-realtime-2.1`. The default credential variable is
+`OPENAI_API_KEY`; `--api-key-env` changes its **name**, not its value.
+
+The GA WebSocket session uses PCM16 at 24 kHz, server VAD and ordinary function
+tools, with a 1,024-token output limit. The adapter waits for `response.done`
+before releasing complete speech and tool calls. Input speech clears queued
+playback; conversation truncation uses the cursor actually delivered to the
+caller, including completed responses that have not finished playing. Cancelled
+responses still contribute their reported usage. See the official
+[Realtime conversation guide](https://developers.openai.com/api/docs/guides/realtime-conversations).
+
+## GPT-Live with Responses
+
+Use `--provider openai-live --model gpt-live-1 --backend-model gpt-6-luna
+--voice marin`, with `OPENAI_API_KEY`. The backend is part of the measured
+system. This adapter uses Responses delegation; a local Gemma backend is not
+implemented by this adapter.
+
+The primary Live connection carries input audio and control messages. An
+authenticated sideband supplies timestamped reflected PCM24k audio, captions,
+nested Responses events and usage. Function calls come from
+`response.output_item.done`, and results return with their original call IDs.
+Voice duration and backend tokens are recorded separately. Closure waits for
+`session.closed` and the delegated response lifecycle. See
+[Live delegation](https://developers.openai.com/api/docs/guides/live-delegation?delegation-mode=responses)
+and [server controls](https://developers.openai.com/api/docs/guides/voice-server-controls?api=live).
+
+**Live endpointing is experimental.** The API has no output-turn-complete
+event. This adapter declares an RMS threshold of 180, 800 ms of silence and
+500 ms of caption grace, using timestamped reflected audio. This identifies
+speech boundaries; a pause does not prove a business answer is complete.
+Missing reflected speech, absent transcripts or late captions are errors.
+Primary audio is not counted again as sideband playback. Live results must
+identify this condition and need a live timing audit before a matched ranking.
+
+## Gemini Live
+
+Use `--provider gemini-live --model gemini-3.8-live --voice Kore`, with
+`GEMINI_API_KEY` (or an explicit `--api-key-env` name). Input PCM is 16 kHz;
+output is 24 kHz. The session declares audio output, independent input/output
+transcription, the domain function schemas and a 1,024-token output limit.
+
+Audio and transcript can arrive independently. The adapter releases a spoken
+turn at `turnComplete`, preserves tool IDs and handles tool cancellation.
+`generationComplete` alone does not end the spoken turn. A `goAway` event ends
+the attempt as an error; there is no automatic reconnection or hidden retry.
+See the [Live API reference](https://ai.google.dev/api/live).
+
+## ElevenLabs Agents
+
+This adapter requires an existing agent with the exact domain policy and
+**client** tools. It does not create or update remote agents. Export the expected
+configuration offline, choosing the actual reasoning model and voice ID:
+
+```bash
+uv run --frozen tau-voice-provider \
+  --export-eleven-config data/simulations/eleven-mock-config.json \
+  --domain mock --model gpt-4.1 --voice YOUR_VOICE_ID --max-seconds 90
+```
+
+Configure the agent in ElevenLabs using that JSON. Disable the provider's first
+greeting, knowledge base, built-in/server tools, language overrides and
+multi-agent workflows. Enable all exported client events, including
+`agent_response_complete`. The exported audio formats are PCM16k input and
+PCM24k output. The adapter validates schemas, descriptions, model, voice,
+policy, event selection and maximum duration before requesting a signed socket.
+
+With `ELEVENLABS_API_KEY` set, this read-only inspection returns the resolved
+configuration fingerprint without starting inference:
+
+```bash
+uv run --frozen tau-voice-provider \
+  --inspect-eleven-agent --agent-id YOUR_AGENT_ID
+```
+
+Use the returned fingerprint for `--preset-sha256`. It covers the conversation
+configuration, resolved tool definitions, platform settings and workflow. Any
+change requires inspection again. For the shared task command, select
+`--provider elevenlabs --model gpt-4.1 --voice YOUR_VOICE_ID`, and add:
+
+```text
+--agent-id YOUR_AGENT_ID --preset-sha256 YOUR_VERIFIED_SHA256
+--usd-per-credit YOUR_PLAN_CONVERSION --max-usd-per-minute YOUR_MAXIMUM_RATE
+```
+
+Those numeric rates must reflect your plan and configured system. The declared
+duration at the maximum rate must fit inside `--stop-usd`. Response audio and
+text are buffered until `agent_response_complete`; tools execute through the
+benchmark orchestrator, with matching IDs. See ElevenLabs'
+[WebSocket guide](https://elevenlabs.io/docs/eleven-agents/libraries/web-sockets)
+and [client events](https://elevenlabs.io/docs/eleven-agents/customization/events/client-events).
+
+## Limits, results and accounting
+
+Calls are bounded to 1–420 seconds, with one connection attempt per trial.
+Limits and qualification are checked before inference. Transport, provider,
+invalid-caller and shutdown failures propagate and remain unscored. An ordinary
+task failure or timeout receives the original frozen reward. The agent sees
+actual caller audio and public policy/tools only; private goals, gold speech
+and reference actions are never sent to it.
+
+Adapters buffer complete provider audio/transcripts before telephony playback,
+which adds latency. The declared Live noise gate is a separate endpointing
+condition. Output text is aligned proportionally to **delivered** audio, not
+word timestamps. Reports must distinguish this adapter delay from model latency.
+Tools already issued remain atomic when speech is interrupted.
+
+The persistent ledger reserves `--stop-usd` plus 0.10 before a connection.
+Known usage can trigger a stop; delayed usage may overshoot it. This is not a
+provider-enforced spending ceiling. Active ledger ownership prevents concurrent
+use. `--resume` retains reservations from dead clients, and unknown final usage
+keeps the reservation. Keep the same ledger between resumed attempts.
+
+Realtime records response token splits. Live records cumulative session seconds
+and each backend response once. Gemini retains every response usage observation
+(including re-billed context), but has no authoritative session-final meter;
+its final USD total stays unknown and its reservation remains. ElevenLabs
+records final conversation credits and raw charging metadata. Credits can
+exclude voice surcharges and are not a final USD invoice; USD stays unknown and
+its reservation remains. Quality can be graded when the conversation and tools
+settle even if final billing is unknown. Unknown billing is never reported as
+zero. Price revisions and raw usage remain in machine-readable run artifacts.
+
+`simulation.json`, `agent-events.json`, audio, provenance and batch records use
+the existing artifact format. Credentials and signed connection URLs are not
+written to those files. Exact provider/model/backend/preset and endpointing
+settings form part of resume provenance.
+
+## Validation
+
+Offline wire fixtures run all four adapters through the production task runner,
+real mock-domain tools and frozen evaluator. The correct write scores 1;
+replaying a deliberately wrong write scores 0. They cover protocol integration,
+not model quality or real account access. Offline tests also cover audio
+conversion, interruptions, tool IDs, final usage, malformed meters, preflight
+checks and shutdown failures. No paid provider calls were made for this work.
+
+`tests/test_voice_local/test_provider_e2e.py` is an opt-in real-provider test.
+It requires `TAU_PROVIDER_E2E=1`, `SPEECH_SWIFT_INFERENCE_URL`, a current
+`TAU_PROVIDER_QUALIFICATION` file and explicit `TAU_PROVIDER`,
+`TAU_PROVIDER_MODEL`, `TAU_PROVIDER_VOICE`, `TAU_PROVIDER_KEY_ENV` variables.
+Live additionally needs `TAU_PROVIDER_BACKEND_MODEL`. ElevenLabs needs the
+`TAU_PROVIDER_AGENT_ID`, `TAU_PROVIDER_PRESET_SHA256`,
+`TAU_PROVIDER_USD_PER_CREDIT` and `TAU_PROVIDER_MAX_USD_PER_MINUTE` variables.
+Run one provider test at a time with `pytest -m local_models
+tests/test_voice_local/test_provider_e2e.py`; it starts a paid 90-second trial.

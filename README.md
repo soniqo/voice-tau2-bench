@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | Tested local v2 profile |
 | Gemma 4 E4B IT, INT4 | Local runtime supported; matched v2 comparison pending |
 | Amazon Nova 2.5 Sonic | Native audio validated; Retail pass^1 **1/1** (one v6 development trial, 420 s cap; [record](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + a named backend agent | Adapter required |
-| OpenAI Realtime | Adapter required |
-| Gemini Live | Adapter required |
-| ElevenLabs Agents | Adapter required |
+| OpenAI GPT-Live + a named backend agent | [Experimental adapter tested offline; live validation pending](docs/providers.md) |
+| OpenAI Realtime | [Experimental adapter tested offline; live validation pending](docs/providers.md) |
+| Gemini Live | [Experimental adapter tested offline; live validation pending](docs/providers.md) |
+| ElevenLabs Agents | [Experimental adapter tested offline; live validation pending](docs/providers.md) |
 
 The local stack uses [speech-swift](https://github.com/soniqo/speech-swift): full Whisper Large-v3 FP16, VoxCPM2 FP16 main weights / FP32 AudioVAE, Silero VAD, and Gemma E4B for caller/listener/judge. Nova 2.5 Sonic has an optional [native audio runner](docs/nova.md); its caller and judge remain local.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 This command builds the pinned native runtime, downloads model assets, calibrates the caller/judge, and runs a controlled voice smoke check. It produces no domain benchmark score. Use a fresh output directory. [Setup and task runs](docs/runtime-setup.md#one-command-local-run).
 
-Limit execution with `--num-tasks`, `--trials`, `--max-seconds` and `--wall-timeout`. The default run stays local. Optional [Nova runs](docs/nova.md) require an explicit AWS profile and provide persistent budget accounting and a usage threshold, not a provider-enforced dollar ceiling.
+Limit execution with `--num-tasks`, `--trials`, `--max-seconds` and `--wall-timeout`. The default run stays local. Optional runners: [Nova](docs/nova.md) · [OpenAI, Gemini and ElevenLabs](docs/providers.md).
 
 Checks: `make test` · `make lint` · `make verify`.
 

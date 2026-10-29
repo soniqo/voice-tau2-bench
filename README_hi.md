@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | परीक्षित स्थानीय v2 प्रोफ़ाइल |
 | Gemma 4 E4B IT, INT4 | स्थानीय रनटाइम समर्थित; समान स्थितियों में v2 तुलना शेष |
 | Amazon Nova 2.5 Sonic | नेटिव ऑडियो सत्यापित; Retail pass^1 **1/1** (v6 का एक विकास परीक्षण, 420 सेकंड की सीमा; [रिकॉर्ड](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + निर्दिष्ट बैकएंड एजेंट | एडाप्टर आवश्यक |
-| OpenAI Realtime | एडाप्टर आवश्यक |
-| Gemini Live | एडाप्टर आवश्यक |
-| ElevenLabs Agents | एडाप्टर आवश्यक |
+| OpenAI GPT-Live + निर्दिष्ट बैकएंड एजेंट | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
+| OpenAI Realtime | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
+| Gemini Live | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
+| ElevenLabs Agents | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
 
 स्थानीय स्टैक [speech-swift](https://github.com/soniqo/speech-swift) का उपयोग करता है: पूर्ण Whisper Large-v3 FP16, VoxCPM2 मुख्य वेट FP16 / AudioVAE FP32, Silero VAD तथा कॉलर, सुनने वाले सहायक और जज के लिए Gemma E4B। Nova 2.5 Sonic के लिए वैकल्पिक [नेटिव ऑडियो रनर](docs/nova.md) है; कॉलर और जज स्थानीय रहते हैं।
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 यह कमांड पिन किया गया नेटिव रनटाइम बनाती है, मॉडल डाउनलोड करती है, कॉलर और मूल्यांकनकर्ता को कैलिब्रेट करती है और नियंत्रित वॉइस स्मोक टेस्ट चलाती है। इससे डोमेन बेंचमार्क स्कोर नहीं मिलता। नया आउटपुट फ़ोल्डर इस्तेमाल करें। [सेटअप और टास्क रन](docs/runtime-setup.md#one-command-local-run)।
 
-`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout`. डिफ़ॉल्ट रन स्थानीय है। वैकल्पिक [Nova रन](docs/nova.md) के लिए स्पष्ट AWS प्रोफ़ाइल चाहिए। स्थायी बजट लेखांकन और उपयोग सीमा उपलब्ध हैं, लेकिन यह प्रदाता द्वारा लागू डॉलर खर्च सीमा नहीं है।
+`--num-tasks`, `--trials`, `--max-seconds` और `--wall-timeout` से निष्पादन सीमित करें। डिफ़ॉल्ट रन स्थानीय है। वैकल्पिक रनर: [Nova](docs/nova.md) · [OpenAI, Gemini और ElevenLabs](docs/providers.md)।
 
 जाँच: `make test` · `make lint` · `make verify`.
 

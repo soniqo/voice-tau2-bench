@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | ملف تعريف محلي v2 مختبر |
 | Gemma 4 E4B IT, INT4 | مدعوم في بيئة التشغيل المحلية؛ المقارنة المتكافئة باستخدام v2 لم تُنفذ بعد |
 | Amazon Nova 2.5 Sonic | تم التحقق من المعالجة الصوتية المباشرة؛ Retail pass^1 **1/1** (تجربة تطوير واحدة v6، بحد 420 ثانية؛ [السجل](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + وكيل خلفي محدد بالاسم | يتطلب محولًا |
-| OpenAI Realtime | يتطلب محولًا |
-| Gemini Live | يتطلب محولًا |
-| ElevenLabs Agents | يتطلب محولًا |
+| OpenAI GPT-Live + وكيل خلفي محدد بالاسم | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
+| OpenAI Realtime | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
+| Gemini Live | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
+| ElevenLabs Agents | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
 
 تستخدم المنظومة المحلية [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 الكامل بدقة FP16، أوزان VoxCPM2 الرئيسية FP16 وAudioVAE بدقة FP32، وSilero VAD، وGemma E4B للمتصل ومساعدات الاستماع والمقيّم. يتوفر لـ Nova 2.5 Sonic [مشغّل صوت أصلي](docs/nova.md) اختياري؛ ويبقى المتصل والمقيّم محليين.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 يبني هذا الأمر بيئة التشغيل الأصلية المثبتة، وينزّل النماذج، ويعاير المتصل والمقيّم، ثم يجري اختبارًا صوتيًا مضبوطًا. لا ينتج عنه تقييم لمعيار المجالات. استخدم مجلد إخراج جديدًا. [الإعداد وتشغيل المهام](docs/runtime-setup.md#one-command-local-run).
 
-حدّد التنفيذ باستخدام `--num-tasks` و`--trials` و`--max-seconds` و`--wall-timeout`. يبقى التشغيل الافتراضي محليًا. يتطلب [تشغيل Nova](docs/nova.md) ملف AWS صريحًا، ويوفر محاسبة ميزانية مستمرة وعتبة استخدام، وليس سقفًا ماليًا يفرضه المزوّد.
+حدّد التنفيذ باستخدام `--num-tasks` و`--trials` و`--max-seconds` و`--wall-timeout`. يبقى التشغيل الافتراضي محليًا. مشغلات اختيارية: [Nova](docs/nova.md) · [OpenAI وGemini وElevenLabs](docs/providers.md).
 
 الفحوص: `make test` · `make lint` · `make verify`.
 
