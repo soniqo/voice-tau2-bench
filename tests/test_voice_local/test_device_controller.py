@@ -3,7 +3,77 @@ import pytest
 from tau2.data_model.message import AssistantMessage, ToolCall, ToolMessage, UserMessage
 from tau2.domains.telecom.environment import get_environment
 from tau2.voice.caller_policy import QualifiedCallerBackend
-from tau2.voice.device_controller import CustomerDeviceController, Observations
+from tau2.voice.device_controller import (
+    CustomerDeviceController,
+    Observations,
+    account_question_only,
+    agent_action_only,
+)
+
+
+def test_v5_line_selection_answers_known_number_without_running_a_speed_test():
+    env, _ = setup()
+    controller = CustomerDeviceController(
+        "My phone number is 555-123-2002.", routing_focus=True
+    )
+    reply = controller.respond(
+        [
+            {
+                "speaker": "service_agent",
+                "content": "I've found your account. Could you please tell me which line's data is not working?",
+            }
+        ],
+        env.get_user_tools(),
+    )
+    assert reply.content == "My phone number is 555-123-2002."
+    assert not reply.is_tool_call()
+
+
+def test_v5_passive_network_mode_question_reads_actual_network_status():
+    env, _ = setup()
+    controller = CustomerDeviceController("Restore my internet.", routing_focus=True)
+    reply = controller.respond(
+        [
+            {
+                "speaker": "service_agent",
+                "content": "Please check your phone's network settings to see if it is set to a 2G or 3G connection.",
+            }
+        ],
+        env.get_user_tools(),
+    )
+    assert [call.name for call in reply.tool_calls] == ["check_network_status"]
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "I can check your account. Could you please enable mobile data?",
+        "Please turn on data roaming and then check your data usage.",
+        "Please enable mobile data if you have exceeded your plan limit.",
+    ],
+)
+def test_v5_action_ownership_keeps_real_customer_instructions(statement):
+    assert not account_question_only(statement)
+    assert not agent_action_only(statement, routing_focus=True)
+
+
+@pytest.mark.parametrize("focused", [False, True])
+def test_closing_help_question_still_runs_required_acceptance_speed_test(focused):
+    env, _ = setup()
+    controller = CustomerDeviceController(
+        "Only consider the issue resolved only when the speed test returns excellent internet speed.",
+        routing_focus=focused,
+    )
+    response = controller.respond(
+        [
+            {
+                "speaker": "service_agent",
+                "content": "Your connection is restored. Is there anything else I can help you with?",
+            }
+        ],
+        env.get_user_tools(),
+    )
+    assert [call.name for call in response.tool_calls] == ["run_speed_test"]
 
 
 class NoModel:

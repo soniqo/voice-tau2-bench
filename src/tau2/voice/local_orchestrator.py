@@ -87,7 +87,8 @@ class LocalV2Orchestrator(FullDuplexOrchestrator):
     def initialize(self):
         try:
             super().initialize()
-            self.clock.advance()
+            if self.clock is not None:
+                self.clock.advance()
             if self.max_steps == 0:
                 self.done = True
                 self.termination_reason = TerminationReason.MAX_STEPS
@@ -98,7 +99,8 @@ class LocalV2Orchestrator(FullDuplexOrchestrator):
 
     def step(self):
         super().step()
-        self.clock.advance()
+        if self.clock is not None:
+            self.clock.advance()
 
     def _execute_tool_calls(self, tool_calls):
         requestors = {call.requestor for call in tool_calls}

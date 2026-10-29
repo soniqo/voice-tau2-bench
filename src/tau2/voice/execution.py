@@ -47,6 +47,17 @@ class SimulationClock:
             _WORK.reset(token)
 
 
+class WallClock:
+    """Measure queue timing when real audio streams pace the interaction."""
+
+    def __init__(self):
+        self.started = time.perf_counter()
+
+    @property
+    def now(self):
+        return time.perf_counter() - self.started
+
+
 class TimedEventQueue:
     """Hold completed work until its measured agent latency elapses in call time."""
 

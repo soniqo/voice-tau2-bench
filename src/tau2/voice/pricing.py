@@ -27,7 +27,7 @@ from loguru import logger
 
 from tau2.data_model.usage import SessionUsage, UsageRecord, aggregate_usage
 
-PRICING_VERSION = "2026-10-01"
+PRICING_VERSION = "2026-10-29"
 
 
 @dataclass(frozen=True)
@@ -49,6 +49,13 @@ class Rates:
 # Keyed by (provider, model). Lookup is exact match first, then longest
 # key-is-prefix-of-model match (handles dated model snapshots).
 PRICING: Dict[Tuple[str, str], Rates] = {
+    # AWS public AmazonBedrock/us-east-1 price list, published 2026-10-28.
+    ("nova", "amazon.nova-2-5-sonic"): Rates(
+        input_text=0.33,
+        input_audio=3.00,
+        output_text=2.75,
+        output_audio=12.00,
+    ),
     # --- OpenAI Realtime (verified: developers.openai.com/api/docs/pricing) ---
     ("openai", "gpt-realtime-1.5"): Rates(
         input_text=4.00,

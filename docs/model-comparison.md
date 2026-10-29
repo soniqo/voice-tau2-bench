@@ -6,7 +6,9 @@ checks final state and selected communication requirements. See [scoring](evalua
 
 ## Available agents and possible adapters
 
-The current implementation binds inference to the loopback speech-swift service.
+Local inference uses the loopback speech-swift service. The optional
+[Nova 2.5 Sonic runner](nova.md) uses native cloud audio and tools, with the
+caller/listener/judge and caller speech still running locally.
 Gemma 4 12B IT INT4 has a tested v2 profile. Gemma 4 E4B IT INT4 is supported by the
 runtime and has a historical v1 profile; an equivalent v2 agent profile and a
 matched run are still needed before comparing it with the current 12B result.
@@ -46,7 +48,7 @@ invalid-caller exception remains unscored and must stay visible in coverage.
 | Tool error rate | Failed or rejected agent calls / all agent attempts | `simulation.info.tool_metrics.assistant` |
 | Completion time | Simulated audio duration and measured trial wall duration | Ticks and `simulation.duration` |
 | Peak memory | Maximum sampled physical footprint of the native process | Guard's `memory.jsonl`; state sampling interval and measured phase |
-| API cost / trial | All billed provider usage / attempted trials | Local API cost is zero; provider accounting is not integrated |
+| API cost / trial | All billed provider usage / attempted trials | Local API cost is zero; Nova records final modality usage and pricing revision |
 | API cost / successful trial | All billed usage, including failures / reward-1 trials | Undefined when no trial passes |
 
 For percentile values, filter by actor and operation, retain successful requests,
@@ -85,18 +87,29 @@ labelled separately. API cost excludes local hardware and energy.
 5. Report pass^1 first, then latency, tool errors, completion time, memory and
    measured API cost. Publish source/model revisions and the complete stack.
 
-The [current measured record](results/gemma4-12b-local-v2-airline.json) is a single
+The [local 12B record](results/gemma4-12b-local-v2-airline.json) is a single
 12B development call. It ended normally and failed its final-state check. It is
 not a matched comparison with the older E4B or 12B v1 runs. Their historical
 records remain in `docs/results/` under their original settings.
+
+Nova 2.5 Sonic's [post-fix Retail record](results/nova25-v6-retail-development.json)
+passed **1/1** development trials with **0/5** tool errors, a normal caller stop
+and **$0.03151542** metered cost. It used real-time v6, seed 70, control acoustics
+and a 420-second cap. Its 296.30-second wall duration and 259.0-second audio
+duration measure the complete call, including local caller work. This one-task
+result establishes a working state-changing voice call; matched multi-model
+coverage remains pending.
 
 ## Execution and provider costs
 
 Current batch controls are `--num-tasks` or an explicit `--task-plan`, `--trials`,
 `--max-seconds` and `--wall-timeout`. The v2 clock distinguishes simulated call
 seconds from a wall watchdog. The watchdog is checked between ticks; an in-flight
-request can delay it. These controls bound execution, with no provider-dollar
-budget guard implemented. Current inference stays local.
+request can delay it. These controls bound execution without guaranteeing a
+provider-dollar ceiling. Local inference stays local. The explicit optional
+[Nova runner](nova.md) now supports complete domain calls with real-time pacing,
+tool execution, persistent spending reservations and usage accounting. Its
+[functional controls](validation/nova25-pilot.md) are separate from domain scores.
 
 Before enabling any paid adapter, add explicit opt-in, a run/trial budget, usage
 metering, request/output limits, and session/backend cancellation. Record the

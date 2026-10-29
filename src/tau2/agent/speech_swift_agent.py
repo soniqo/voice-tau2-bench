@@ -97,6 +97,8 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
             "asr": [],
             "chat": [],
             "cancellations": [],
+            "reply_supersessions": [],
+            "discarded_events": {},
             "text_alignment": "estimated_until_tts_complete",
         }
 
@@ -268,6 +270,8 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
     def _interrupt(self, state):
         if self._future is None and not self._speech_text:
             return
+        already_cancelled = self._cancelled.is_set()
+        audible = bool(self._spoken_chars or self._played_samples)
         self._cancelled.set()
         with self._request_lock:
             # Hearing the caller must finish even when a newer speech segment
@@ -282,6 +286,14 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                 {"request_id": rid, "reason": "barge_in"}
             )
             self.backend.cancel(rid)
+        if not already_cancelled:
+            self.metrics["reply_supersessions"].append(
+                {
+                    "epoch": self._epoch,
+                    "audible": audible,
+                    "native_cancel_requests": len(requests),
+                }
+            )
         self._epoch += 1
         self._output.clear()
         self._finish_spoken_history(state, interrupted=True)
@@ -357,6 +369,8 @@ class SpeechSwiftAgent(FullDuplexAgent[CascadeState]):
                     state.recognized_utterances.append(text)
                 continue
             if epoch != self._epoch:
+                discarded = self.metrics["discarded_events"]
+                discarded[kind] = discarded.get(kind, 0) + 1
                 continue
             if kind == "speech_start":
                 self._speech_text = value

@@ -18,6 +18,89 @@ describes the predeclared reporting groups.
 
 ## Faster development runs
 
+### Experimental v3 profile
+
+`configs/voice/soniqo-local-gemma12b-v3.json` keeps the same model checkpoints,
+tasks, tools, policies and grading. It requires native `reasoning_history`
+and `non_thinking_tool_continuation` support and uses 30 seconds of caller patience, giving a local tool sequence
+more time before a check-in. Thought-channel text stays outside spoken replies
+and is retained only through the current sequence of tool calls. The v1 and v2
+profile files remain unchanged. Report v3 as a separate condition, including its
+patience and execution budgets.
+
+V3 enables `price_grounding` for English requests with an explicit numeric
+spending cap. If the heard agent has not stated a price, the controller keeps
+an unpriced completion open and asks for the total cost before paid consent or
+after a completion claim. It reads the caller's scenario and heard conversation.
+Balance statements and repeated customer limits are excluded from price
+evidence. A request to approve a quoted price keeps the call open for the
+customer's answer; it cannot establish completed work. Quoted amounts, their scope and conditional alternatives still require
+model decisions and trace review. Report this caller-control condition with
+results; qualification fingerprints include the setting.
+
+V3 also enables `goal_progress`. After a supported explicit refusal, its caller assessment lists unresolved requests
+using the scenario and heard conversation. A nonempty list prevents terminal
+control and is passed to customer generation, so a policy refusal of one request
+can lead to an independent request instead of repeating the refused alternative.
+After an explicit English refusal of a service action, the controller speaks the
+first assessed remaining request directly. Direct questions and requests for
+identifying details keep normal customer generation. This avoids a generator
+ignoring its own progress assessment. The selected request is recorded with the
+caller-control diagnostics. Refusal wording outside the supported forms still
+uses the model and requires trace review.
+This is model-assessed progress, not reference actions or private service state.
+
+After rebuilding and restaging the matching native service:
+
+```bash
+uv run --frozen tau-voice qualify \
+  --profile configs/voice/soniqo-local-gemma12b-v3.json \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/local-v3-qualification.json
+
+uv run --frozen tau-voice batch --domain all \
+  --task-plan configs/pilots/local-v2-development.json \
+  --trials 1 --seed 70 --complexity control \
+  --max-seconds 300 --wall-timeout 900 \
+  --profile configs/voice/soniqo-local-gemma12b-v3.json \
+  --qualification data/simulations/local-v3-qualification.json \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/local-v3-development
+```
+
+The existing three-task plan fixes the task selection; its filename does not
+change the selected execution profile. Qualification also binds the clock and
+caller-patience setting. Requalify after changing either. Native generation
+errors remain unscored; no incomplete tool call is repaired or executed.
+
+### Single-domain validation
+
+For a complete development call, keep the original E4B caller and allow the
+profile's 600 simulated seconds and 1,200-second wall watchdog:
+
+```bash
+uv run --frozen tau-voice qualify \
+  --profile configs/voice/soniqo-local-gemma12b-v3.json \
+  --base-url http://127.0.0.1:8787 \
+  --output data/simulations/local-v3-qualification.json
+
+uv run --frozen tau-voice run --domain airline --task-id 12 \
+  --profile configs/voice/soniqo-local-gemma12b-v3.json \
+  --qualification data/simulations/local-v3-qualification.json \
+  --base-url http://127.0.0.1:8787 --seed 70 --complexity control \
+  --max-seconds 600 --wall-timeout 1200 \
+  --output data/simulations/local-v3-airline
+```
+
+The shorter three-task plan helps iteration; a timeout under its 300-second
+limit does not establish whether the same agent could finish a longer call.
+Qualification and domain trace audits both remain required.
+
+The [validated v3 run](validation/local-v3-runtime.md) records the working stack,
+checks, timing and a valid airline model failure.
+
+### V2 development run
+
 Use the separate three-task plan for one state-changing task per domain, one
 trial each, and a shorter call budget. After starting the pinned native service
 and qualifying the current source, run:
@@ -102,7 +185,10 @@ uv run --frozen tau-voice qualify \
   --output data/simulations/local-v2-qualification.json
 ```
 
-The 84 checks cover completed versus promised work, required follow-ups after a
+V2 retains its 84-check suite and caller prompts. V3 uses a separately versioned
+91-check suite, adding two unpriced-change cases, a long quoted total and four
+independent-request checks after partial refusal, including a repeated-refusal history.
+The checks cover completed versus promised work, required follow-ups after a
 refusal, incomplete answers, unknown identifiers, goal disclosure, role separation
 and positive/negative semantic facts. Fifty-one use the full 30-tool telecom
 customer interface, including actual reads and writes in fresh fixture devices.
@@ -115,6 +201,9 @@ phone controller, including waiting and checking in after an answered identity q
 Two further cases distinguish completed work followed by a closing help question
 from an actual pending action followed by the same question.
 Additional cases cover material caller constraints and their conditional follow-ups.
+Unpriced-consent and unpriced-completion cases require an actual price question;
+a generic acknowledgement or approval fails qualification. These checks also
+cover the generation path after an account lookup and after a completion claim.
 Two judge cases exercise the actual NL-assertion prompt in addition to the six
 communication cases. NL results must cover every requested assertion with a
 Boolean value. A judge-model mismatch fails qualification before inference.

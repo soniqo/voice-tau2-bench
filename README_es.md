@@ -12,12 +12,13 @@
 | --- | --- |
 | Gemma 4 12B IT, INT4 | Perfil local v2 probado |
 | Gemma 4 E4B IT, INT4 | Runtime local compatible; comparación v2 equivalente pendiente |
+| Amazon Nova 2.5 Sonic | Audio nativo validado; Retail pass^1 **1/1** (un ensayo de desarrollo v6, límite de 420 s; [registro](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + un agente backend identificado | Requiere adaptador |
 | OpenAI Realtime | Requiere adaptador |
 | Gemini Live | Requiere adaptador |
 | ElevenLabs Agents | Requiere adaptador |
 
-La pila local utiliza [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principales de VoxCPM2 FP16 / AudioVAE FP32, Silero VAD y Gemma E4B como interlocutor, asistente de escucha y juez. Los sistemas en la nube no están integrados ni se han evaluado aquí.
+La pila local utiliza [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principales de VoxCPM2 FP16 / AudioVAE FP32, Silero VAD y Gemma E4B como interlocutor, asistente de escucha y juez. Nova 2.5 Sonic dispone de un [ejecutor de audio nativo](docs/nova.md) opcional; el interlocutor y el juez siguen siendo locales.
 
 ## Métricas de comparación
 
@@ -34,24 +35,33 @@ La pila local utiliza [speech-swift](https://github.com/soniqo/speech-swift): Wh
 
 Compare las mismas tareas, semillas, límites, condiciones acústicas y configuración del interlocutor/juez. Mantenga fija la pila de voz al comparar LLM locales. Los agentes de audio nativo y gestionados deben identificar su pila completa. Los tiempos de componentes son distintos del retardo de respuesta de voz de extremo a extremo.
 
-## Diagnóstico local registrado
+## Resultados de desarrollo registrados
 
-| Agente | Puntuados / previstos | Pass^1 | Errores de herramientas | LLM p50 / p95 | Primer audio TTS p50 / p95 | Coste API / ensayo |
+Un ensayo de desarrollo por fila. Las tareas y los relojes difieren; la clasificación con condiciones equivalentes sigue pendiente. Los costes corresponden a llamadas completadas.
+
+| Agente | Condición / tarea | Puntuados / previstos | Pass^1 | Errores de herramientas | Tiempo real | Coste API de la llamada |
 | --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
+| Gemma 4 12B IT, INT4 | v2 · Aerolínea 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
+| Amazon Nova 2.5 Sonic | v6 · Comercio 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
 
 Tarea de aerolínea 12, un ensayo, semilla 70, v2; máximo de **600 segundos simulados / 1.200 segundos reales**. La llamada terminó normalmente tras **312,9 segundos simulados / 554,4 segundos reales medidos**. Equipo: Apple M5 Pro, 48 GB, estación compartida. Es un ensayo de desarrollo; la clasificación con varios modelos bajo condiciones equivalentes sigue pendiente. [Datos y definiciones de medición](docs/results/gemma4-12b-local-v2-airline.json).
+
+Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
+
+Nova: un ensayo, semilla 70, acústica control, **límite de 420 s en tiempo real**. Se intercambiaron ambos artículos solicitados; coincidieron las **5/5** acciones de referencia y el estado final de la base de datos. La llamada terminó normalmente tras **259,0 s de audio / 296,3 s reales**. La contabilidad de la campaña debe incluir también los intentos interrumpidos. [Registro y límites](docs/results/nova25-v6-retail-development.json).
 
 ## Ejecución local
 
 Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Siga la [configuración](docs/runtime-setup.md) y la [ejecución v2](docs/local-v2.md) para iniciar el servicio local, validar al interlocutor/juez y ejecutar tareas.
 
 ```bash
-uv sync --frozen --extra dev
-uv run --frozen tau-voice verify
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --output data/simulations/first-local-run
 ```
 
-Limite la ejecución con `--num-tasks`, `--trials`, `--max-seconds` y `--wall-timeout`. Los adaptadores de nube y un límite de gasto en USD **no están implementados**. La inferencia actual es local y no necesita una clave de API de nube.
+Este comando compila el entorno nativo fijado, descarga los modelos, calibra al interlocutor y al evaluador y ejecuta una prueba de voz controlada. No genera una puntuación del benchmark por dominio. Use un directorio de salida nuevo. [Configuración y ejecución de tareas](docs/runtime-setup.md#one-command-local-run).
+
+Limite la ejecución con `--num-tasks`, `--trials`, `--max-seconds` y `--wall-timeout`. La ejecución predeterminada sigue siendo local. Los [ejecutores Nova](docs/nova.md) requieren un perfil AWS explícito y ofrecen contabilidad persistente del presupuesto y un umbral de uso, no un límite monetario impuesto por el proveedor.
 
 Comprobaciones: `make test` · `make lint` · `make verify`.
 

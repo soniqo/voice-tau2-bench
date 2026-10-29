@@ -12,12 +12,13 @@
 | --- | --- |
 | Gemma 4 12B IT, INT4 | 검증된 로컬 v2 프로필 |
 | Gemma 4 E4B IT, INT4 | 로컬 런타임 지원; 동일 조건의 v2 비교는 대기 중 |
+| Amazon Nova 2.5 Sonic | 네이티브 오디오 검증 완료; Retail pass^1 **1/1** (v6 개발 시험 1회, 제한 420초; [기록](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + 명시한 백엔드 에이전트 | 어댑터 필요 |
 | OpenAI Realtime | 어댑터 필요 |
 | Gemini Live | 어댑터 필요 |
 | ElevenLabs Agents | 어댑터 필요 |
 
-로컬 구성은 [speech-swift](https://github.com/soniqo/speech-swift)를 사용합니다: 전체 Whisper Large-v3 FP16, VoxCPM2 주 가중치 FP16 / AudioVAE FP32, Silero VAD 및 발신자·청취 보조·평가자용 Gemma E4B. 클라우드 시스템은 아직 통합되거나 이 벤치마크에서 평가되지 않았습니다.
+로컬 구성은 [speech-swift](https://github.com/soniqo/speech-swift)를 사용합니다: 전체 Whisper Large-v3 FP16, VoxCPM2 주 가중치 FP16 / AudioVAE FP32, Silero VAD 및 발신자·청취 보조·평가자용 Gemma E4B. Nova 2.5 Sonic은 선택적 [네이티브 오디오 실행기](docs/nova.md)를 지원하며 발신자와 평가자는 로컬에서 실행됩니다.
 
 ## 비교 지표
 
@@ -34,24 +35,33 @@
 
 동일한 작업, 시드, 통화 제한, 음향 조건, 발신자·평가자 설정으로 비교합니다. 로컬 LLM 비교에서는 음성 구성을 고정합니다. 오디오 네이티브 및 관리형 에이전트는 전체 구성을 명시해야 합니다. 구성 요소별 시간과 전체 음성 응답 지연은 별도 지표입니다.
 
-## 기록된 로컬 진단
+## 기록된 개발 시험 결과
 
-| 에이전트 | 평가 / 계획 | Pass^1 | 도구 오류 | LLM p50 / p95 | TTS 첫 오디오 p50 / p95 | API 비용 / 시도 |
+각 행은 개발 시험 1회입니다. 작업과 시간 설정이 다르며 동일 조건의 모델 순위는 아직 없습니다. 비용은 완료된 통화에 해당합니다.
+
+| 에이전트 | 조건 / 작업 | 평가 / 계획 | Pass^1 | 도구 오류 | 실제 시간 | 통화 API 비용 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
+| Gemma 4 12B IT, INT4 | v2 · 항공 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
+| Amazon Nova 2.5 Sonic | v6 · 소매 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
 
 항공 작업 12, 1회 시도, 시드 70, v2; 최대 **시뮬레이션 600초 / 실제 1,200초**. 통화는 **시뮬레이션 312.9초 / 측정된 실제 554.4초** 후 정상 종료되었습니다. 하드웨어: Apple M5 Pro, 48 GB, 공유 워크스테이션. 개발용 단일 시도이며 동일 조건의 여러 모델 순위는 아직 없습니다. [데이터 및 측정 정의](docs/results/gemma4-12b-local-v2-airline.json).
+
+Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
+
+Nova: 1회 시험, 시드 70, control 음향 조건, **실시간 / 실제 시간 제한 420초**. 요청한 두 상품을 교환했고 **5/5** 참조 작업과 최종 데이터베이스 상태가 일치했습니다. 통화는 **오디오 259.0초 / 실제 296.3초** 후 정상 종료되었습니다. 전체 비용에는 중단된 시도도 포함해야 합니다. [실행 기록 및 한계](docs/results/nova25-v6-retail-development.json).
 
 ## 로컬 실행
 
 Python **3.12/3.13**, Apple Silicon, **macOS 15+**. [설정](docs/runtime-setup.md) 및 [v2 실행](docs/local-v2.md)에 따라 로컬 서비스를 시작하고 발신자·평가자를 검증한 뒤 작업을 실행합니다.
 
 ```bash
-uv sync --frozen --extra dev
-uv run --frozen tau-voice verify
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --output data/simulations/first-local-run
 ```
 
-`--num-tasks`, `--trials`, `--max-seconds`, `--wall-timeout`으로 실행을 제한합니다. 클라우드 어댑터와 USD 지출 한도는 **구현되지 않았습니다**. 현재 추론은 로컬에서 실행되며 클라우드 API 키가 필요 없습니다.
+이 명령은 고정된 네이티브 런타임을 빌드하고 모델을 다운로드하며 발신자와 평가기를 보정한 뒤 제어된 음성 스모크 테스트를 실행합니다. 도메인 벤치마크 점수는 생성하지 않습니다. 새로운 출력 디렉터리를 사용하세요. [설정 및 작업 실행](docs/runtime-setup.md#one-command-local-run).
+
+`--num-tasks`, `--trials`, `--max-seconds`, `--wall-timeout`으로 실행을 제한합니다. 기본 실행은 로컬입니다. 선택적 [Nova 실행](docs/nova.md)은 명시적 AWS 프로필이 필요하며 영구 예산 기록과 사용량 임계값을 제공합니다. 공급자가 강제하는 비용 상한은 아닙니다.
 
 검사: `make test` · `make lint` · `make verify`.
 

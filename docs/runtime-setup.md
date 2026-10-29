@@ -4,7 +4,68 @@
 
 The runtime needs the native inference service with Gemma tool/result history, VoxCPM2 streaming and FP16 main weights, full Whisper Large-v3, stateful Silero VAD, and cancellation. The E4B service is on speech-swift main; the matching build exposes `--inference-manifest`. The 12B adapter is also on main; its introduction is recorded in [speech-swift PR #520](https://github.com/soniqo/speech-swift/pull/520). Use the exact source revisions recorded in the [E4B run](results/gemma4-e4b-local-600.json), [12B domain attempt](results/gemma4-12b-local-600.json), or [successful 12B voice check](validation/gemma4-12b-voice-e2e.md) when reproducing them.
 
+## One-command local run
+
+Install `uv`, Git and Xcode with its command-line tools and Metal toolchain first.
+If `xcrun --find metal` fails, run `xcodebuild -downloadComponent MetalToolchain`.
+On Apple Silicon with
+macOS 15+ and Python 3.12/3.13, run this from a fresh benchmark source checkout:
+
+```bash
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --output data/simulations/first-local-run
+```
+
+The launcher fetches the public speech-swift revision in `runtime/lock.json`,
+applies the bundled checksum-pinned compatibility patch in an isolated managed
+checkout, verifies the resulting source hash, builds the release server and
+Metal shaders, and stages the pinned models. It then starts the guarded local
+service, checks its capabilities, calibrates the v4 caller/judge, and runs the
+controlled spoken write plus wrong-write grading control. It stops its own
+service afterward. First setup requires network access for public source,
+dependencies and model downloads; inference uses only the local service.
+
+The runtime package also includes the exact `Package.resolved` dependency pins
+from the validated build. Setup verifies their checksum and installs them into
+the managed checkout before building with automatic dependency resolution disabled.
+Existing dependency files must match; setup never overwrites them.
+
+The managed source is cached under `.cache/voice-runtime/`. It does not patch an
+existing checkout. This pinned patch contains the same native changes used by
+the [validated v3 run](validation/local-v3-runtime.md), so setup does not depend
+on an unpublished branch or a changing upstream main. Update the source revision,
+patch, source hash and validation together when upgrading the runtime.
+
+The default smoke check is a pipeline test, not a domain score. Run a domain task
+with the same setup command by adding its selection:
+
+```bash
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --domain airline --task-id 12 --output data/simulations/first-airline-run
+```
+
+`result.json` distinguishes a completed task, including reward zero, from an
+unscored setup or inference failure. Each stage has a separate log. Output
+directories must be fresh so previous evidence is preserved. Other heavy local
+jobs cause a clear resource error; they are never stopped. Read-only Swift
+metadata queries are excluded from that check. Code edits and documentation can
+run in parallel. The tested machine has 48 GB unified memory; model downloads
+and a release build also need substantial free disk space.
+
+For development, `--runtime-source` accepts an exact matching native source and
+`--server` can select its prebuilt server. Without these overrides, setup builds
+the pinned managed source. The manual commands below remain available.
+
 ## Build and stage
+
+For the optional native-audio cloud agent, see [Nova setup and task runs](nova.md).
+It uses the local runtime for caller speech and evaluation while Nova handles
+the agent conversation.
+
+The local v4 development pilot and versioned v5 caller candidate are documented
+in the [failure audit](validation/local-v4-failure-audit.md). An explicitly
+opted-in [Nova 2.5 Sonic probe](validation/nova25-pilot.md) tests cloud audio/tools
+separately; it is not a scored domain runner.
 
 Build the matching speech-swift checkout first:
 
@@ -48,6 +109,10 @@ type for failed chat calls in `failed-run.json` under the inference events.
 Match the native and benchmark records by request ID. Successful request bodies
 and failed audio payloads are not retained by this failure-capture path. Errors
 still propagate and remain unscored; capture never retries or repairs them.
+The runner checks settled inference records before grading, including requests
+superseded by later caller speech. Cancellation intent alone cannot hide a
+failure. For a failed chat request, a matching native cancellation capture is
+needed to establish an expected cancellation; otherwise the trial is unscored.
 
 ## Serve
 
@@ -62,6 +127,10 @@ python3 scripts/run_speech_swift_guarded.py \
 ```
 
 Models load once. Heavy inference requests run sequentially; VAD keeps separate lightweight stream state. The launcher samples native-process physical footprint and stops its child above 24 GiB or below 2 GiB free disk. Run one benchmark process at a time.
+
+Before starting the process, the launcher checks every pinned local file and
+checksum. Missing or damaged files are reported together with their model role;
+restage the models before retrying. Startup never downloads replacement files.
 
 ## Run and inspect
 
@@ -87,6 +156,35 @@ See [model comparison and limits](model-comparison.md) for available systems,
 metric definitions, and the [recorded local diagnostic](results/gemma4-12b-local-v2-airline.json).
 The v1 examples below reproduce historical profiles and should not be mixed
 with v2 results.
+
+The separate `soniqo-local-gemma12b-v3` profile requires a matching native runtime
+advertising `reasoning_history`. It keeps Gemma's reasoning on the current tool
+sequence and out of speech, and uses a 30-second caller check-in threshold.
+Its defaults are 600 simulated seconds and a 1,200-second wall watchdog.
+Rebuild, restage and qualify before using it; see
+[the v3 development commands](local-v2.md#experimental-v3-profile).
+
+The v3 profile retains E4B for caller, listener and judge. Its agent requires
+`non_thinking_tool_continuation`. A caller-visible price-evidence guard asks for
+a quote before unpriced paid consent and keeps an unpriced completion open.
+The condition is recorded in the profile and qualification identity. V2 retains
+its original prompts and calibration suite.
+V3's `goal_progress` condition records unresolved requests after a supported refusal and
+passes them to customer generation. A refused request cannot close a call while
+the assessment still lists an independent request as pending.
+After a supported explicit English refusal without a direct question or request
+for account details, the controller speaks the first assessed remaining request
+directly instead of regenerating a refused request.
+
+The packaged launcher selects `soniqo-local-gemma12b-v4`. It adds caller
+`question_focus`: the next spoken reply receives the caller's scenario beside
+the latest heard agent question. This keeps a repeated request from replacing
+an answer already supported by the scenario. Unknown details remain unknown;
+the agent never receives this caller-only context. V4 uses a separate 98-case
+qualification suite, including seven question-answer regressions. V2 and v3
+retain their existing generation conditions. The agent, tools, frozen tasks and
+reward rules are unchanged. See the [confidence pilot](validation/local-v3-confidence-pilot.md)
+for the captured failure, validation and fixed subset plan.
 
 For the experimental simulated-clock profile, caller/judge qualification, and
 the predeclared 18-call pilot, follow [local v2 execution](local-v2.md). It uses

@@ -42,6 +42,115 @@ class Backend:
         )
 
 
+@pytest.mark.parametrize("enabled", [False, True])
+def test_question_focus_exposes_only_customer_scenario_and_heard_context(enabled):
+    backend = Backend(["CONTINUE", "I am moving to another city."])
+    scenario = "Cancel membership because I am moving. My account ID is unknown."
+    caller = QualifiedCallerBackend(backend, scenario, question_focus=enabled)
+    history = [AssistantMessage(role="assistant", content="Please cancel it.")]
+    for _ in range(8):
+        history += [
+            UserMessage(role="user", content="Why are you cancelling?"),
+            AssistantMessage(role="assistant", content="Please cancel it."),
+        ]
+    history.append(UserMessage(role="user", content="Why are you cancelling?"))
+    reply = caller.generate(
+        "model", history, tools=[], call_name="user_streaming_response"
+    )
+    assert reply.content == "I am moving to another city."
+    sent = backend.calls[-1][0][-1].content
+    context = json.loads(sent[sent.index("{") :])
+    assert (
+        context["latest_service_agent_statement"]["content"]
+        == "Why are you cancelling?"
+    )
+    assert context.get("customer_scenario") == (scenario if enabled else None)
+    assert all(
+        row["speaker"] in {"service_agent", "customer"}
+        for row in context["conversation"]
+    )
+
+
+@pytest.mark.parametrize("proposed", ["COMPLETE", "CONTINUE"])
+@pytest.mark.parametrize("enabled", [False, True])
+def test_price_guard_keeps_unquoted_capped_change_open(proposed, enabled):
+    heard = "I have successfully upgraded the booking. Is there anything else I can help you with?"
+    assessment = json.dumps(
+        {"reasoning": "fixture", "agent_evidence": heard, "decision": proposed}
+    )
+    backend = Backend([assessment, "No, that is all. Thank you."])
+    caller = QualifiedCallerBackend(
+        backend, "Upgrade for up to $650.", price_grounding=enabled
+    )
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=heard)],
+        tools=[],
+        call_name="user_streaming_response",
+    )
+    if enabled:
+        assert "total cost" in reply.content
+        assert caller.decisions[-1]["decision"] == "CONTINUE"
+        assert len(backend.calls) == 1
+        assert reply.raw_data["caller_turn_control"]["guard"] == "missing_price_quote"
+    else:
+        assert reply.content == (
+            "###STOP###" if proposed == "COMPLETE" else "No, that is all. Thank you."
+        )
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_quoted_offer_cannot_complete_a_price_controlled_call(enabled):
+    heard = "The total cost is $598.00, within your $650 budget. Would you like me to proceed?"
+    backend = Backend(
+        [
+            json.dumps(
+                {
+                    "reasoning": "The quoted price meets the limit.",
+                    "agent_evidence": heard,
+                    "decision": "COMPLETE",
+                }
+            ),
+            "Yes, please proceed.",
+        ]
+    )
+    caller = QualifiedCallerBackend(
+        backend, "Upgrade for up to $650.", price_grounding=enabled
+    )
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=heard)],
+        tools=[],
+        call_name="user_streaming_response",
+    )
+    if enabled:
+        assert reply.content == "Yes, please proceed."
+        assert caller.decisions[-1]["guard"] == "pending_price_consent"
+        assert caller.decisions[-1]["decision"] == "CONTINUE"
+    else:
+        assert reply.content == "###STOP###"
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_price_controls_preserve_the_recorded_caller_prompts(enabled):
+    backend = Backend(["CONTINUE", "My number is 555-123-2002."])
+    caller = QualifiedCallerBackend(
+        backend, "Check my account.", price_grounding=enabled
+    )
+    caller.generate(
+        "model",
+        [UserMessage(role="user", content="What is your phone number?")],
+        tools=[],
+        call_name="user_streaming_response",
+    )
+    assessment_prompt = backend.calls[0][0][0].content
+    caller_prompt = backend.calls[1][0][0].content
+    from tau2.voice.caller_policy import TERMINAL_PROMPT
+
+    assert assessment_prompt == TERMINAL_PROMPT
+    assert "Before answering any consent question" not in caller_prompt
+
+
 @pytest.mark.parametrize("decision", ["COMPLETE", "REFUSED"])
 def test_only_model_assessed_terminal_state_emits_caller_stop(decision):
     backend = Backend([decision])
@@ -704,10 +813,69 @@ def test_agent_offer_has_no_customer_tools_and_does_not_prioritize_an_old_report
 
 
 @pytest.mark.parametrize(
-    "silence,expected", [(0, ""), (14.95, ""), (15, "Are you still there?")]
+    "statement",
+    [
+        "I've checked your usage. Since the speed is still slow, I can check if your phone is using an older network technology.",
+        "I can check if your data plan limit has been reached.",
+    ],
+)
+def test_v5_agent_offer_does_not_require_a_customer_tool(statement):
+    backend = Backend(["CONTINUE", "Yes, please check that."])
+    caller = QualifiedCallerBackend(
+        backend, "Restore my mobile data.", device_grounding=True, routing_focus=True
+    )
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=statement)],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    assert reply.content == "Yes, please check that." and not reply.is_tool_call()
+    assert len(backend.calls) == 2
+    assert caller.decisions[-1]["customer_tool_route"]["guard"] == "agent_owns_action"
+
+
+@pytest.mark.parametrize(
+    "statement",
+    [
+        "I see roaming is already enabled on your line. I will check your data usage. Could you please tell me if you have reached your data limit?",
+        "Since you have no connection, please check if your data usage has exceeded your plan limit.",
+    ],
+)
+def test_v5_account_usage_unknown_is_a_spoken_answer_not_a_device_action(statement):
+    backend = Backend(["CONTINUE", "I don't know if I've reached my data limit."])
+    caller = QualifiedCallerBackend(
+        backend,
+        "Restore my mobile data. I do not know my usage.",
+        device_grounding=True,
+        routing_focus=True,
+    )
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=statement)],
+        tools=[Tool(set_mobile_data)],
+        call_name="user_streaming_response",
+    )
+    assert not reply.is_tool_call() and "don't know" in reply.content
+    assert (
+        caller.decisions[-1]["customer_tool_route"]["guard"] == "account_usage_question"
+    )
+    assert len(backend.calls) == 2
+
+
+@pytest.mark.parametrize(
+    "idle,silence,expected",
+    [
+        (15, 0, ""),
+        (15, 14.95, ""),
+        (15, 15, "Are you still there?"),
+        (30, 15, ""),
+        (30, 29.95, ""),
+        (30, 30, "Are you still there?"),
+    ],
 )
 def test_non_phone_caller_waits_for_a_complete_turn_and_retains_check_in(
-    silence, expected
+    idle, silence, expected
 ):
     backend = Backend([])
     caller = QualifiedCallerBackend(backend, "Change my flight.")
@@ -722,7 +890,7 @@ def test_non_phone_caller_waits_for_a_complete_turn_and_retains_check_in(
         ],
         call_name="user_streaming_response",
         agent_silence_seconds=silence,
-        caller_idle_seconds=15,
+        caller_idle_seconds=idle,
     )
     assert reply.content == expected and not reply.is_tool_call()
     assert not backend.calls
@@ -1116,3 +1284,151 @@ def test_device_response_guard_allows_a_later_completed_confirmation():
     )
     assert decision == "COMPLETE"
     assert "guard" not in caller.decisions[-1]
+
+
+@pytest.mark.parametrize("decision", ["COMPLETE", "REFUSED"])
+def test_remaining_request_prevents_terminal_control_after_partial_refusal(decision):
+    quote = "I cannot change the delivery address."
+    backend = Backend(
+        [
+            json.dumps(
+                {
+                    "reasoning": "One request is refused.",
+                    "agent_evidence": quote,
+                    "decision": decision,
+                    "remaining_requests": ["Cancel my recurring subscription."],
+                }
+            )
+        ]
+    )
+    caller = QualifiedCallerBackend(
+        backend,
+        "Change the address and cancel my subscription even if the address cannot change.",
+        goal_progress=True,
+    )
+    actual, _ = caller.assess("model", [UserMessage(role="user", content=quote)])
+    assert actual == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "remaining_customer_requests"
+
+
+def test_progress_request_list_is_required_without_silent_legacy_fallback():
+    heard = "I cannot cancel that subscription."
+    reply = json.dumps(
+        {"reasoning": "fixture", "agent_evidence": heard, "decision": "REFUSED"}
+    )
+    caller = QualifiedCallerBackend(
+        Backend([reply, reply]), "scenario", goal_progress=True
+    )
+    with pytest.raises(CallerPolicyError, match="remaining_requests"):
+        caller.assess("model", [UserMessage(role="user", content=heard)])
+
+
+def test_completed_progress_allows_terminal_control_with_empty_requests():
+    quote = "I cannot change the address. Your subscription is cancelled."
+    caller = QualifiedCallerBackend(
+        Backend(
+            [
+                json.dumps(
+                    {
+                        "reasoning": "All requests addressed.",
+                        "agent_evidence": quote,
+                        "decision": "COMPLETE",
+                        "remaining_requests": [],
+                    }
+                )
+            ]
+        ),
+        "Cancel my subscription.",
+        goal_progress=True,
+    )
+    decision, _ = caller.assess("model", [UserMessage(role="user", content=quote)])
+    assert decision == "COMPLETE"
+
+
+@pytest.mark.parametrize(
+    "heard,has_pending,redirect",
+    [
+        ("I cannot upgrade just one passenger.", True, True),
+        ("I cannot change the delivery address.", True, True),
+        (
+            "I cannot upgrade just one passenger. Is there anything else I can help you with?",
+            True,
+            True,
+        ),
+        ("I cannot find your account. Please provide your ID.", True, False),
+        (
+            "I cannot upgrade one passenger. Would you like me to add the bags?",
+            True,
+            False,
+        ),
+        ("I cannot change that. Please confirm your account ID.", True, False),
+        ("I cannot upgrade just one passenger.", False, False),
+    ],
+)
+def test_progress_redirects_only_unanswered_independent_requests(
+    heard, has_pending, redirect
+):
+    data = {
+        "reasoning": "The upgrade was denied; another request may remain.",
+        "agent_evidence": heard,
+        "decision": "CONTINUE",
+    }
+    if QualifiedCallerBackend.followup_after_refusal(
+        [{"speaker": "service_agent", "content": heard}]
+    ):
+        data["remaining_requests"] = ["Add two checked bags."] if has_pending else []
+    backend = Backend([json.dumps(data), "Could you please clarify?"])
+    caller = QualifiedCallerBackend(
+        backend, "Upgrade and add two bags.", goal_progress=True
+    )
+    reply = caller.generate(
+        "model",
+        [UserMessage(role="user", content=heard)],
+        tools=[],
+        call_name="user_streaming_response",
+    )
+    if redirect:
+        assert reply.content == "Then, Add two checked bags."
+        assert (
+            reply.raw_data["caller_turn_control"]["request"] == "Add two checked bags"
+        )
+        assert len(backend.calls) == 1
+    else:
+        assert reply.content == "Could you please clarify?"
+        assert len(backend.calls) == 2
+
+
+@pytest.mark.parametrize(
+    "heard",
+    [
+        "I am checking your subscription now.",
+        "I'm still processing the cancellation.",
+        "We are updating your reservation.",
+        "We're adding the bags now.",
+    ],
+)
+@pytest.mark.parametrize("proposed", ["COMPLETE", "REFUSED"])
+def test_ongoing_agent_work_never_confirms_completion(heard, proposed):
+    caller = QualifiedCallerBackend(
+        Backend(
+            [
+                json.dumps(
+                    {
+                        "reasoning": "fixture",
+                        "agent_evidence": heard,
+                        "decision": proposed,
+                    }
+                )
+            ]
+        ),
+        "Complete the requested change.",
+    )
+    decision, _ = caller.assess(
+        "model",
+        [
+            UserMessage(role="user", content=heard),
+            AssistantMessage(role="assistant", content="It has been completed."),
+        ],
+    )
+    assert decision == "CONTINUE"
+    assert caller.decisions[-1]["guard"] == "pending_agent_offer"

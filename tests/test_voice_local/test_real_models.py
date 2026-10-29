@@ -2,6 +2,7 @@
 
 import audioop
 import hashlib
+import json
 import os
 import re
 import time
@@ -37,6 +38,76 @@ from tau2.voice.runtime_profile import load_profile
 from tau2.voice.speech_swift import SpeechSwiftBackend, SpeechSwiftError, pcm16
 
 pytestmark = pytest.mark.local_models
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "reason-after-long-request-loop",
+        "reason-releases-slot",
+        "reason-colour-mismatch",
+        "requested-date-friday",
+        "requested-date-monday",
+        "unknown-identifier-after-loop",
+        "unknown-motive-no-invention",
+    ],
+)
+def test_real_caller_question_focus(runtime, case_id, tmp_path):
+    from tau2.data_model.persona import PersonaConfig
+    from tau2.user.prompts import build_user_system_prompt
+    from tau2.voice.baseline import repository_root
+    from tau2.voice.caller_policy import LOCAL_CALLER_GUIDELINES, QualifiedCallerBackend
+    from tau2.voice.qualification import fixture_history, qualification_suite
+
+    profile = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v4.json"
+    )
+    case = next(
+        row for row in qualification_suite(profile)["caller"] if row["id"] == case_id
+    )
+    caller = QualifiedCallerBackend(runtime, case["scenario"], question_focus=True)
+    system = build_user_system_prompt(
+        instructions=case["scenario"],
+        persona_config=PersonaConfig(),
+        mode="voice",
+        guidelines=LOCAL_CALLER_GUIDELINES,
+    )
+    response = caller.generate(
+        "gemma4-e4b-it",
+        [
+            SystemMessage(role="system", content=system),
+            *fixture_history(case["history"]),
+        ],
+        tools=[],
+        temperature=0,
+        max_tokens=1024,
+        call_name="user_streaming_response",
+    )
+    output = Path(os.environ.get("TAU_VOICE_CALLER_FOCUS_OUTPUT", str(tmp_path)))
+    output.mkdir(parents=True, exist_ok=True)
+    (output / f"{case_id}.json").write_text(
+        json.dumps(
+            {
+                "case": case,
+                "response": response.model_dump(mode="json"),
+                "decisions": caller.decisions,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    text = (response.content or "").lower()
+    assert not response.is_tool_call() and text.strip() and "###stop###" not in text
+    expected = case["reply"]
+    if expected.get("unknown_information"):
+        assert re.search(
+            r"(?:don.t|not) (?:\w+ ){0,3}(?:know|have|remember)|unsure|unknown", text
+        )
+        assert not re.search(r"\d{3,}", text)
+    else:
+        assert all(word.lower() in text for word in expected.get("must_contain", []))
+        if "must_contain_any" in expected:
+            assert any(word.lower() in text for word in expected["must_contain_any"])
 
 
 @pytest.fixture(scope="module")
@@ -112,6 +183,51 @@ def test_real_gemma_native_tool_call_and_result_history(runtime, model):
     )
     assert not result.tool_calls
     assert "record" in result.content.lower()
+
+
+def test_real_gemma12b_reasoning_history_is_not_spoken(runtime):
+    if (
+        "reasoning_history"
+        not in runtime.capabilities().models["gemma4-12b-it"].features
+    ):
+        pytest.skip("Requires native reasoning_history support")
+
+    def read_record(id: str) -> str:
+        """Read a record's marker."""
+        return "ready"
+
+    for marker in ("indigo_field_827", "amber_river_416"):
+        call = AssistantMessage(
+            role="assistant",
+            tool_calls=[
+                {"id": "read-1", "name": "read_record", "arguments": {"id": "record_7"}}
+            ],
+            raw_data={"reasoning_content": "Use the returned marker, then finish."},
+        )
+        reply = runtime.generate(
+            "gemma4-12b-it",
+            [
+                SystemMessage(
+                    role="system",
+                    content="Reply only with the exact marker from the successful tool result. Do not repeat a lookup.",
+                ),
+                UserMessage(role="user", content="Read record_7."),
+                call,
+                ToolMessage(
+                    role="tool",
+                    id="read-1",
+                    content='{"marker":"' + marker + '"}',
+                    requestor="assistant",
+                ),
+            ],
+            tools=[Tool(read_record)],
+            temperature=0,
+            max_tokens=128,
+        )
+        assert not reply.tool_calls
+        assert marker in reply.content
+        assert not reply.content.startswith("thought\n")
+        assert "Use the returned marker" not in reply.content
 
 
 @pytest.mark.parametrize("completed", [False, True])
@@ -301,6 +417,9 @@ def test_real_closing_help_question_does_not_hide_completion_or_pending_work(
         "spending-cap-rejects-over-budget-consent",
         "spending-cap-completed-with-quoted-total",
         "spending-cap-asks-for-unknown-price",
+        "spending-cap-unquoted-consent-after-lookup",
+        "spending-cap-unquoted-completion",
+        "spending-cap-long-quoted-total",
     ],
 )
 def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
@@ -312,7 +431,14 @@ def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
     from tau2.voice.provenance import benchmark_sources
     from tau2.voice.qualification import fixture_history, qualification_suite
 
-    cases = {case["id"]: case for case in qualification_suite()["caller"]}
+    profile_path = os.environ.get("TAU_VOICE_PROFILE")
+    selected = load_profile(Path(profile_path) if profile_path else None)
+    cases = {case["id"]: case for case in qualification_suite(selected)["caller"]}
+    if (
+        case_id.startswith("spending-cap-unquoted-")
+        or case_id == "spending-cap-long-quoted-total"
+    ) and case_id not in cases:
+        pytest.skip("The added price-evidence fixtures belong to the explicit v3 suite")
     if case_id == "spending-cap-asks-for-unknown-price":
         case = dict(cases["spending-cap-in-opening"])
         case["history"] = [
@@ -327,10 +453,15 @@ def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
         mode="voice",
         guidelines=LOCAL_CALLER_GUIDELINES,
     )
-    caller = QualifiedCallerBackend(runtime, case["scenario"])
+    caller = QualifiedCallerBackend(
+        runtime,
+        case["scenario"],
+        price_grounding=selected.execution.price_grounding,
+        goal_progress=selected.execution.goal_progress,
+    )
     start = len(runtime.events)
     reply = caller.generate(
-        "gemma4-e4b-it",
+        selected.roles["caller"].model_id,
         [
             SystemMessage(role="system", content=system),
             *fixture_history(case["history"]),
@@ -360,6 +491,11 @@ def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
         assert reply.content == "###STOP###"
     else:
         assert reply.content != "###STOP###" and not reply.is_tool_call()
+        if case.get("reply", {}).get("must_approve"):
+            assert re.match(r"^\s*(?:yes|sure|absolutely)\b", reply.content, re.I), (
+                reply.content
+            )
+            return
         for word in (
             case.get("reply", {}).get("must_contain", [])
             if case_id != "spending-cap-asks-for-unknown-price"
@@ -370,7 +506,9 @@ def test_real_caller_preserves_spending_constraints(runtime, tmp_path, case_id):
             assert not re.match(
                 r"^\s*(?:yes|sure|absolutely)\b", reply.content, re.I
             ), reply.content
-        if case_id == "spending-cap-asks-for-unknown-price":
+        if case_id == "spending-cap-asks-for-unknown-price" or case.get(
+            "reply", {}
+        ).get("must_ask_price"):
             assert re.search(
                 r"\b(?:price|cost|fee|charge)|how much", reply.content, re.I
             ), reply.content
@@ -1070,7 +1208,9 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
 
     # A fixed spoken request makes this a pipeline check, independent of a caller LLM's omissions.
     caller_text = (
-        "Please create a task called Important Meeting for user underscore one."
+        "Create a task for user underscore one, written in lowercase. "
+        "Use the two word title Important Meeting, with a capital I and a capital M. "
+        "There is no punctuation in the title. Do not put a period in the title."
     )
     caller_events_start = len(runtime.events)
     caller_audio = runtime.synthesize(
@@ -1227,3 +1367,33 @@ def test_real_full_voice_task_writes_database_and_grader_rejects_wrong_write(
     (output / "negative-control.json").write_text(
         grading.model_dump_json(indent=2) + "\n"
     )
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    [
+        "partial-refusal-keeps-independent-bags-request",
+        "partial-refusal-keeps-independent-subscription-request",
+        "partial-refusal-and-independent-completion-can-stop",
+        "over-budget-refusal-loop-keeps-independent-request",
+    ],
+)
+def test_real_caller_tracks_remaining_requests(runtime, monkeypatch, tmp_path, case_id):
+    import json
+
+    from tau2.voice import qualification
+    from tau2.voice.provenance import run_provenance
+
+    path = os.environ.get("TAU_VOICE_PROFILE")
+    profile = load_profile(Path(path) if path else None)
+    if not profile.execution.goal_progress:
+        pytest.skip("The progress condition belongs to the experimental v3 profile")
+    suite = qualification.qualification_suite(profile)
+    case = next(case for case in suite["caller"] if case["id"] == case_id)
+    one = {"suite": suite["suite"], "caller": [case], "judge": []}
+    monkeypatch.setattr(qualification, "qualification_suite", lambda *_: one)
+    report = qualification.qualify(runtime, profile, run_provenance(runtime))
+    root = Path(os.environ.get("TAU_VOICE_PROGRESS_E2E_OUTPUT", str(tmp_path)))
+    root.mkdir(parents=True, exist_ok=True)
+    (root / (case_id + ".json")).write_text(json.dumps(report, indent=2) + "\n")
+    assert report["passed"], report["cases"]

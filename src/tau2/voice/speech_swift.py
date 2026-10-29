@@ -121,6 +121,9 @@ class SpeechSwiftBackend:
                 if type(cached_tokens) is not int or cached_tokens < 0:
                     raise SpeechSwiftError("Invalid native cached prefix token count")
                 metadata["cached_prefix_tokens"] = cached_tokens
+            if operation == "chat" and result.get("reasoningContent") is not None:
+                if not isinstance(result["reasoningContent"], str):
+                    raise SpeechSwiftError("Invalid native reasoning content")
             success = True
             return result
         except Exception as error:
@@ -166,7 +169,11 @@ class SpeechSwiftBackend:
         if tool_choice not in {None, "auto", "none", "required"}:
             raise ValueError(f"Unsupported tool choice: {tool_choice}")
         history = []
-        for message in messages:
+        last_user = max(
+            (index for index, message in enumerate(messages) if message.role == "user"),
+            default=-1,
+        )
+        for index, message in enumerate(messages):
             entry = {"role": message.role, "content": message.content}
             if isinstance(message, ToolMessage):
                 entry["toolCallID"] = message.id
@@ -177,6 +184,13 @@ class SpeechSwiftBackend:
                     for call in calls
                 ]
                 entry["role"] = "assistant"
+                reasoning = (getattr(message, "raw_data", None) or {}).get(
+                    "reasoning_content"
+                )
+                if reasoning and index > last_user:
+                    if not isinstance(reasoning, str):
+                        raise SpeechSwiftError("Invalid reasoning in tool history")
+                    entry["reasoningContent"] = reasoning
             if (
                 entry["role"] in {"user", "assistant"}
                 and not entry.get("toolCalls")
@@ -229,6 +243,11 @@ class SpeechSwiftBackend:
                 "runtime": "speech-swift",
                 "call_name": call_name,
                 **(
+                    {"reasoning_content": result["reasoningContent"]}
+                    if result.get("reasoningContent")
+                    else {}
+                ),
+                **(
                     {"cached_prefix_tokens": result["cachedPrefixTokens"]}
                     if "cachedPrefixTokens" in result
                     else {}
@@ -259,6 +278,7 @@ class SpeechSwiftBackend:
         started = time.perf_counter()
         first = None
         done = False
+        cancelled = False
         with self._lock:
             self._active.add(request_id)
         try:
@@ -281,6 +301,7 @@ class SpeechSwiftBackend:
                         continue
                     event = json.loads(line)
                     if event["event"] == "error":
+                        cancelled = event.get("message") == "CancellationError()"
                         raise SpeechSwiftError(event["message"])
                     if event["event"] == "done":
                         done = True
@@ -299,6 +320,11 @@ class SpeechSwiftBackend:
                 raise SpeechSwiftError(
                     "Native speech stream ended without a completion event"
                 )
+        except GeneratorExit:
+            # The consumer closed an unfinished generator. Scoring also
+            # requires a recorded cancellation for this exact request ID.
+            cancelled = True
+            raise
         finally:
             with self._lock:
                 self._active.discard(request_id)
@@ -310,6 +336,7 @@ class SpeechSwiftBackend:
                         "first_audio_seconds": first,
                         "wall_seconds": time.perf_counter() - started,
                         "success": done,
+                        **({"cancelled": True} if cancelled else {}),
                     }
                 )
 

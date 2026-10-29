@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "functional_check_only": true,
+  "domain": "mock",
+  "standard_leaderboard": false,
+  "domain_score": null,
+  "pricing_source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/us-east-1/index.json",
+  "pricing_publication_date": "2026-10-28",
+  "runs": [
+    {
+      "run": "nova-smoke-06",
+      "model": "amazon.nova-2-5-sonic",
+      "region": "us-east-1",
+      "input_sha256": "7c7c5ca9b3826443d7f004924bc073a0805cc0bb1b3b25d978dd7ec7fd31ecc1",
+      "input_seconds": 14.1999375,
+      "wall_seconds": 18.49485341599211,
+      "output_seconds": 3.08,
+      "database_control_reward": 1.0,
+      "wrong_write_control_reward": 0.0,
+      "usage": {
+        "input": {
+          "speechTokens": 503,
+          "textTokens": 956
+        },
+        "output": {
+          "speechTokens": 77,
+          "textTokens": 95
+        }
+      },
+      "usage_finalized": true,
+      "metered_usd": 0.00300973,
+      "source_sha256": null
+    },
+    {
+      "run": "nova-smoke-07",
+      "model": "amazon.nova-2-5-sonic",
+      "region": "us-east-1",
+      "input_sha256": "7c7c5ca9b3826443d7f004924bc073a0805cc0bb1b3b25d978dd7ec7fd31ecc1",
+      "input_seconds": 14.1999375,
+      "wall_seconds": 18.8289680830203,
+      "output_seconds": 3.08,
+      "database_control_reward": 1.0,
+      "wrong_write_control_reward": 0.0,
+      "usage": {
+        "input": {
+          "speechTokens": 503,
+          "textTokens": 958
+        },
+        "output": {
+          "speechTokens": 77,
+          "textTokens": 93
+        }
+      },
+      "usage_finalized": true,
+      "metered_usd": 0.00300489,
+      "source_sha256": {
+        "probe_nova.py": "344c6bf895a490e7b6046dd525cfa3c7fc4724ae047611fc838d64b07a107a6d",
+        "nova.py": "02f8a7fd505b934a1745d560c6e67297f45c5c069d4b816d705236879d9cc301"
+      }
+    }
+  ]
+}

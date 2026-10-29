@@ -19,7 +19,7 @@ def test_qualification_runs_the_actual_nl_assertion_judge(
     monkeypatch.setattr(
         qualification,
         "qualification_suite",
-        lambda: {
+        lambda *_: {
             "suite": "nl-fixture",
             "caller": [],
             "judge": [
@@ -68,7 +68,7 @@ def test_judge_kind_or_model_mismatch_fails_before_inference(
     monkeypatch.setattr(
         qualification,
         "qualification_suite",
-        lambda: {
+        lambda *_: {
             "suite": "nl-fixture",
             "caller": [],
             "judge": [
@@ -134,9 +134,57 @@ def test_v2_requires_passing_matching_qualification(certificate):
         qualification.require_qualification(path, profile, changed)
 
 
+def test_qualification_binds_price_grounding_condition(certificate):
+    profile, provenance, _, path = certificate
+    profile.execution.price_grounding = True
+    with pytest.raises(ValueError, match="no longer matches"):
+        qualification.require_qualification(path, profile, provenance)
+
+
+def test_qualification_binds_goal_progress_condition(certificate):
+    profile, provenance, _, path = certificate
+    profile.execution.goal_progress = True
+    with pytest.raises(ValueError, match="no longer matches"):
+        qualification.require_qualification(path, profile, provenance)
+
+
+def test_qualification_binds_question_focus_condition(certificate):
+    profile, provenance, _, path = certificate
+    profile.execution.question_focus = True
+    with pytest.raises(ValueError, match="no longer matches"):
+        qualification.require_qualification(path, profile, provenance)
+
+
+def test_v4_retains_every_v3_fixture_and_adds_question_regressions():
+    from tau2.voice.baseline import repository_root
+    from tau2.voice.runtime_profile import load_profile
+
+    root = repository_root() / "configs/voice"
+    previous = qualification.qualification_suite(
+        load_profile(root / "soniqo-local-gemma12b-v3.json")
+    )
+    current = qualification.qualification_suite(
+        load_profile(root / "soniqo-local-gemma12b-v4.json")
+    )
+    assert current["judge"] == previous["judge"]
+    assert current["caller"][: len(previous["caller"])] == previous["caller"]
+    assert len(current["caller"]) == len(previous["caller"]) + 7
+    ids = [row["id"] for row in current["caller"]]
+    assert len(set(ids)) == len(ids)
+
+
 @pytest.mark.parametrize(
     "change",
-    ["failed", "missing", "duplicate", "model", "assets", "device_grounding", "error"],
+    [
+        "failed",
+        "missing",
+        "duplicate",
+        "model",
+        "assets",
+        "device_grounding",
+        "caller_idle",
+        "error",
+    ],
 )
 def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, change):
     profile, provenance, report, path = certificate
@@ -150,6 +198,8 @@ def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, c
         profile.roles["caller"].model_id = "different caller"
     elif change == "device_grounding":
         profile.execution.device_grounding = False
+    elif change == "caller_idle":
+        profile.execution.caller_idle_seconds += 1
     elif change == "error":
         report["cases"][0]["error"] = "Caller reply generation failed"
     else:
@@ -162,6 +212,40 @@ def test_invalid_or_partial_qualification_cannot_enable_benchmark(certificate, c
 def test_historical_profiles_do_not_require_new_caller_policy():
     profile = load_profile()
     assert qualification.require_qualification(None, profile, {}) is None
+
+
+def test_v3_calibration_extends_v2_without_changing_its_fixtures():
+    root = repository_root() / "configs/voice"
+    v2 = load_profile(root / "soniqo-local-gemma12b-v2.json")
+    v3 = load_profile(root / "soniqo-local-gemma12b-v3.json")
+    old = qualification.qualification_suite(v2)
+    new = qualification.qualification_suite(v3)
+    assert sum(len(old[key]) for key in ("caller", "judge")) == 84
+    assert sum(len(new[key]) for key in ("caller", "judge")) == 91
+    assert old["suite"] != new["suite"]
+    indexed = {case["id"]: case for case in new["caller"]}
+    assert [indexed[case["id"]] for case in old["caller"]] == old["caller"]
+    assert new["judge"] == old["judge"]
+    assert set(indexed) - {case["id"] for case in old["caller"]} == {
+        "spending-cap-unquoted-consent-after-lookup",
+        "spending-cap-unquoted-completion",
+        "spending-cap-long-quoted-total",
+        "partial-refusal-keeps-independent-bags-request",
+        "partial-refusal-keeps-independent-subscription-request",
+        "partial-refusal-and-independent-completion-can-stop",
+        "over-budget-refusal-loop-keeps-independent-request",
+    }
+
+
+def test_v2_certificate_cannot_qualify_the_extended_v3_suite(certificate):
+    _, provenance, report, path = certificate
+    profile = load_profile(
+        repository_root() / "configs/voice/soniqo-local-gemma12b-v3.json"
+    )
+    report["identity"] = qualification.qualification_identity(profile, provenance)
+    path.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match="qualification failed"):
+        qualification.require_qualification(path, profile, provenance)
 
 
 def terminal(decision="CONTINUE", evidence=None):
@@ -187,11 +271,68 @@ def single_case(monkeypatch, case):
     monkeypatch.setattr(
         qualification,
         "qualification_suite",
-        lambda: {"suite": "fixture", "caller": [case], "judge": []},
+        lambda *_: {"suite": "fixture", "caller": [case], "judge": []},
     )
     return load_profile(
         repository_root() / "configs/voice/soniqo-local-gemma12b-v2.json"
     )
+
+
+@pytest.mark.parametrize(
+    "case_id",
+    ["spending-cap-unquoted-consent-after-lookup", "spending-cap-unquoted-completion"],
+)
+@pytest.mark.parametrize(
+    "draft,passed",
+    [
+        ("Yes, I'd like to proceed.", False),
+        ("Everything is done, thank you.", False),
+        ("What is the total cost before I agree?", True),
+    ],
+)
+def test_qualification_checks_unpriced_consent_and_completion(
+    monkeypatch, case_id, draft, passed
+):
+    case = next(
+        c
+        for c in qualification.qualification_suite(
+            load_profile(
+                repository_root() / "configs/voice/soniqo-local-gemma12b-v3.json"
+            )
+        )["caller"]
+        if c["id"] == case_id
+    )
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            if kwargs["call_name"].startswith("caller_terminal_v2"):
+                return terminal()
+            return AssistantMessage(role="assistant", content=draft)
+
+    row = qualification.qualify(Backend(), profile, provenance())["cases"][0]
+    assert row["passed"] is passed
+
+
+def test_qualification_rejects_completion_claim_without_price(monkeypatch):
+    case = next(
+        c
+        for c in qualification.qualification_suite(
+            load_profile(
+                repository_root() / "configs/voice/soniqo-local-gemma12b-v3.json"
+            )
+        )["caller"]
+        if c["id"] == "spending-cap-unquoted-completion"
+    )
+    profile = single_case(monkeypatch, case)
+
+    class Backend:
+        def generate(self, model, messages, **kwargs):
+            return terminal("COMPLETE", case["history"][-1][1])
+
+    report = qualification.qualify(Backend(), profile, provenance())
+    assert report["passed"] is False
+    assert report["cases"][0]["actual_action"] == "stop"
 
 
 def test_qualification_replays_incomplete_speech_without_speaking(monkeypatch):
