@@ -31,24 +31,23 @@ La pila local utiliza [speech-swift](https://github.com/soniqo/speech-swift): Wh
 | Tasa de error de herramientas | Llamadas del agente fallidas o rechazadas / llamadas intentadas |
 | Tiempo de finalización | Duración simulada de llamada y tiempo real medido, por separado |
 | Memoria máxima | Memoria física del proceso nativo, indicando el alcance de medición |
-| Coste de API | USD por ensayo y por ensayo exitoso; incluir intentos fallidos |
 
 Compare las mismas tareas, semillas, límites, condiciones acústicas y configuración del interlocutor/juez. Mantenga fija la pila de voz al comparar LLM locales. Los agentes de audio nativo y gestionados deben identificar su pila completa. Los tiempos de componentes son distintos del retardo de respuesta de voz de extremo a extremo.
 
 ## Resultados de desarrollo registrados
 
-Un ensayo de desarrollo por fila. Las tareas y los relojes difieren; la clasificación con condiciones equivalentes sigue pendiente. Los costes corresponden a llamadas completadas.
+Un ensayo de desarrollo por fila. Las tareas y los relojes difieren; la clasificación con condiciones equivalentes sigue pendiente.
 
-| Agente | Condición / tarea | Puntuados / previstos | Pass^1 | Errores de herramientas | Tiempo real | Coste API de la llamada |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | v2 · Aerolínea 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
-| Amazon Nova 2.5 Sonic | v6 · Comercio 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
+| Agente | Condición / tarea | Puntuados / previstos | Pass^1 | Errores de herramientas | Tiempo real |
+| --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | v2 · Aerolínea 12 | 1/1 | 0/1 | 1/6 | 554.4 s |
+| Amazon Nova 2.5 Sonic | v6 · Comercio 0 | 1/1 | **1/1** | **0/5** | **296.3 s** |
 
 Tarea de aerolínea 12, un ensayo, semilla 70, v2; máximo de **600 segundos simulados / 1.200 segundos reales**. La llamada terminó normalmente tras **312,9 segundos simulados / 554,4 segundos reales medidos**. Equipo: Apple M5 Pro, 48 GB, estación compartida. Es un ensayo de desarrollo; la clasificación con varios modelos bajo condiciones equivalentes sigue pendiente. [Datos y definiciones de medición](docs/results/gemma4-12b-local-v2-airline.json).
 
 Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
 
-Nova: un ensayo, semilla 70, acústica control, **límite de 420 s en tiempo real**. Se intercambiaron ambos artículos solicitados; coincidieron las **5/5** acciones de referencia y el estado final de la base de datos. La llamada terminó normalmente tras **259,0 s de audio / 296,3 s reales**. La contabilidad de la campaña debe incluir también los intentos interrumpidos. [Registro y límites](docs/results/nova25-v6-retail-development.json).
+Nova: un ensayo, semilla 70, acústica control, **límite de 420 s en tiempo real**. Se intercambiaron ambos artículos solicitados; coincidieron las **5/5** acciones de referencia y el estado final de la base de datos. La llamada terminó normalmente tras **259,0 s de audio / 296,3 s reales**. [Registro y límites](docs/results/nova25-v6-retail-development.json).
 
 ## Ejecución local
 

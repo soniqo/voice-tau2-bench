@@ -31,24 +31,23 @@ The local stack uses [speech-swift](https://github.com/soniqo/speech-swift): ful
 | Tool error rate | Failed or rejected agent calls / attempted calls |
 | Completion time | Simulated call time and measured wall time, separately |
 | Peak memory | Native process physical footprint, with measurement scope |
-| API cost | USD per trial and per successful trial; include failed attempts |
 
 Compare the same tasks, seeds, call limits, acoustics and caller/judge configuration. Keep the speech stack fixed when comparing local LLMs. Audio-native and managed agents must name their complete stack. Component timings are separate from end-to-end voice response delay.
 
 ## Recorded development results
 
-One development trial per row. Tasks and clocks differ; a matched model ranking remains pending. Costs cover the completed calls.
+One development trial per row. Tasks and clocks differ; a matched model ranking remains pending.
 
-| Agent | Condition / task | Scored / planned | Pass^1 | Tool errors | Wall time | API cost of call |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | v2 · Airline 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
-| Amazon Nova 2.5 Sonic | v6 · Retail 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
+| Agent | Condition / task | Scored / planned | Pass^1 | Tool errors | Wall time |
+| --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | v2 · Airline 12 | 1/1 | 0/1 | 1/6 | 554.4 s |
+| Amazon Nova 2.5 Sonic | v6 · Retail 0 | 1/1 | **1/1** | **0/5** | **296.3 s** |
 
 Airline task 12, one trial, seed 70, v2; **600 simulated seconds / 1,200 wall seconds** maximum. The call ended normally after **312.9 simulated seconds / 554.4 measured wall seconds**. Hardware: Apple M5 Pro, 48 GB, shared workstation. This is one development trial; a matched multi-model ranking remains pending. [Data and measurement definitions](docs/results/gemma4-12b-local-v2-airline.json).
 
 Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
 
-Nova: one trial, seed 70, control acoustics, **420 s real-time / wall cap**. Both requested items were exchanged; all **5/5** reference actions and the final database state matched. The call ended normally after **259.0 audio seconds / 296.3 wall seconds**. Campaign accounting must also include interrupted attempts. [Run record and limits](docs/results/nova25-v6-retail-development.json).
+Nova: one trial, seed 70, control acoustics, **420 s real-time / wall cap**. Both requested items were exchanged; all **5/5** reference actions and the final database state matched. The call ended normally after **259.0 audio seconds / 296.3 wall seconds**. [Run record and limits](docs/results/nova25-v6-retail-development.json).
 
 ## Run locally
 
