@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | Perfil local v2 probado |
 | Gemma 4 E4B IT, INT4 | Runtime local compatible; comparación v2 equivalente pendiente |
 | Amazon Nova 2.5 Sonic | Audio nativo validado; Retail pass^1 **1/1** (un ensayo de desarrollo v6, límite de 420 s; [registro](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + un agente backend identificado | Requiere adaptador |
-| OpenAI Realtime | Requiere adaptador |
-| Gemini Live | Requiere adaptador |
-| ElevenLabs Agents | Requiere adaptador |
+| OpenAI GPT-Live + un agente backend identificado | [Adaptador experimental probado sin conexión; validación en vivo pendiente](docs/providers.md) |
+| OpenAI Realtime | [Adaptador experimental probado sin conexión; validación en vivo pendiente](docs/providers.md) |
+| Gemini Live | [Adaptador experimental probado sin conexión; validación en vivo pendiente](docs/providers.md) |
+| ElevenLabs Agents | [Adaptador experimental probado sin conexión; validación en vivo pendiente](docs/providers.md) |
 
 La pila local utiliza [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principales de VoxCPM2 FP16 / AudioVAE FP32, Silero VAD y Gemma E4B como interlocutor, asistente de escucha y juez. Nova 2.5 Sonic dispone de un [ejecutor de audio nativo](docs/nova.md) opcional; el interlocutor y el juez siguen siendo locales.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 Este comando compila el entorno nativo fijado, descarga los modelos, calibra al interlocutor y al evaluador y ejecuta una prueba de voz controlada. No genera una puntuación del benchmark por dominio. Use un directorio de salida nuevo. [Configuración y ejecución de tareas](docs/runtime-setup.md#one-command-local-run).
 
-Limite la ejecución con `--num-tasks`, `--trials`, `--max-seconds` y `--wall-timeout`. La ejecución predeterminada sigue siendo local. Los [ejecutores Nova](docs/nova.md) requieren un perfil AWS explícito y ofrecen contabilidad persistente del presupuesto y un umbral de uso, no un límite monetario impuesto por el proveedor.
+Limite la ejecución con `--num-tasks`, `--trials`, `--max-seconds` y `--wall-timeout`. La ejecución predeterminada sigue siendo local. Ejecutores opcionales: [Nova](docs/nova.md) · [OpenAI, Gemini y ElevenLabs](docs/providers.md).
 
 Comprobaciones: `make test` · `make lint` · `make verify`.
 

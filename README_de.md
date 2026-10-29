@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | Getestetes lokales v2-Profil |
 | Gemma 4 E4B IT, INT4 | Lokale Laufzeit unterstützt; gleichwertiger v2-Vergleich steht aus |
 | Amazon Nova 2.5 Sonic | Native Audioverarbeitung validiert; Retail pass^1 **1/1** (ein v6-Entwicklungslauf, Limit 420 s; [Ergebnis](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + ein benannter Backend-Agent | Adapter erforderlich |
-| OpenAI Realtime | Adapter erforderlich |
-| Gemini Live | Adapter erforderlich |
-| ElevenLabs Agents | Adapter erforderlich |
+| OpenAI GPT-Live + ein benannter Backend-Agent | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
+| OpenAI Realtime | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
+| Gemini Live | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
+| ElevenLabs Agents | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
 
 Die lokale Pipeline nutzt [speech-swift](https://github.com/soniqo/speech-swift): vollständiges Whisper Large-v3 FP16, VoxCPM2-Hauptgewichte FP16 / AudioVAE FP32, Silero VAD und Gemma E4B für Anrufer, Zuhörhilfen und Bewertung. Nova 2.5 Sonic hat einen optionalen [Runner für natives Audio](docs/nova.md); Anrufer und Bewertung bleiben lokal.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 Dieser Befehl baut die festgelegte native Laufzeit, lädt die Modelldateien herunter, kalibriert Anrufer und Bewertung und führt einen kontrollierten Sprachtest aus. Er erzeugt keinen Domänen-Benchmarkwert. Verwenden Sie ein neues Ausgabeverzeichnis. [Einrichtung und Aufgabenläufe](docs/runtime-setup.md#one-command-local-run).
 
-Begrenzen Sie die Ausführung mit `--num-tasks`, `--trials`, `--max-seconds` und `--wall-timeout`. Der Standardlauf bleibt lokal. Optionale [Nova-Läufe](docs/nova.md) benötigen ein explizites AWS-Profil und bieten dauerhafte Budgeterfassung sowie eine Verbrauchsschwelle, keine vom Anbieter garantierte Kostengrenze.
+Begrenzen Sie die Ausführung mit `--num-tasks`, `--trials`, `--max-seconds` und `--wall-timeout`. Der Standardlauf bleibt lokal. Optionale Runner: [Nova](docs/nova.md) · [OpenAI, Gemini und ElevenLabs](docs/providers.md).
 
 Prüfungen: `make test` · `make lint` · `make verify`.
 

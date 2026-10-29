@@ -13,10 +13,10 @@ A [Soniqo](https://github.com/soniqo) mantém este benchmark para medir se agent
 | Gemma 4 12B IT, INT4 | Perfil local v2 testado |
 | Gemma 4 E4B IT, INT4 | Runtime local compatível; comparação v2 em condições equivalentes pendente |
 | Amazon Nova 2.5 Sonic | Áudio nativo validado; Retail pass^1 **1/1** (um teste de desenvolvimento v6, limite de 420 s; [registro](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + um agente backend identificado | Requer adaptador |
-| OpenAI Realtime | Requer adaptador |
-| Gemini Live | Requer adaptador |
-| ElevenLabs Agents | Requer adaptador |
+| OpenAI GPT-Live + um agente backend identificado | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
+| OpenAI Realtime | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
+| Gemini Live | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
+| ElevenLabs Agents | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
 
 A pilha local usa [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principais do VoxCPM2 FP16 / AudioVAE FP32, Silero VAD e Gemma E4B como interlocutor, auxiliares de escuta e avaliador. Nova 2.5 Sonic tem um [executor de áudio nativo](docs/nova.md) opcional; o interlocutor e o avaliador continuam locais.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 Este comando compila o runtime nativo fixado, baixa os modelos, calibra o interlocutor e o avaliador e executa um teste de voz controlado. Ele não produz uma pontuação de benchmark por domínio. Use um novo diretório de saída. [Configuração e execução de tarefas](docs/runtime-setup.md#one-command-local-run).
 
-Limite a execução com `--num-tasks`, `--trials`, `--max-seconds` e `--wall-timeout`. A execução padrão continua local. As [execuções Nova](docs/nova.md) exigem um perfil AWS explícito e oferecem registro persistente do orçamento e um limiar de uso, sem teto monetário imposto pelo provedor.
+Limite a execução com `--num-tasks`, `--trials`, `--max-seconds` e `--wall-timeout`. A execução padrão continua local. Executores opcionais: [Nova](docs/nova.md) · [OpenAI, Gemini e ElevenLabs](docs/providers.md).
 
 Verificações: `make test` · `make lint` · `make verify`.
 

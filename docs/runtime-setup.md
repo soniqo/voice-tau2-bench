@@ -61,6 +61,9 @@ the pinned managed source. The manual commands below remain available.
 For the optional native-audio cloud agent, see [Nova setup and task runs](nova.md).
 It uses the local runtime for caller speech and evaluation while Nova handles
 the agent conversation.
+Experimental [OpenAI, Gemini and ElevenLabs adapters](providers.md) use the
+same local caller/evaluator and require explicit cloud opt-in. Their current
+validation uses offline wire fixtures; real-provider scores are pending.
 
 The local v4 development pilot and versioned v5 caller candidate are documented
 in the [failure audit](validation/local-v4-failure-audit.md). An explicitly

@@ -1253,6 +1253,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+cloud-voice = [
+    { name = "aiohttp" },
+]
 dev = [
     { name = "pre-commit" },
     { name = "pytest" },
@@ -1266,6 +1269,7 @@ nova = [
 [package.metadata]
 requires-dist = [
     { name = "addict", specifier = ">=2.4" },
+    { name = "aiohttp", marker = "extra == 'cloud-voice'", specifier = "==3.14.5" },
     { name = "audioop-lts", marker = "python_full_version >= '3.13'", specifier = ">=0.2.1" },
     { name = "aws-sdk-bedrock-runtime", extras = ["awscrt"], marker = "extra == 'nova'", specifier = "==0.12.0" },
     { name = "boto3", marker = "extra == 'nova'", specifier = "==1.43.121" },
@@ -1289,7 +1293,7 @@ requires-dist = [
     { name = "toml", specifier = ">=0.10.2" },
     { name = "typing-extensions", specifier = ">=4.12" },
 ]
-provides-extras = ["voice-local", "nova", "dev"]
+provides-extras = ["voice-local", "nova", "cloud-voice", "dev"]
 
 [[package]]
 name = "win32-setctime"

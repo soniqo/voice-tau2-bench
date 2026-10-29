@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | Test edilmiş yerel v2 profili |
 | Gemma 4 E4B IT, INT4 | Yerel çalışma zamanı destekliyor; eş koşullu v2 karşılaştırması bekliyor |
 | Amazon Nova 2.5 Sonic | Doğrudan ses işleme doğrulandı; Retail pass^1 **1/1** (bir v6 geliştirme denemesi, 420 sn sınırı; [kayıt](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + adı belirtilmiş bir arka uç ajanı | Adaptör gerekiyor |
-| OpenAI Realtime | Adaptör gerekiyor |
-| Gemini Live | Adaptör gerekiyor |
-| ElevenLabs Agents | Adaptör gerekiyor |
+| OpenAI GPT-Live + adı belirtilmiş bir arka uç ajanı | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
+| OpenAI Realtime | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
+| Gemini Live | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
+| ElevenLabs Agents | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
 
 Yerel yapı [speech-swift](https://github.com/soniqo/speech-swift) kullanır: tam Whisper Large-v3 FP16, VoxCPM2 ana ağırlıkları FP16 / AudioVAE FP32, Silero VAD ve arayan/dinleme yardımcıları/değerlendirici için Gemma E4B. Nova 2.5 Sonic için isteğe bağlı bir [doğal ses çalıştırıcısı](docs/nova.md) vardır; arayan ve değerlendirici yerel kalır.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 Bu komut sabitlenmiş yerel çalışma zamanını derler, modelleri indirir, arayanı ve değerlendiriciyi kalibre eder ve kontrollü bir ses testi çalıştırır. Alan karşılaştırması puanı üretmez. Yeni bir çıktı dizini kullanın. [Kurulum ve görev çalıştırma](docs/runtime-setup.md#one-command-local-run).
 
-Çalıştırmayı `--num-tasks`, `--trials`, `--max-seconds` ve `--wall-timeout` ile sınırlayın. Varsayılan çalışma yereldir. İsteğe bağlı [Nova çalışmaları](docs/nova.md) açık bir AWS profili gerektirir; kalıcı bütçe kaydı ve kullanım eşiği sunar, sağlayıcının uyguladığı kesin bir parasal tavan değildir.
+Yürütmeyi `--num-tasks`, `--trials`, `--max-seconds` ve `--wall-timeout` ile sınırlayın. Varsayılan çalışma yereldir. İsteğe bağlı çalıştırıcılar: [Nova](docs/nova.md) · [OpenAI, Gemini ve ElevenLabs](docs/providers.md).
 
 Kontroller: `make test` · `make lint` · `make verify`.
 

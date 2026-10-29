@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | 검증된 로컬 v2 프로필 |
 | Gemma 4 E4B IT, INT4 | 로컬 런타임 지원; 동일 조건의 v2 비교는 대기 중 |
 | Amazon Nova 2.5 Sonic | 네이티브 오디오 검증 완료; Retail pass^1 **1/1** (v6 개발 시험 1회, 제한 420초; [기록](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + 명시한 백엔드 에이전트 | 어댑터 필요 |
-| OpenAI Realtime | 어댑터 필요 |
-| Gemini Live | 어댑터 필요 |
-| ElevenLabs Agents | 어댑터 필요 |
+| OpenAI GPT-Live + 명시한 백엔드 에이전트 | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
+| OpenAI Realtime | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
+| Gemini Live | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
+| ElevenLabs Agents | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
 
 로컬 구성은 [speech-swift](https://github.com/soniqo/speech-swift)를 사용합니다: 전체 Whisper Large-v3 FP16, VoxCPM2 주 가중치 FP16 / AudioVAE FP32, Silero VAD 및 발신자·청취 보조·평가자용 Gemma E4B. Nova 2.5 Sonic은 선택적 [네이티브 오디오 실행기](docs/nova.md)를 지원하며 발신자와 평가자는 로컬에서 실행됩니다.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 이 명령은 고정된 네이티브 런타임을 빌드하고 모델을 다운로드하며 발신자와 평가기를 보정한 뒤 제어된 음성 스모크 테스트를 실행합니다. 도메인 벤치마크 점수는 생성하지 않습니다. 새로운 출력 디렉터리를 사용하세요. [설정 및 작업 실행](docs/runtime-setup.md#one-command-local-run).
 
-`--num-tasks`, `--trials`, `--max-seconds`, `--wall-timeout`으로 실행을 제한합니다. 기본 실행은 로컬입니다. 선택적 [Nova 실행](docs/nova.md)은 명시적 AWS 프로필이 필요하며 영구 예산 기록과 사용량 임계값을 제공합니다. 공급자가 강제하는 비용 상한은 아닙니다.
+`--num-tasks`, `--trials`, `--max-seconds`, `--wall-timeout`으로 실행을 제한합니다. 기본 실행은 로컬입니다. 선택적 실행기: [Nova](docs/nova.md) · [OpenAI, Gemini, ElevenLabs](docs/providers.md).
 
 검사: `make test` · `make lint` · `make verify`.
 

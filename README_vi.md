@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | Hồ sơ v2 cục bộ đã kiểm thử |
 | Gemma 4 E4B IT, INT4 | Runtime cục bộ hỗ trợ; chưa so sánh v2 trong điều kiện tương đương |
 | Amazon Nova 2.5 Sonic | Đã xác thực xử lý âm thanh trực tiếp; Retail pass^1 **1/1** (một lượt thử phát triển v6, giới hạn 420 giây; [kết quả](docs/results/nova25-v6-retail-development.json)) |
-| OpenAI GPT-Live + tác nhân backend được chỉ định | Cần bộ điều hợp |
-| OpenAI Realtime | Cần bộ điều hợp |
-| Gemini Live | Cần bộ điều hợp |
-| ElevenLabs Agents | Cần bộ điều hợp |
+| OpenAI GPT-Live + tác nhân backend được chỉ định | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
+| OpenAI Realtime | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
+| Gemini Live | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
+| ElevenLabs Agents | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
 
 Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 đầy đủ FP16, trọng số chính VoxCPM2 FP16 / AudioVAE FP32, Silero VAD và Gemma E4B cho người gọi, trợ lý nghe và bộ chấm. Nova 2.5 Sonic có [trình chạy âm thanh gốc](docs/nova.md) tùy chọn; người gọi và bộ chấm vẫn chạy cục bộ.
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 Lệnh này biên dịch runtime gốc đã ghim, tải mô hình, hiệu chuẩn người gọi và bộ đánh giá, rồi chạy kiểm tra giọng nói có kiểm soát. Lệnh không tạo điểm benchmark theo miền. Hãy dùng thư mục đầu ra mới. [Thiết lập và chạy tác vụ](docs/runtime-setup.md#one-command-local-run).
 
-Giới hạn thực thi bằng `--num-tasks`, `--trials`, `--max-seconds` và `--wall-timeout`. Mặc định vẫn chạy cục bộ. [Lượt chạy Nova](docs/nova.md) tùy chọn cần hồ sơ AWS rõ ràng, có sổ ngân sách bền vững và ngưỡng sử dụng, không phải trần tiền do nhà cung cấp cưỡng chế.
+Giới hạn thực thi bằng `--num-tasks`, `--trials`, `--max-seconds` và `--wall-timeout`. Mặc định vẫn chạy cục bộ. Trình chạy tùy chọn: [Nova](docs/nova.md) · [OpenAI, Gemini và ElevenLabs](docs/providers.md).
 
 Kiểm tra: `make test` · `make lint` · `make verify`.
 

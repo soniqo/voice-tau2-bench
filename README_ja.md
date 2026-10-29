@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | 検証済みのローカル v2 プロファイル |
 | Gemma 4 E4B IT, INT4 | ローカルランタイムで対応。同条件の v2 比較は未実施 |
 | Amazon Nova 2.5 Sonic | ネイティブ音声を検証済み。Retail pass^1 **1/1**（v6 の開発試行 1 件、上限 420 秒。[記録](docs/results/nova25-v6-retail-development.json)） |
-| OpenAI GPT-Live + 明示したバックエンドエージェント | アダプターが必要 |
-| OpenAI Realtime | アダプターが必要 |
-| Gemini Live | アダプターが必要 |
-| ElevenLabs Agents | アダプターが必要 |
+| OpenAI GPT-Live + 明示したバックエンドエージェント | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
+| OpenAI Realtime | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
+| Gemini Live | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
+| ElevenLabs Agents | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
 
 ローカル構成は [speech-swift](https://github.com/soniqo/speech-swift) を使用します：完全版 Whisper Large-v3 FP16、VoxCPM2 主重み FP16 / AudioVAE FP32、Silero VAD、呼び出し側・聞き取り補助・判定役の Gemma E4B。Nova 2.5 Sonic は任意の[ネイティブ音声ランナー](docs/nova.md)で利用でき、呼び出し側と判定役はローカルで動作します。
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 このコマンドは固定されたネイティブランタイムをビルドし、モデルをダウンロードし、発信者と評価器を校正して、制御された音声スモークテストを実行します。ドメインベンチマークのスコアは生成しません。新しい出力ディレクトリを使用してください。[セットアップとタスク実行](docs/runtime-setup.md#one-command-local-run)。
 
-`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout`. 既定の実行はローカルです。任意の [Nova 実行](docs/nova.md)には明示的な AWS プロファイルが必要です。永続的な予算記録と使用量のしきい値を提供しますが、プロバイダーが強制する料金上限ではありません。
+`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout` で実行を制限します。既定の実行はローカルです。任意のランナー：[Nova](docs/nova.md) · [OpenAI、Gemini、ElevenLabs](docs/providers.md)。
 
 確認: `make test` · `make lint` · `make verify`.
 

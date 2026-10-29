@@ -13,10 +13,10 @@
 | Gemma 4 12B IT, INT4 | 已验证的本地 v2 配置 |
 | Gemma 4 E4B IT, INT4 | 本地运行时支持；同条件 v2 比较尚待完成 |
 | Amazon Nova 2.5 Sonic | 原生音频已验证；Retail pass^1 **1/1**（v6 开发试验 1 次，上限 420 秒；[记录](docs/results/nova25-v6-retail-development.json)） |
-| OpenAI GPT-Live + 明确指定的后端智能体 | 需要适配器 |
-| OpenAI Realtime | 需要适配器 |
-| Gemini Live | 需要适配器 |
-| ElevenLabs Agents | 需要适配器 |
+| OpenAI GPT-Live + 明确指定的后端智能体 | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
+| OpenAI Realtime | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
+| Gemini Live | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
+| ElevenLabs Agents | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
 
 本地技术栈使用 [speech-swift](https://github.com/soniqo/speech-swift)：完整版 Whisper Large-v3 FP16、VoxCPM2 主权重 FP16 / AudioVAE FP32、Silero VAD，以及作为调用者、听取辅助和评判的 Gemma E4B。Nova 2.5 Sonic 提供可选的[原生音频运行器](docs/nova.md)；调用者和评判仍在本地运行。
 
@@ -60,7 +60,7 @@ uv run --frozen --extra dev python scripts/run_local_voice.py \
 
 此命令构建固定版本的原生运行时、下载模型、校准来电者和评估器，并运行受控语音冒烟测试。它不生成领域基准分数。请使用新的输出目录。[设置与任务运行](docs/runtime-setup.md#one-command-local-run)。
 
-`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout`. 默认运行保持本地。可选的 [Nova 运行](docs/nova.md)需要显式 AWS 配置，支持持久预算记账和用量阈值，但不是云服务强制执行的美元上限。
+`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout` 可限制执行。默认运行保持本地。可选运行器：[Nova](docs/nova.md) · [OpenAI、Gemini 和 ElevenLabs](docs/providers.md)。
 
 检查: `make test` · `make lint` · `make verify`.
 
