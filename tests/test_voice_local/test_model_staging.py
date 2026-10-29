@@ -146,6 +146,7 @@ def test_guard_propagates_native_startup_and_resource_failures(
     )
     guard = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(guard)
+    monkeypatch.setattr(guard, "validate_assets", lambda _: None)
 
     def rusage(*_):
         return 0
@@ -174,3 +175,96 @@ def test_guard_propagates_native_startup_and_resource_failures(
         assert error.value.code == expected
     else:
         guard.main()
+
+
+def guard_with_assets(tmp_path):
+    spec = importlib.util.spec_from_file_location(
+        "runtime_guard_assets",
+        repository_root() / "scripts/run_speech_swift_guarded.py",
+    )
+    guard = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guard)
+    data = b"pinned"
+    manifest = {"assets": {}}
+    for role in ("gemma", "vox", "whisper", "vad", "tokenizer", "agent"):
+        directory = tmp_path / role
+        directory.mkdir()
+        (directory / "config.json").write_bytes(data)
+        manifest[f"{role}Directory"] = str(directory)
+        manifest["assets"][role] = {
+            "files": [
+                {
+                    "path": "config.json",
+                    "size": len(data),
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                }
+            ]
+        }
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(manifest))
+    return guard, path
+
+
+def test_guard_accepts_all_pinned_local_files(tmp_path):
+    guard, path = guard_with_assets(tmp_path)
+    guard.validate_assets(path)
+
+
+def test_missing_caller_and_vad_are_reported_before_loading_native_code(
+    monkeypatch, tmp_path, capsys
+):
+    guard, path = guard_with_assets(tmp_path)
+    (tmp_path / "gemma/config.json").unlink()
+    (tmp_path / "vad/config.json").unlink()
+    monkeypatch.setattr(
+        guard.ctypes,
+        "CDLL",
+        lambda *a, **k: pytest.fail("Native code must not load before asset checks"),
+    )
+    monkeypatch.setattr(
+        guard.subprocess,
+        "Popen",
+        lambda *a, **k: pytest.fail("Model process must not start"),
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "guard",
+            "--server",
+            "unused",
+            "--manifest",
+            str(path),
+            "--metrics",
+            str(tmp_path / "memory.jsonl"),
+        ],
+    )
+    with pytest.raises(SystemExit) as error:
+        guard.main()
+    assert error.value.code == 2
+    output = capsys.readouterr().err
+    assert "gemma/config.json: missing" in output
+    assert "vad/config.json: missing" in output
+    assert "prepare_speech_swift_models.py" in output
+
+
+def test_guard_rejects_same_size_corruption_and_unpinned_agent(tmp_path):
+    guard, path = guard_with_assets(tmp_path)
+    (tmp_path / "agent/config.json").write_bytes(b"wrong!")
+    with pytest.raises(ValueError, match="agent/config.json: checksum mismatch"):
+        guard.validate_assets(path)
+    manifest = json.loads(path.read_text())
+    del manifest["assets"]["agent"]
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="agent: missing asset pins"):
+        guard.validate_assets(path)
+
+
+@pytest.mark.parametrize("relative", ["../private.json", "/private.json", 42])
+def test_guard_rejects_invalid_pin_paths_without_opening_them(tmp_path, relative):
+    guard, path = guard_with_assets(tmp_path)
+    manifest = json.loads(path.read_text())
+    manifest["assets"]["agent"]["files"][0]["path"] = relative
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="agent: invalid file pin"):
+        guard.validate_assets(path)

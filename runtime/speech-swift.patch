@@ -1,0 +1,613 @@
+diff --git a/Package.swift b/Package.swift
+index 05b2663871812c40c29b163720b6138d8cd49894..0294947869ac41a8443a70ff5fb509e8c1b6e582 100644
+--- a/Package.swift
++++ b/Package.swift
+@@ -1337,7 +1337,8 @@ let package = Package(
+                 // Gemma4AttentionBlockTests imports MLXRandom; without it the
+                 // whole test bundle fails to build.
+                 .product(name: "MLXRandom", package: "mlx-swift"),
+-            ]
++            ],
++            resources: [.copy("Fixtures")]
+         ),
+         .testTarget(
+             name: "FunctionGemmaTests",
+diff --git a/Sources/AudioServer/NativeInference.swift b/Sources/AudioServer/NativeInference.swift
+index b8db7ce4fd50d417cb78ae55c293f7a8b7e93ee6..0de08d9fbf13ea54dbb0c545d0b412c496d9a561 100644
+--- a/Sources/AudioServer/NativeInference.swift
++++ b/Sources/AudioServer/NativeInference.swift
+@@ -204,7 +204,7 @@ public final class NativeInferenceService: @unchecked Sendable {
+             "silero-vad": model("silero-vad", "silero", nil, ["streaming"]),
+         ]
+         if let agent {
+-            var features = ["tool_calls", "tool_history", "cancel"]
++            var features = ["tool_calls", "tool_history", "reasoning_history", "non_thinking_tool_continuation", "cancel"]
+             if agent.prefixCacheBudgetBytes > 0 { features.append("system_prefix_cache") }
+             models["gemma4-12b-it"] = model("gemma4-12b-it", "gemma4-unified", "int4", features)
+         }
+diff --git a/Sources/Qwen3Chat/Gemma4Tools.swift b/Sources/Qwen3Chat/Gemma4Tools.swift
+index 2963a33c650f7cffc6b162fb27aae3b6811da65e..d1d40d9cb890b5559da72ff731dfb71b6f810f22 100644
+--- a/Sources/Qwen3Chat/Gemma4Tools.swift
++++ b/Sources/Qwen3Chat/Gemma4Tools.swift
+@@ -55,11 +55,14 @@ public struct Gemma4ConversationMessage: Codable, Sendable, Equatable {
+     public let content: String?
+     public let toolCalls: [Gemma4ToolCall]?
+     public let toolCallID: String?
++    public let reasoningContent: String?
+ 
+     public init(role: Role, content: String? = nil,
+-                toolCalls: [Gemma4ToolCall]? = nil, toolCallID: String? = nil) {
++                toolCalls: [Gemma4ToolCall]? = nil, toolCallID: String? = nil,
++                reasoningContent: String? = nil) {
+         self.role = role; self.content = content
+         self.toolCalls = toolCalls; self.toolCallID = toolCallID
++        self.reasoningContent = reasoningContent
+     }
+ }
+ 
+@@ -67,9 +70,12 @@ public struct Gemma4Response: Codable, Sendable, Equatable {
+     public let content: String
+     public let toolCalls: [Gemma4ToolCall]
+     public let generatedTokens: Int
++    public let reasoningContent: String?
+ 
+-    public init(content: String, toolCalls: [Gemma4ToolCall], generatedTokens: Int) {
++    public init(content: String, toolCalls: [Gemma4ToolCall], generatedTokens: Int,
++                reasoningContent: String? = nil) {
+         self.content = content; self.toolCalls = toolCalls; self.generatedTokens = generatedTokens
++        self.reasoningContent = reasoningContent
+     }
+ }
+ 
+@@ -84,7 +90,7 @@ public enum Gemma4ToolError: Error, LocalizedError {
+ public enum Gemma4ToolCodec {
+     private static let quote = "<|\"|>"
+ 
+-    static func value(_ value: ChatJSONValue) -> String {
++    static func value(_ value: ChatJSONValue, escapeKeys: Bool = false) -> String {
+         switch value {
+         case .string(let s): return quote + s + quote
+         case .number(let n):
+@@ -92,9 +98,11 @@ public enum Gemma4ToolCodec {
+                 ? String(Int64(n)) : String(n)
+         case .bool(let b): return b ? "true" : "false"
+         case .null: return "null"
+-        case .array(let a): return "[" + a.map(Self.value).joined(separator: ",") + "]"
++        case .array(let a): return "[" + a.map { Self.value($0, escapeKeys: escapeKeys) }.joined(separator: ",") + "]"
+         case .object(let o):
+-            return "{" + o.keys.sorted().map { $0 + ":" + Self.value(o[$0]!) }.joined(separator: ",") + "}"
++            return "{" + o.keys.sorted().map {
++                (escapeKeys ? quote + $0 + quote : $0) + ":" + Self.value(o[$0]!, escapeKeys: escapeKeys)
++            }.joined(separator: ",") + "}"
+         }
+     }
+ 
+@@ -144,14 +152,73 @@ public enum Gemma4ToolCodec {
+         return value
+     }
+ 
++    // The canonical Gemma template selects declaration fields instead of
++    // serializing the entire JSON schema, including presentation-only titles.
++    private static func declaration(_ tool: Gemma4Tool, canonical: Bool) -> String {
++        let parameters = schema(tool.parameters)
++        let opening = "declaration:" + tool.name + "{description:" + value(.string(tool.description))
++        guard canonical, case .object(let fields) = parameters else {
++            return opening + ",parameters:" + value(parameters) + "}"
++        }
++        guard !fields.isEmpty else { return opening + "}" }
++        var parts: [String] = []
++        if case .object(let properties) = fields["properties"], !properties.isEmpty {
++            parts.append("properties:{" + declarationProperties(properties) + "}")
++        }
++        if case .array(let required) = fields["required"], !required.isEmpty {
++            parts.append("required:" + value(.array(required)))
++        }
++        if let type = fields["type"] { parts.append("type:" + value(type)) }
++        return opening + ",parameters:{" + parts.joined(separator: ",") + "}}"
++    }
++
++    private static func declarationProperties(_ properties: [String: ChatJSONValue]) -> String {
++        properties.keys.sorted().map { key in
++            guard case .object(let field) = properties[key] else { return key + ":{type:" + value(.string("")) + "}" }
++            var parts: [String] = []
++            if case .string(let description) = field["description"], !description.isEmpty {
++                parts.append("description:" + value(.string(description)))
++            }
++            if field["type"] == .string("STRING"), case .array(let choices) = field["enum"], !choices.isEmpty {
++                parts.append("enum:" + value(.array(choices)))
++            } else if field["type"] == .string("ARRAY"), case .object(let items) = field["items"], !items.isEmpty {
++                let rendered = items.keys.sorted().compactMap { itemKey -> String? in
++                    guard let item = items[itemKey], item != .null else { return nil }
++                    if itemKey == "properties", case .object(let nested) = item {
++                        return "properties:{" + declarationProperties(nested) + "}"
++                    }
++                    return itemKey + ":" + value(item, escapeKeys: itemKey != "required" && itemKey != "type")
++                }
++                parts.append("items:{" + rendered.joined(separator: ",") + "}")
++            }
++            if field["nullable"] == .bool(true) { parts.append("nullable:true") }
++            if field["type"] == .string("OBJECT") {
++                if case .object(let nested) = field["properties"] {
++                    parts.append("properties:{" + declarationProperties(nested) + "}")
++                }
++                if case .array(let required) = field["required"], !required.isEmpty {
++                    parts.append("required:" + value(.array(required)))
++                }
++            }
++            parts.append("type:" + value(field["type"] ?? .string("")))
++            return key + ":{" + parts.joined(separator: ",") + "}"
++        }.joined(separator: ",")
++    }
++
+     /// Render a complete conversation, keeping tool responses inside the model turn.
+     public static func prompt(messages: [Gemma4ConversationMessage], tools: [Gemma4Tool] = []) throws -> String {
+         try prompt(messages: messages, tools: tools, preserveToolResponseText: false)
+     }
+ 
++    /// Keep non-thinking generation explicit when resuming an open tool turn.
++    static func nonThinkingGenerationPrompt(_ prompt: String) -> String {
++        guard prompt.hasSuffix("<|turn>model\n") || prompt.hasSuffix("<tool_response|>") else { return prompt }
++        return prompt + "<|channel>thought\n<channel|>"
++    }
++
+     /// Select text tool responses for checkpoints whose chat template wraps role:tool content verbatim.
+     static func prompt(messages: [Gemma4ConversationMessage], tools: [Gemma4Tool],
+-                       preserveToolResponseText: Bool) throws -> String {
++                       preserveToolResponseText: Bool, canonicalDeclarations: Bool = false) throws -> String {
+         var text = "<bos>"
+         var start = 0
+         let system = messages.first?.role == .system ? messages.first?.content ?? "" : ""
+@@ -159,13 +226,13 @@ public enum Gemma4ToolCodec {
+         if !system.isEmpty || !tools.isEmpty {
+             text += "<|turn>system\n" + system
+             for tool in tools {
+-                text += "<|tool>declaration:" + tool.name + "{description:" + value(.string(tool.description))
+-                text += ",parameters:" + value(schema(tool.parameters)) + "}<tool|>"
++                text += "<|tool>" + declaration(tool, canonical: canonicalDeclarations) + "<tool|>"
+             }
+             text += "<turn|>\n"
+         }
+         var index = start
+         var modelTurnOpen = false
++        let lastUserIndex = messages.lastIndex { $0.role == .user } ?? -1
+         while index < messages.count {
+             let message = messages[index]
+             guard message.role != .tool else { throw Gemma4ToolError.malformed("orphan tool response") }
+@@ -175,6 +242,10 @@ public enum Gemma4ToolCodec {
+             }
+             if !(message.role == .assistant && modelTurnOpen) { text += "<|turn>" + role + "\n" }
+             modelTurnOpen = false
++            if message.role == .assistant, index > lastUserIndex,
++               let reasoning = message.reasoningContent, !reasoning.isEmpty {
++                text += "<|channel>thought\n" + reasoning + "\n<channel|>"
++            }
+             let calls = message.toolCalls ?? []
+             if !calls.isEmpty {
+                 guard message.role == .assistant else { throw Gemma4ToolError.malformed("tool calls require assistant role") }
+@@ -220,18 +291,30 @@ public enum Gemma4ToolCodec {
+     static func response(_ raw: String, generatedTokens: Int,
+                          allowRepeatedToolTerminators: Bool) throws -> Gemma4Response {
+         var text = raw
+-        while let open = text.range(of: "<|channel>") {
+-            guard let close = text.range(of: "<channel|>", range: open.upperBound..<text.endIndex) else {
+-                throw Gemma4ToolError.malformed("unfinished reasoning channel")
+-            }
+-            text.removeSubrange(open.lowerBound..<close.upperBound)
+-        }
++        var reasoning: [String] = []
+         var calls: [Gemma4ToolCall] = []
+-        while let start = text.range(of: "<|tool_call>") {
+-            guard let end = text.range(of: "<tool_call|>", range: start.upperBound..<text.endIndex) else {
+-                throw Gemma4ToolError.malformed("unfinished tool call")
++        while true {
++            let channel = text.range(of: "<|channel>")
++            let call = text.range(of: "<|tool_call>")
++            // Consume the first complete block. Markers quoted inside a call
++            // belong to its arguments; calls inside reasoning are never run.
++            if let open = channel, open.lowerBound < (call?.lowerBound ?? text.endIndex) {
++                guard let close = text.range(of: "<channel|>", range: open.upperBound..<text.endIndex) else {
++                    throw Gemma4ToolError.malformed("unfinished reasoning channel")
++                }
++                let body = String(text[open.upperBound..<close.lowerBound])
++                guard !body.contains("<|channel>") else {
++                    throw Gemma4ToolError.malformed("nested reasoning channel")
++                }
++                guard body.hasPrefix("thought\n") else {
++                    throw Gemma4ToolError.malformed("unsupported reasoning channel")
++                }
++                reasoning.append(String(body.dropFirst("thought\n".count)).trimmingCharacters(in: .whitespacesAndNewlines))
++                text.removeSubrange(open.lowerBound..<close.upperBound)
++                continue
+             }
+-            let body = String(text[start.upperBound..<end.lowerBound])
++            guard let start = call else { break }
++            let body = text[start.upperBound...]
+             guard body.hasPrefix("call:"), let brace = body.firstIndex(of: "{") else {
+                 throw Gemma4ToolError.malformed("missing call name or arguments")
+             }
+@@ -243,13 +326,22 @@ public enum Gemma4ToolCodec {
+                     throw Gemma4ToolError.malformed("call name must be a string")
+                 }
+                 name = parsed
+-            } else { name = renderedName }
++            } else {
++                guard !renderedName.contains("<"), !renderedName.contains(">"),
++                      !renderedName.contains(where: \.isWhitespace) else {
++                    throw Gemma4ToolError.malformed("invalid unquoted call name")
++                }
++                name = renderedName
++            }
+             guard !name.isEmpty else { throw Gemma4ToolError.malformed("empty call name") }
+-            var parser = Parser(String(body[brace...]))
+-            let arguments = try parser.parse()
++            var parser = Parser(String(text[brace...]))
++            let arguments = try parser.parseValue(depth: 0)
+             guard case .object = arguments else { throw Gemma4ToolError.malformed("arguments must be an object") }
++            guard parser.consume("<tool_call|>") else {
++                throw Gemma4ToolError.malformed("missing tool call terminator")
++            }
+             calls.append(.init(name: name, arguments: arguments))
+-            var consumedEnd = end.upperBound
++            var consumedEnd = text.index(brace, offsetBy: parser.text.distance(from: parser.text.startIndex, to: parser.index))
+             if allowRepeatedToolTerminators {
+                 while text[consumedEnd...].hasPrefix("<tool_call|>") {
+                     consumedEnd = text.index(consumedEnd, offsetBy: "<tool_call|>".count)
+@@ -263,7 +355,9 @@ public enum Gemma4ToolCodec {
+         for marker in ["<eos>", "<turn|>", "<channel|>", "<|tool_response>", "<|think|>"] {
+             text = text.replacingOccurrences(of: marker, with: "")
+         }
+-        return .init(content: text.trimmingCharacters(in: .whitespacesAndNewlines), toolCalls: calls, generatedTokens: generatedTokens)
++        return .init(content: text.trimmingCharacters(in: .whitespacesAndNewlines), toolCalls: calls,
++                     generatedTokens: generatedTokens,
++                     reasoningContent: reasoning.isEmpty ? nil : reasoning.joined(separator: "\n"))
+     }
+ 
+     private struct Parser {
+diff --git a/Sources/Qwen3Chat/Gemma4UnifiedChat.swift b/Sources/Qwen3Chat/Gemma4UnifiedChat.swift
+index c508debc28daf2d21c4f11ea2062f307b7bb7b89..1dc116866877c166173a99cf94d698dcb4dfbead 100644
+--- a/Sources/Qwen3Chat/Gemma4UnifiedChat.swift
++++ b/Sources/Qwen3Chat/Gemma4UnifiedChat.swift
+@@ -100,15 +100,17 @@ public final class Gemma4UnifiedChat: @unchecked Sendable {
+     }
+ 
+     static func prompt(messages: [Gemma4ConversationMessage], tools: [Gemma4Tool]) throws -> String {
+-        var prompt = try Gemma4ToolCodec.prompt(messages: messages, tools: tools, preserveToolResponseText: true)
+-        // Match the checkpoint's enable_thinking=false generation prefix.
+-        if prompt.hasSuffix("<|turn>model\n") { prompt += "<|channel>thought\n<channel|>" }
+-        return prompt
++        let prompt = try Gemma4ToolCodec.prompt(messages: messages, tools: tools,
++                                              preserveToolResponseText: true, canonicalDeclarations: true)
++        // Stabilize non-thinking output after both user turns and tool results,
++        // while retaining the current model turn and its reasoning history.
++        return Gemma4ToolCodec.nonThinkingGenerationPrompt(prompt)
+     }
+ 
+     static func systemPrefixPrompt(messages: [Gemma4ConversationMessage], tools: [Gemma4Tool]) throws -> String {
+         let system = messages.first?.role == .system ? Array(messages.prefix(1)) : []
+-        let rendered = try Gemma4ToolCodec.prompt(messages: system, tools: tools, preserveToolResponseText: true)
++        let rendered = try Gemma4ToolCodec.prompt(messages: system, tools: tools,
++                                                 preserveToolResponseText: true, canonicalDeclarations: true)
+         let generationPrefix = "<|turn>model\n"
+         guard rendered.hasSuffix(generationPrefix) else {
+             throw Gemma4ToolError.malformed("invalid system prefix template")
+diff --git a/Tests/Qwen3ChatTests/E2EGemma4UnifiedTests.swift b/Tests/Qwen3ChatTests/E2EGemma4UnifiedTests.swift
+index 657c19a6488c9952f5721bc5caee29097d6949d7..8c7f5b2444e175762648473952c53a89bad27a8c 100644
+--- a/Tests/Qwen3ChatTests/E2EGemma4UnifiedTests.swift
++++ b/Tests/Qwen3ChatTests/E2EGemma4UnifiedTests.swift
+@@ -5,6 +5,30 @@ import XCTest
+ @testable import Qwen3Chat
+ 
+ final class E2EGemma4UnifiedTests: XCTestCase {
++    func testReasoningContinuesThroughToolResultWithoutBeingSpoken() throws {
++        guard let folder = ProcessInfo.processInfo.environment["GEMMA4_12B_MODEL_DIR"] else {
++            throw XCTSkip("Set GEMMA4_12B_MODEL_DIR to the staged Gemma 4 12B INT4 checkpoint")
++        }
++        let chat = try Gemma4UnifiedChat.fromDirectory(URL(fileURLWithPath: folder))
++        let tool = Gemma4Tool(name: "read_record", description: "Read the record's marker.",
++                             parameters: .object(["type": .string("object"),
++                                                  "properties": .object(["id": .object(["type": .string("string")])]),
++                                                  "required": .array([.string("id")])]))
++        for marker in ["indigo_field_827", "amber_river_416"] {
++            let call = Gemma4ToolCall(id: "read-1", name: tool.name, arguments: .object(["id": .string("record_7")]))
++            let reply = try chat.generateResponse(messages: [
++                .init(role: .system, content: "Answer with only the exact marker from the successful tool result. Do not repeat a lookup."),
++                .init(role: .user, content: "Read record_7."),
++                .init(role: .assistant, toolCalls: [call], reasoningContent: "Use the returned marker, then finish."),
++                .init(role: .tool, content: "{\"marker\":\"\(marker)\"}", toolCallID: call.id)
++            ], tools: [tool], sampling: .init(temperature: 0, maxTokens: 128, repetitionPenalty: 1))
++            XCTAssertTrue(reply.toolCalls.isEmpty)
++            XCTAssertTrue(reply.content.contains(marker), reply.content)
++            XCTAssertFalse(reply.content.hasPrefix("thought\n"), reply.content)
++            XCTAssertFalse(reply.content.contains("Use the returned marker"), reply.content)
++        }
++    }
++
+     func testToolResultSurvivesFollowingUserTurn() throws {
+         guard let folder = ProcessInfo.processInfo.environment["GEMMA4_12B_MODEL_DIR"] else {
+             throw XCTSkip("Set GEMMA4_12B_MODEL_DIR to the staged Gemma 4 12B INT4 checkpoint")
+@@ -165,7 +189,7 @@ final class E2EGemma4UnifiedTests: XCTestCase {
+         XCTAssertEqual(call.name, "record_note")
+         XCTAssertEqual(call.arguments, .object(["text": .string("launch review")]))
+         let result = try chat.generateResponse(messages: messages + [
+-            .init(role: .assistant, toolCalls: reply.toolCalls),
++            .init(role: .assistant, toolCalls: reply.toolCalls, reasoningContent: reply.reasoningContent),
+             .init(role: .tool, content: "{\"status\":\"recorded\"}", toolCallID: call.id)],
+             tools: tools, sampling: sampling)
+         XCTAssertTrue(result.toolCalls.isEmpty)
+diff --git a/docs/inference/native-inference-server.md b/docs/inference/native-inference-server.md
+index aba0f26788dfa2c6c0a081713b7d83a36415bc9a..8cfc1e80cc4de70ca4a58379fad3a04a3f317efa 100644
+--- a/docs/inference/native-inference-server.md
++++ b/docs/inference/native-inference-server.md
+@@ -92,6 +92,16 @@ JSON schema. The runtime uses Gemma's native declaration/call/result tokens,
+ expands local schema references, and validates generated argument syntax.
+ Clients own validation of application-specific JSON replies.
+ 
++The 12B model advertises `reasoning_history`. Its optional `reasoningContent`
++response field is separate from spoken `content`; copy it onto the assistant
++tool-call message for subsequent calls in the same tool sequence. A new user
++turn discards prior reasoning. Never synthesize this field as speech. Native
++12B declarations use the canonical schema fields, omitting presentation-only
++titles while preserving a real argument named `title`.
++The `non_thinking_tool_continuation` capability identifies an explicit empty
++thought prefix after tool results. It keeps the same model turn open and does
++not enable a thinking mode.
++
+ For 12B, duplicate adjacent closing markers immediately after a complete,
+ validated tool call are consumed with that call. They do not create another
+ call or alter its arguments. Other orphan markers and malformed arguments remain
+diff --git a/docs/models/gemma4-chat.md b/docs/models/gemma4-chat.md
+index 30df0dfdf51e78e6f9017e839bbce8198b143a0a..e39e773ba53cdf44c947f4059610d37609e7ccc8 100644
+--- a/docs/models/gemma4-chat.md
++++ b/docs/models/gemma4-chat.md
+@@ -35,9 +35,29 @@ responses, the formatter closes the previous model turn before opening the user
+ turn. This also applies after chained tool calls and preserves tool-result
+ pairing by call ID. The turn boundary follows the
+ [Gemma 4 canonical template](https://huggingface.co/google/gemma-4-12B-it/blob/main/chat_template.jinja).
++For 12B, declarations select the canonical schema fields after expanding local
++references and nullable branches. Presentation-only schema titles are omitted;
++a real argument named `title` remains available.
++
++`Gemma4Response.reasoningContent` carries an optional thought channel separately
++from the user-facing `content`. Keep it in
++`Gemma4ConversationMessage.reasoningContent` on assistant tool-call messages
++through the current tool sequence. The formatter removes prior reasoning when a
++new user turn begins. Generation retains the non-thinking prefix and existing
++channel-opening suppression. An empty thought channel is prefilled when
++resuming after a tool result as well as after a user turn, without closing the
++active model turn. This extends the documented
++[non-thinking prefix](https://ai.google.dev/gemma/docs/capabilities/thinking)
++to the tool continuation to prevent a stray thought label in answer text.
++The codec separates channels in supplied responses
++and history; this field does not enable a thinking mode. Do not send
++`reasoningContent` to speech synthesis.
++This follows the [Gemma thought-context guidance](https://ai.google.dev/gemma/docs/core/prompt-formatting-gemma4#managing-thought-context-between-turns).
++
+ Response parsing removes channel delimiters from
+ returned text, including a closing marker generated after a tool result. Tool
+-argument strings retain their original values. For 12B, repeated adjacent
++argument strings retain their original values, including quoted control markers.
++Calls inside a reasoning block are never dispatched. For 12B, repeated adjacent
+ terminators immediately after a fully validated call are consumed with that
+ call. Standalone terminators, incomplete calls, and invalid arguments remain
+ errors. The public codec and E4B keep strict terminator handling. Cancellation is cooperative. Prefill evaluates
+@@ -60,6 +80,9 @@ The native inference HTTP response exposes the optional `cachedPrefixTokens`
+ count for 12B chat. Capabilities advertise `system_prefix_cache` when enabled,
+ and provenance records `gemma4_12b_prefix_cache_budget_bytes` in the effective
+ configuration. The first request still pays for the full prompt prefill.
++The native HTTP service advertises `reasoning_history` and
++`non_thinking_tool_continuation` for the 12B model and
++accepts/emits the optional `reasoningContent` field on chat messages/responses.
+ 
+ This interface provides
+ buffered text/tool responses; it rejects constrained response formats. Vision
+diff --git a/Tests/Qwen3ChatTests/Fixtures/gemma4-canonical-tools.json b/Tests/Qwen3ChatTests/Fixtures/gemma4-canonical-tools.json
+new file mode 100644
+index 0000000..d416c57
+--- /dev/null
++++ b/Tests/Qwen3ChatTests/Fixtures/gemma4-canonical-tools.json
+@@ -0,0 +1,75 @@
++{
++  "reference": "https://huggingface.co/google/gemma-4-12B-it/blob/711c136/chat_template.jinja",
++  "tools": [
++    {
++      "name": "record_note",
++      "description": "Record a note.",
++      "parameters": {
++        "type": "object",
++        "title": "Presentation only",
++        "properties": {
++          "title": {
++            "type": "string",
++            "description": "Exact note title.",
++            "title": "Display label"
++          },
++          "mode": {
++            "type": "string",
++            "enum": [
++              "short",
++              "full"
++            ],
++            "default": "short",
++            "title": "Mode"
++          },
++          "options": {
++            "type": "object",
++            "properties": {
++              "active": {
++                "type": "boolean",
++                "title": "Active"
++              },
++              "label": {
++                "type": "string",
++                "nullable": true,
++                "title": "Label"
++              }
++            },
++            "required": [
++              "active"
++            ],
++            "title": "Options"
++          },
++          "entries": {
++            "type": "array",
++            "items": {
++              "type": "object",
++              "properties": {
++                "amount": {
++                  "type": "number",
++                  "description": "Amount.",
++                  "title": "Amount"
++                }
++              },
++              "required": [
++                "amount"
++              ],
++              "title": "Entry"
++            },
++            "title": "Entries"
++          }
++        },
++        "required": [
++          "title",
++          "entries"
++        ]
++      }
++    },
++    {
++      "name": "list_notes",
++      "description": "List notes.",
++      "parameters": {}
++    }
++  ],
++  "expected": "<bos><|turn>system\nUse tools.<|tool>declaration:record_note{description:<|\"|>Record a note.<|\"|>,parameters:{properties:{entries:{items:{properties:{amount:{description:<|\"|>Amount.<|\"|>,type:<|\"|>NUMBER<|\"|>}},required:[<|\"|>amount<|\"|>],title:<|\"|>Entry<|\"|>,type:<|\"|>OBJECT<|\"|>},type:<|\"|>ARRAY<|\"|>},mode:{enum:[<|\"|>short<|\"|>,<|\"|>full<|\"|>],type:<|\"|>STRING<|\"|>},options:{properties:{active:{type:<|\"|>BOOLEAN<|\"|>},label:{nullable:true,type:<|\"|>STRING<|\"|>}},required:[<|\"|>active<|\"|>],type:<|\"|>OBJECT<|\"|>},title:{description:<|\"|>Exact note title.<|\"|>,type:<|\"|>STRING<|\"|>}},required:[<|\"|>title<|\"|>,<|\"|>entries<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:list_notes{description:<|\"|>List notes.<|\"|>}<tool|><turn|>\n<|turn>user\nSave a note.<turn|>\n<|turn>model\n"
++}
+diff --git a/Tests/Qwen3ChatTests/Gemma4CanonicalFormatTests.swift b/Tests/Qwen3ChatTests/Gemma4CanonicalFormatTests.swift
+new file mode 100644
+index 0000000..de81d1b
+--- /dev/null
++++ b/Tests/Qwen3ChatTests/Gemma4CanonicalFormatTests.swift
+@@ -0,0 +1,124 @@
++import Foundation
++import XCTest
++@testable import Qwen3Chat
++
++final class Gemma4CanonicalFormatTests: XCTestCase {
++    func testNonThinkingToolContinuationPreservesTheOpenModelTurn() throws {
++        let call = Gemma4ToolCall(id: "read-1", name: "read_record", arguments: .object([:]))
++        let raw = try Gemma4ToolCodec.prompt(messages: [
++            .init(role: .user, content: "Read it."),
++            .init(role: .assistant, toolCalls: [call], reasoningContent: "Check the returned marker."),
++            .init(role: .tool, content: "ready", toolCallID: call.id)
++        ])
++        let prompt = Gemma4ToolCodec.nonThinkingGenerationPrompt(raw)
++        XCTAssertEqual(prompt, raw + "<|channel>thought\n<channel|>")
++        XCTAssertTrue(prompt.contains("Check the returned marker."))
++        XCTAssertTrue(prompt.hasSuffix("<tool_response|><|channel>thought\n<channel|>"))
++        XCTAssertEqual(prompt.components(separatedBy: "<|turn>model\n").count - 1, 1)
++    }
++
++    func testNonThinkingPrefixIsIdempotentAndDoesNotRewriteCompletedText() {
++        let raw = "<bos><|turn>user\nHello<turn|>\n<|turn>model\n"
++        let prefixed = Gemma4ToolCodec.nonThinkingGenerationPrompt(raw)
++        XCTAssertEqual(prefixed, raw + "<|channel>thought\n<channel|>")
++        XCTAssertEqual(Gemma4ToolCodec.nonThinkingGenerationPrompt(prefixed), prefixed)
++        let completed = raw + "Hello.<turn|>\n"
++        XCTAssertEqual(Gemma4ToolCodec.nonThinkingGenerationPrompt(completed), completed)
++    }
++
++    func testCanonicalDeclarationsMatchPinnedReferenceWithoutDroppingTitleArgument() throws {
++        struct Fixture: Decodable {
++            let tools: [Gemma4Tool]
++            let expected: String
++        }
++        let path = try XCTUnwrap(Bundle.module.url(forResource: "gemma4-canonical-tools", withExtension: "json", subdirectory: "Fixtures"))
++        let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: path))
++        let messages: [Gemma4ConversationMessage] = [
++            .init(role: .system, content: "Use tools."),
++            .init(role: .user, content: "Save a note.")
++        ]
++        let prompt = try Gemma4ToolCodec.prompt(messages: messages, tools: fixture.tools,
++                                               preserveToolResponseText: true, canonicalDeclarations: true)
++        XCTAssertEqual(prompt, fixture.expected)
++        XCTAssertTrue(prompt.contains("title:{description:"))
++        XCTAssertFalse(prompt.contains("Display label"))
++        // The legacy declaration path stays available for E4B checkpoints.
++        XCTAssertTrue(try Gemma4ToolCodec.prompt(messages: messages, tools: fixture.tools).contains("Display label"))
++    }
++
++    func testReasoningIsSeparatedFromSpeechAndNeverDispatchesItsExampleCall() throws {
++        let reply = try Gemma4ToolCodec.response("""
++        <|channel>thought
++        Check first. Example: <|tool_call>call:wrong{}<tool_call|>
++        <channel|><|tool_call>call:read_record{id:<|"|>record_7<|"|>}<tool_call|>
++        """)
++        XCTAssertEqual(reply.toolCalls.map(\.name), ["read_record"])
++        XCTAssertEqual(reply.content, "")
++        XCTAssertEqual(reply.reasoningContent, "Check first. Example: <|tool_call>call:wrong{}<tool_call|>")
++        let spoken = try Gemma4ToolCodec.response("<|channel>thought\nKeep this internal.<channel|>The record is ready.<turn|>")
++        XCTAssertEqual(spoken.content, "The record is ready.")
++        XCTAssertEqual(spoken.reasoningContent, "Keep this internal.")
++    }
++
++    func testReasoningSurvivesToolContinuationAndIsStrippedAfterNewUserTurn() throws {
++        let call = Gemma4ToolCall(id: "read-1", name: "read_record", arguments: .object([:]))
++        let messages: [Gemma4ConversationMessage] = [
++            .init(role: .user, content: "Read the record."),
++            .init(role: .assistant, toolCalls: [call], reasoningContent: "Check this unique marker first."),
++            .init(role: .tool, content: "ready", toolCallID: call.id)
++        ]
++        let continuation = try Gemma4ToolCodec.prompt(messages: messages)
++        XCTAssertTrue(continuation.contains("<|channel>thought\nCheck this unique marker first.\n<channel|><|tool_call>"))
++        XCTAssertTrue(continuation.hasSuffix("<tool_response|>"))
++        let nextTurn = try Gemma4ToolCodec.prompt(messages: messages + [.init(role: .user, content: "What next?")])
++        XCTAssertFalse(nextTurn.contains("Check this unique marker first."))
++        XCTAssertTrue(nextTurn.contains("<tool_response|><turn|>\n<|turn>user\nWhat next?"))
++    }
++
++    func testLegacyWirePayloadsDecodeWithoutReasoningAndNewPayloadsRoundTrip() throws {
++        let legacy = try JSONDecoder().decode(Gemma4Response.self, from: Data("{\"content\":\"Ready\",\"toolCalls\":[],\"generatedTokens\":1}".utf8))
++        XCTAssertNil(legacy.reasoningContent)
++        let reply = Gemma4Response(content: "Ready", toolCalls: [], generatedTokens: 3, reasoningContent: "Private intermediate step.")
++        XCTAssertEqual(try JSONDecoder().decode(Gemma4Response.self, from: JSONEncoder().encode(reply)), reply)
++        let message = try JSONDecoder().decode(Gemma4ConversationMessage.self, from: Data("{\"role\":\"user\",\"content\":\"Hello\"}".utf8))
++        XCTAssertNil(message.reasoningContent)
++    }
++
++    func testMalformedReasoningAndPartialCallsRemainErrors() throws {
++        for raw in ["<|channel>thought\nunfinished", "<|channel>unknown\ntext<channel|>Ready",
++                    "<|tool_call>call:calculate{expression:<|\"|>1 +",
++                    "<|tool_call>call:broken<tool_call|><|tool_call>call:valid{}<tool_call|>"] {
++            XCTAssertThrowsError(try Gemma4ToolCodec.response(raw))
++        }
++    }
++
++    func testNestedReasoningCannotExposeAnExampleCallForDispatch() {
++        let raw = "<|channel>thought\nExample: <|channel>thought\ninner<channel|><|tool_call>call:wrong{}<tool_call|><channel|>"
++        XCTAssertThrowsError(try Gemma4ToolCodec.response(raw))
++    }
++
++    func testQuotedControlMarkersRemainLiteralToolArguments() throws {
++        let literal = "Keep <|channel>unknown\nprivate?<channel|> and <|tool_call>call:wrong{}<tool_call|> literally."
++        let json = String(decoding: try JSONEncoder().encode(literal), as: UTF8.self)
++        for quoted in ["<|\"|>" + literal + "<|\"|>", json] {
++            let raw = "<|tool_call>call:record_note{text:" + quoted + "}<tool_call|>"
++            let reply = try Gemma4ToolCodec.response(raw)
++            XCTAssertEqual(reply.toolCalls.map(\.name), ["record_note"])
++            XCTAssertEqual(reply.toolCalls.first?.arguments, .object(["text": .string(literal)]))
++            XCTAssertNil(reply.reasoningContent)
++            XCTAssertEqual(reply.content, "")
++        }
++    }
++
++    func testReasoningBetweenCallsNeverDispatchesItsExampleCall() throws {
++        let reply = try Gemma4ToolCodec.response("""
++        <|tool_call>call:first{text:<|"|><|channel>thought\nquoted<channel|><|"|>}<tool_call|>
++        <|channel>thought\nExample: <|tool_call>call:wrong{}<tool_call|>\n<channel|>
++        <|tool_call>call:second{ok:true}<tool_call|>
++        """)
++        XCTAssertEqual(reply.toolCalls.map(\.name), ["first", "second"])
++        XCTAssertEqual(reply.toolCalls.first?.arguments, .object(["text": .string("<|channel>thought\nquoted<channel|>")]))
++        XCTAssertEqual(reply.reasoningContent, "Example: <|tool_call>call:wrong{}<tool_call|>")
++        XCTAssertEqual(reply.content, "")
++    }
++}

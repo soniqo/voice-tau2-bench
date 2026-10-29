@@ -12,12 +12,13 @@
 | --- | --- |
 | Gemma 4 12B IT, INT4 | 已验证的本地 v2 配置 |
 | Gemma 4 E4B IT, INT4 | 本地运行时支持；同条件 v2 比较尚待完成 |
+| Amazon Nova 2.5 Sonic | 原生音频已验证；Retail pass^1 **1/1**（v6 开发试验 1 次，上限 420 秒；[记录](docs/results/nova25-v6-retail-development.json)） |
 | OpenAI GPT-Live + 明确指定的后端智能体 | 需要适配器 |
 | OpenAI Realtime | 需要适配器 |
 | Gemini Live | 需要适配器 |
 | ElevenLabs Agents | 需要适配器 |
 
-本地技术栈使用 [speech-swift](https://github.com/soniqo/speech-swift)：完整版 Whisper Large-v3 FP16、VoxCPM2 主权重 FP16 / AudioVAE FP32、Silero VAD，以及作为调用者、听取辅助和评判的 Gemma E4B。云端系统尚未接入，也未在此基准中测试。
+本地技术栈使用 [speech-swift](https://github.com/soniqo/speech-swift)：完整版 Whisper Large-v3 FP16、VoxCPM2 主权重 FP16 / AudioVAE FP32、Silero VAD，以及作为调用者、听取辅助和评判的 Gemma E4B。Nova 2.5 Sonic 提供可选的[原生音频运行器](docs/nova.md)；调用者和评判仍在本地运行。
 
 ## 比较指标
 
@@ -34,24 +35,33 @@
 
 比较时应使用相同的任务、种子、通话限制、声学条件和调用者/评判配置。比较本地 LLM 时保持语音技术栈一致。音频原生和托管智能体必须注明完整技术栈。组件耗时与端到端语音响应延迟分别统计。
 
-## 已记录的本地诊断
+## 已记录的开发测试结果
 
-| 智能体 | 已评分 / 计划 | Pass^1 | 工具错误 | LLM p50 / p95 | TTS 首段音频 p50 / p95 | API 成本 / 试验 |
+每行是一次开发试验。任务与时钟设置不同；同条件模型排名尚待完成。费用仅涵盖已完成的通话。
+
+| 智能体 | 条件 / 任务 | 已评分 / 计划 | Pass^1 | 工具错误 | 墙钟时间 | 单次通话 API 费用 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
+| Gemma 4 12B IT, INT4 | v2 · 航空 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
+| Amazon Nova 2.5 Sonic | v6 · 零售 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
 
 航空任务 12，单次试验，种子 70，v2；最长 **600 秒模拟时间 / 1,200 秒墙钟时间**。通话在 **312.9 秒模拟时间 / 554.4 秒实测墙钟时间**后正常结束。硬件：Apple M5 Pro，48 GB，共享工作站。这是一次开发试验；同条件的多模型排名尚待完成。 [数据与测量定义](docs/results/gemma4-12b-local-v2-airline.json).
+
+Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
+
+Nova：单次试验，种子 70，control 声学条件，**420 秒实时 / 墙钟上限**。两件指定商品均已换货；**5/5** 参考操作及最终数据库状态均匹配。通话在 **259.0 秒音频时间 / 296.3 秒墙钟时间**后正常结束。整个测试的费用核算还须包括中断尝试。[运行记录与限制](docs/results/nova25-v6-retail-development.json)。
 
 ## 本地运行
 
 Python **3.12/3.13**、Apple Silicon、**macOS 15+**。按[配置](docs/runtime-setup.md)和 [v2 运行](docs/local-v2.md)文档启动本地服务、验证调用者/评判并执行任务。
 
 ```bash
-uv sync --frozen --extra dev
-uv run --frozen tau-voice verify
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --output data/simulations/first-local-run
 ```
 
-使用 `--num-tasks`、`--trials`、`--max-seconds` 和 `--wall-timeout` 限制运行。云端适配器和美元支出上限**尚未实现**。当前推理完全在本地运行，无需云端 API 密钥。
+此命令构建固定版本的原生运行时、下载模型、校准来电者和评估器，并运行受控语音冒烟测试。它不生成领域基准分数。请使用新的输出目录。[设置与任务运行](docs/runtime-setup.md#one-command-local-run)。
+
+`--num-tasks` · `--trials` · `--max-seconds` · `--wall-timeout`. 默认运行保持本地。可选的 [Nova 运行](docs/nova.md)需要显式 AWS 配置，支持持久预算记账和用量阈值，但不是云服务强制执行的美元上限。
 
 检查: `make test` · `make lint` · `make verify`.
 

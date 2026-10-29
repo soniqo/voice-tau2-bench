@@ -21,14 +21,27 @@ from tau2.voice.baseline import repository_root
 from tau2.voice.caller_policy import LOCAL_CALLER_GUIDELINES, QualifiedCallerBackend
 
 
-def qualification_suite():
+def qualification_suite(profile=None):
+    if profile is not None and profile.profile.endswith("-v6"):
+        return json.loads(
+            (
+                repository_root() / "data/tau2/voice_local/qualification-v5.json"
+            ).read_text()
+        )
+    version = (
+        profile.profile.rsplit("-", 1)[-1]
+        if profile is not None and profile.profile.endswith(("-v3", "-v4", "-v5"))
+        else "v2"
+    )
     return json.loads(
-        (repository_root() / "data/tau2/voice_local/qualification-v2.json").read_text()
+        (
+            repository_root() / f"data/tau2/voice_local/qualification-{version}.json"
+        ).read_text()
     )
 
 
 def qualification_identity(profile, provenance):
-    suite = qualification_suite()
+    suite = qualification_suite(profile)
     return {
         "suite": suite["suite"],
         "suite_sha256": hashlib.sha256(
@@ -37,6 +50,12 @@ def qualification_identity(profile, provenance):
         "benchmark_source_sha256": provenance["benchmark"]["sha256"],
         "caller_policy": profile.execution.caller_policy,
         "device_grounding": profile.execution.device_grounding,
+        "clock_mode": profile.execution.mode,
+        "caller_idle_seconds": profile.execution.caller_idle_seconds,
+        "price_grounding": profile.execution.price_grounding,
+        "goal_progress": profile.execution.goal_progress,
+        "question_focus": profile.execution.question_focus,
+        "routing_focus": profile.execution.routing_focus,
         "roles": {
             role: profile.roles[role].model_dump(mode="json")
             for role in ("caller", "listener", "judge")
@@ -56,7 +75,7 @@ def require_qualification(path: Path | None, profile, provenance):
             "The v2 profile requires --qualification from a passing tau-voice qualify run"
         )
     report = json.loads(path.read_text())
-    suite = qualification_suite()
+    suite = qualification_suite(profile)
     expected_ids = {
         case["id"] for section in ("caller", "judge") for case in suite[section]
     }
@@ -148,7 +167,7 @@ def qualify(backend, profile, provenance):
         raise ValueError(
             "Qualification applies to the explicit terminal-v2 caller profile"
         )
-    suite = qualification_suite()
+    suite = qualification_suite(profile)
     rows = []
     for case in suite["caller"]:
         row = {"id": case["id"], "component": "caller", "passed": False}
@@ -177,6 +196,10 @@ def qualify(backend, profile, provenance):
                 case["scenario"],
                 device_grounding=profile.execution.device_grounding
                 and case.get("toolset") == "telecom",
+                price_grounding=profile.execution.price_grounding,
+                goal_progress=profile.execution.goal_progress,
+                question_focus=profile.execution.question_focus,
+                routing_focus=profile.execution.routing_focus,
             )
             messages = fixture_history(case["history"])
             decision, _ = caller.assess(
@@ -315,6 +338,34 @@ def qualify(backend, profile, provenance):
                     row["passed"] &= row["final_action"] == "wait"
                 elif expected.get("must_speak"):
                     row["passed"] &= row["final_action"] == "speak"
+                elif expected.get("must_approve"):
+                    row["passed"] &= row["final_action"] == "speak" and bool(
+                        re.match(
+                            r"^\s*(?:yes|sure|absolutely)\b",
+                            response.content or "",
+                            re.I,
+                        )
+                    )
+                elif expected.get("must_ask_price"):
+                    text = response.content or ""
+                    row["passed"] &= (
+                        row["final_action"] == "speak"
+                        and bool(
+                            re.search(
+                                r"\b(?:price|cost|fee|charge)|how much", text, re.I
+                            )
+                        )
+                        and bool(
+                            re.search(
+                                r"\?|\b(?:tell|give|quote|confirm|provide)\b",
+                                text,
+                                re.I,
+                            )
+                        )
+                        and not bool(
+                            re.match(r"^\s*(?:yes|sure|absolutely)\b", text, re.I)
+                        )
+                    )
                 elif "device_unchanged" in expected:
                     device = fixture_environment.user_tools.db.device
                     row["device_after"] = {
@@ -342,8 +393,13 @@ def qualify(backend, profile, provenance):
                 else:
                     row["passed"] &= not response.is_tool_call() and all(
                         word.lower() in (response.content or "").lower()
-                        for word in expected["must_contain"]
+                        for word in expected.get("must_contain", [])
                     )
+                    if "must_contain_any" in expected:
+                        row["passed"] &= any(
+                            word.lower() in (response.content or "").lower()
+                            for word in expected["must_contain_any"]
+                        )
         except Exception as error:
             row["passed"] = False
             row["error"] = f"{type(error).__name__}: {error}"

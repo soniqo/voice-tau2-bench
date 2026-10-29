@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "name": "state-change-development-3",
+  "selection_method": "Diagnostic development subset, not held out: airline 8 is the first frozen-frame task with a single reference write; retail 0 is the first frozen-frame retail task and has a reference exchange write; telecom uses a two-setting airplane/data fault without an abroad or persona complication. Chosen before running the new caller/provider condition. Prior exposure is retained; do not use as a leaderboard estimate.",
+  "complexity": "control",
+  "recommended_trials": 1,
+  "recommended_seed": 70,
+  "recommended_max_seconds": 600,
+  "recommended_wall_timeout_seconds": 1200,
+  "standard_leaderboard": false,
+  "tasks": [
+    {"domain": "airline", "task_id": "8"},
+    {"domain": "retail", "task_id": "0"},
+    {"domain": "telecom", "task_id": "[mobile_data_issue]airplane_mode_on|data_mode_off[PERSONA:None]"}
+  ]
+}

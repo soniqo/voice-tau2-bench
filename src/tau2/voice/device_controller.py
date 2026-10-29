@@ -146,6 +146,11 @@ AGENT_ACTION = re.compile(
     r"\b(?:would you like me|do you want me|shall i|can i|could i|may i|i'll|i will|let me(?!\s+know\b))\b",
     re.I,
 )
+AGENT_OFFER = re.compile(
+    r"\bi (?:can|could|am going to|plan to)\s+"
+    r"(?:check|inspect|look|review|verify|enable|disable|update|change|refuel|process)\b",
+    re.I,
+)
 
 
 @dataclass(frozen=True)
@@ -256,7 +261,7 @@ def clauses(text):
     )
 
 
-def customer_request_clauses(text):
+def customer_request_clauses(text, *, routing_focus=False):
     """Use the same action owner for tools, identity answers and follow-ups."""
     for clause in clauses(text):
         if not REQUEST.search(clause):
@@ -270,13 +275,37 @@ def customer_request_clauses(text):
                 or NEGATED_ACTION.search(prefix)
             ):
                 clause = clause[cue.start() :]
-        if AGENT_ACTION.search(clause) and not CUSTOMER_REQUEST.search(clause):
+        owns_action = AGENT_ACTION.search(clause) or (
+            routing_focus and AGENT_OFFER.search(clause)
+        )
+        if owns_action and not CUSTOMER_REQUEST.search(clause):
             continue
         yield clause
 
 
-def agent_action_only(text):
-    return bool(AGENT_ACTION.search(text)) and not any(customer_request_clauses(text))
+def agent_action_only(text, *, routing_focus=False):
+    owns_action = AGENT_ACTION.search(text) or (
+        routing_focus and AGENT_OFFER.search(text)
+    )
+    return bool(owns_action) and not any(
+        customer_request_clauses(text, routing_focus=routing_focus)
+    )
+
+
+def account_question_only(text):
+    """Account usage questions cannot be answered by a customer device tool."""
+    requests = list(customer_request_clauses(text, routing_focus=True))
+    return bool(requests) and all(
+        re.search(
+            r"\b(?:data usage|data limit|plan(?:'s)? (?:data )?limit)\b", request, re.I
+        )
+        and not re.search(
+            r"\b(?:turn|switch|enable|disable|toggle|reset|roaming|wi[- ]?fi|vpn|airplane|data saver)\b",
+            request,
+            re.I,
+        )
+        for request in requests
+    )
 
 
 def setting_changes(clause, previous):
@@ -322,11 +351,11 @@ def setting_changes(clause, previous):
     return sorted(changes, key=lambda entry: entry[0]), ambiguous
 
 
-def requested_steps(text):
+def requested_steps(text, *, routing_focus=False):
     steps = []
     ambiguous = False
     previous = None
-    for clause in customer_request_clauses(text):
+    for clause in customer_request_clauses(text, routing_focus=routing_focus):
         # Describing the reported problem is conversational. A topic word such
         # as "data" does not turn that question into a new settings inspection.
         if (
@@ -352,6 +381,19 @@ def requested_steps(text):
             continue
         if re.search(r"\b(?:know how|explain how|understand how)\b", clause, re.I):
             ambiguous = True
+            continue
+        if (
+            routing_focus
+            and re.search(
+                r"\b(?:is|it's|it is) (?:currently )?set to (?:a )?(?:[2345]g|lte)\b",
+                clause,
+                re.I,
+            )
+            and not re.search(
+                r"\b(?:turn|switch|change|enable|disable)\b", clause, re.I
+            )
+        ):
+            steps.append(Step("network", "check_network_status"))
             continue
         if re.search(r"\b(?:app permissions?|permissions?|app status)\b", clause, re.I):
             app = re.search(
@@ -601,8 +643,9 @@ def requested_steps(text):
 
 
 class CustomerDeviceController:
-    def __init__(self, scenario):
+    def __init__(self, scenario, *, routing_focus=False):
         self.scenario = scenario
+        self.routing_focus = routing_focus
         self.requires_excellent_speed = bool(
             re.search(
                 r"\bonly when\s+(?:the\s+)?speed test returns?\s+excellent\b",
@@ -676,9 +719,22 @@ class CustomerDeviceController:
             ):
                 return self.speak("Are you still there?", context, "silence_check_in")
             return self.speak("", context, "wait_for_agent_turn")
-        requests = list(customer_request_clauses(statement))
+        requests = list(
+            customer_request_clauses(statement, routing_focus=self.routing_focus)
+        )
         latest_request = requests[-1] if requests else ""
-        if any(PHONE_QUESTION.search(request) for request in requests):
+        if any(
+            PHONE_QUESTION.search(request)
+            or (
+                self.routing_focus
+                and re.search(
+                    r"\bwhich line(?:'s)?\b.{0,45}\b(?:data|service|mms)\b",
+                    request,
+                    re.I,
+                )
+            )
+            for request in requests
+        ):
             known = self.scenario
             if match := re.search(
                 r"Known info:\s*(.*?)(?:Task instructions:|$)", known, re.I | re.S
@@ -696,7 +752,7 @@ class CustomerDeviceController:
                 {**context, "source": "caller_scenario.known_info"},
                 "known_phone" if number else "unknown_phone",
             )
-        steps, ambiguous = requested_steps(statement)
+        steps, ambiguous = requested_steps(statement, routing_focus=self.routing_focus)
         if (
             not steps
             and not ambiguous
@@ -734,7 +790,7 @@ class CustomerDeviceController:
             not steps
             and not ambiguous
             and self.requires_excellent_speed
-            and not agent_action_only(statement)
+            and not agent_action_only(statement, routing_focus=self.routing_focus)
             and re.search(
                 r"\banything else\b|\bhave (?:a |an )?(?:great|good|wonderful|nice) "
                 r"(?:day|evening|night)\b|\b(?:glad|happy)\b.{0,70}\b(?:working|fixed|resolved|restored)\b",

@@ -247,6 +247,52 @@ def test_stream_failure_or_truncation_never_becomes_success(tail):
     backend.close()
 
 
+@pytest.mark.parametrize("message", ["CancellationError()", "inference failed"])
+def test_stream_records_cancellation_only_for_native_cancellation(message):
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200, content=json.dumps({"event": "error", "message": message}) + "\n"
+            )
+        ),
+    )
+    try:
+        with pytest.raises(SpeechSwiftError):
+            list(backend.stream_speech("hello", request_id="stream", voice="local"))
+        assert backend.events[-1].get("cancelled", False) is (
+            message == "CancellationError()"
+        )
+        assert backend.events[-1]["success"] is False
+    finally:
+        backend.close()
+
+
+def test_consumer_closing_stream_is_recorded_for_cancellation_attribution():
+    data = base64.b64encode(b"\x00\x01" * 512).decode()
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200,
+                content=json.dumps(
+                    {"event": "audio", "audioBase64": data, "sampleRate": 48000}
+                )
+                + "\n",
+            )
+        ),
+    )
+    try:
+        stream = backend.stream_speech("hello", request_id="stream", voice="local")
+        assert next(stream).data
+        stream.close()
+        assert backend.events[-1]["cancelled"] is True
+        assert backend.events[-1]["success"] is False
+        assert not backend._active
+    finally:
+        backend.close()
+
+
 def test_spoken_fragments_form_one_participant_turn_for_native_chat():
     captured = []
 
@@ -320,7 +366,108 @@ def test_cancelled_epoch_audio_and_tools_are_discarded():
     assert agent._drain_events(state) is None
     assert not agent._output
     assert len(state.messages) == 1
+    assert agent.metrics["discarded_events"] == {"audio": 1, "tools": 1}
     agent.stop()
+
+
+def test_reasoning_is_private_to_current_tool_continuation():
+    requests = []
+
+    def server(request):
+        requests.append(json.loads(request.content))
+        if len(requests) == 1:
+            return httpx.Response(
+                200,
+                json={
+                    "content": "",
+                    "generatedTokens": 12,
+                    "reasoningContent": "Verify the fetched state.",
+                    "toolCalls": [{"id": "read", "name": "lookup", "arguments": {}}],
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "content": "Saved.",
+                "generatedTokens": 6,
+                "reasoningContent": "The result confirms success.",
+                "toolCalls": [],
+            },
+        )
+
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080", transport=httpx.MockTransport(server)
+    )
+    try:
+        messages = [UserMessage(role="user", content="Save the record.")]
+        call = backend.generate("gemma4-12b-it", messages)
+        assert call.content is None
+        assert call.raw_data["reasoning_content"] == "Verify the fetched state."
+        messages += [
+            call,
+            ToolMessage(role="tool", id="read", content="ready", requestor="assistant"),
+        ]
+        spoken = backend.generate("gemma4-12b-it", messages)
+        assert spoken.content == "Saved."
+        assert (
+            requests[-1]["messages"][1]["reasoningContent"]
+            == "Verify the fetched state."
+        )
+        backend.generate(
+            "gemma4-12b-it",
+            [*messages, spoken, UserMessage(role="user", content="What next?")],
+        )
+        assert all("reasoningContent" not in row for row in requests[-1]["messages"])
+        assert all("reasoning_content" not in event for event in backend.events)
+    finally:
+        backend.close()
+
+
+@pytest.mark.parametrize("reasoning", [True, 42, [], {}])
+def test_invalid_native_reasoning_fails_with_preserved_request(reasoning):
+    backend = SpeechSwiftBackend(
+        "http://localhost:8080",
+        transport=httpx.MockTransport(
+            lambda _: httpx.Response(
+                200,
+                json={
+                    "content": "Ready",
+                    "generatedTokens": 1,
+                    "toolCalls": [],
+                    "reasoningContent": reasoning,
+                },
+            )
+        ),
+    )
+    try:
+        with pytest.raises(SpeechSwiftError, match="reasoning content"):
+            backend.generate(
+                "gemma4-12b-it", [UserMessage(role="user", content="Hello")]
+            )
+        assert backend.events[-1]["success"] is False
+        assert backend.events[-1]["failure"]["response_status"] == 200
+    finally:
+        backend.close()
+
+
+def test_superseded_reply_before_delivery_is_distinct_from_audible_interruption():
+    from concurrent.futures import Future
+
+    agent = SpeechSwiftAgent([], "policy", backend=object())
+    state = agent.get_init_state()
+    agent._future = Future()
+    agent._future.set_result(None)
+    agent._speech_text = "Pending reply."
+    try:
+        agent._interrupt(state)
+        agent._interrupt(state)
+        assert agent.metrics["interruptions"] == 0
+        assert agent.metrics["reply_supersessions"] == [
+            {"epoch": 0, "audible": False, "native_cancel_requests": 0}
+        ]
+        assert len(state.messages) == 1
+    finally:
+        agent.stop()
 
 
 @pytest.mark.parametrize("simulation_time", [False, True])

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "condition": "soniqo-local-gemma12b-v4",
+  "scope": "development whole-stack pilot",
+  "standard_leaderboard": false,
+  "valid_model_comparison": false,
+  "task_frame": "English voice-v1 (278 tasks)",
+  "tasks_attempted": 30,
+  "scored_trials": 27,
+  "passed_trials": 2,
+  "unscored_caller_errors": 3,
+  "domains": {
+    "airline": {
+      "planned": 10,
+      "scored": 10,
+      "passed": 2,
+      "unscored_errors": 0
+    },
+    "retail": {
+      "planned": 10,
+      "scored": 10,
+      "passed": 0,
+      "unscored_errors": 0
+    },
+    "telecom": {
+      "planned": 10,
+      "scored": 7,
+      "passed": 0,
+      "unscored_errors": 3
+    }
+  },
+  "terminations": {
+    "max_steps": 21,
+    "too_many_errors": 1,
+    "user_stop": 4,
+    "timeout": 1
+  },
+  "both_passes_policy_refusals": true,
+  "agent": {
+    "model": "gemma4-12b-it",
+    "precision": "int4"
+  },
+  "caller_listener_judge": {
+    "model": "gemma4-e4b-it",
+    "precision": "int4"
+  },
+  "asr": "whisper-large-v3 CoreML fp16",
+  "tts": "VoxCPM2 fp16 main network, fp32 AudioVAE",
+  "acoustics": "control",
+  "seed": 70,
+  "trials_per_task": 1,
+  "clock": "simulation-v2",
+  "call_seconds": 600,
+  "wall_timeout_seconds": 1200,
+  "source_sha256": "2e2387ff04bc819e8c73b81a6eed23d6ef66ae289c3ffd6a95703afeb2601c86",
+  "native_binary_sha256": "8a28a0940d6cd6d8b401e5fcc361ba36c9240d69e3aef8b377b7f4de3f1c1f7d",
+  "paid_inference_calls": 0,
+  "limitations": [
+    "Caller defects also appear within scored traces.",
+    "No held-out model comparison.",
+    "Premature termination receives zero without a complete final-state grading pass."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "model": "amazon.nova-2-5-sonic",
+  "region": "us-east-1",
+  "voice": "tiffany",
+  "standard_leaderboard": false,
+  "development_only": true,
+  "domain": "retail",
+  "task_id": "0",
+  "trial": 0,
+  "seed": 70,
+  "complexity": "control",
+  "runtime_profile": "soniqo-local-gemma12b-v6",
+  "clock_mode": "realtime-v1",
+  "max_seconds": 420,
+  "wall_timeout_seconds": 420,
+  "scored_trials": 1,
+  "planned_trials": 1,
+  "pass_1": {
+    "passed": 1,
+    "total": 1
+  },
+  "termination": "user_stop",
+  "database_match": true,
+  "action_matches": {
+    "matched": 5,
+    "total": 5
+  },
+  "tool_errors": {
+    "errors": 0,
+    "attempts": 5
+  },
+  "caller_audit": {
+    "identity_provided": true,
+    "requested_replacements_confirmed": true,
+    "payment_method_chosen": true,
+    "write_after_consent": true,
+    "completion_evidence_from_agent": true
+  },
+  "exchange": {
+    "original_item_ids": [
+      "1151293680",
+      "4983901480"
+    ],
+    "replacement_item_ids": [
+      "7706410293",
+      "7747408585"
+    ],
+    "refund_usd": 16.63,
+    "payment_method": "original credit card"
+  },
+  "wall_seconds": 296.2972058340674,
+  "audio_seconds": 259.0,
+  "metered_usd": 0.03151542,
+  "usage_finalized": true,
+  "usage": {
+    "input": {
+      "speechTokens": 822,
+      "textTokens": 6049
+    },
+    "output": {
+      "speechTokens": 2086,
+      "textTokens": 735
+    }
+  },
+  "pricing_revision": "AWS us-east-1 2026-10-28",
+  "local_support": {
+    "caller_listener_judge": "Gemma 4 E4B IT INT4",
+    "caller_tts_and_fixed_opener": "VoxCPM2 FP16 main weights / FP32 AudioVAE"
+  },
+  "qualification": {
+    "passed": 103,
+    "total": 103
+  },
+  "offline_tests_passed": 959,
+  "source_sha256": "4ecc3f63d45590320dc381f029a512587354990c7a7578c35aa5c335738182c2",
+  "native_binary_sha256": "8a28a0940d6cd6d8b401e5fcc361ba36c9240d69e3aef8b377b7f4de3f1c1f7d",
+  "simulation_sha256": "651f17cce5f9201f4f1f51651d25f8acca4f3444d08022dee0f5b667b6874723",
+  "qualification_sha256": "8562c8f7f7ebd8bc5b6cd73277fbf4686aa848319f7bbe973838f3d9c219b1f5",
+  "delivered_nova_turns_with_correct_end_marker": 4,
+  "limitations": [
+    "One development task and seed; no general model ranking",
+    "Different clock and call limit from historical Gemma simulation-clock records",
+    "No independent speech quality or standardized voice-delay percentile measurement",
+    "Earlier adapter-defective and infrastructure-interrupted attempts are separate records"
+  ],
+  "conversation_local_agent_asr_llm_tts_used": false
+}

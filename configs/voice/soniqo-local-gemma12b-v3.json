@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "profile": "soniqo-local-gemma12b-v3",
+  "language": "en",
+  "roles": {
+    "agent": {
+      "model_id": "gemma4-12b-it",
+      "engine": "speech-swift/gemma4-unified",
+      "precision": "int4",
+      "features": [
+        "cancel",
+        "reasoning_history",
+        "tool_calls",
+        "tool_history",
+        "non_thinking_tool_continuation"
+      ]
+    },
+    "caller": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "tool_calls",
+        "tool_history",
+        "json_output"
+      ]
+    },
+    "listener": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": []
+    },
+    "judge": {
+      "model_id": "gemma4-e4b-it",
+      "engine": "speech-swift/gemma4",
+      "precision": "int4",
+      "features": [
+        "json_output"
+      ]
+    },
+    "agent_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": [
+        "streaming",
+        "cancel"
+      ]
+    },
+    "caller_tts": {
+      "model_id": "voxcpm2",
+      "engine": "speech-swift/voxcpm2",
+      "precision": "fp16",
+      "features": []
+    },
+    "asr": {
+      "model_id": "whisper-large-v3",
+      "engine": "speech-swift/whisper",
+      "precision": "fp16",
+      "features": []
+    },
+    "vad": {
+      "model_id": "silero-vad",
+      "engine": "speech-swift/silero",
+      "features": [
+        "streaming"
+      ]
+    }
+  },
+  "execution": {
+    "mode": "simulation-v2",
+    "call_seconds": 600,
+    "wall_timeout_seconds": 1200,
+    "caller_policy": "terminal-v2",
+    "require_qualification": true,
+    "tool_guard": true,
+    "device_grounding": true,
+    "caller_idle_seconds": 30,
+    "price_grounding": true,
+    "goal_progress": true
+  }
+}

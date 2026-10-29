@@ -1,0 +1,2 @@
+# Preserve the exact bytes of checksum-pinned unified diffs.
+runtime/*.patch -text whitespace=-blank-at-eol

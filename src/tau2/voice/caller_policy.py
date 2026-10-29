@@ -9,7 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from tau2.data_model.message import AssistantMessage, SystemMessage, UserMessage
 from tau2.user.user_simulator_base import STOP
 from tau2.utils.response import extract_json_from_llm_response
-from tau2.voice.device_controller import CustomerDeviceController, agent_action_only
+from tau2.voice.device_controller import (
+    CustomerDeviceController,
+    account_question_only,
+    agent_action_only,
+)
+from tau2.voice.price_guard import (
+    missing_price_quote,
+    pending_price_consent,
+    price_followup,
+)
 
 TERMINAL_PROMPT = """TASK
 You are an independent conversation evaluator. Do not play either person.
@@ -125,9 +134,40 @@ class TerminalAssessment(BaseModel):
     decision: Literal["CONTINUE", "COMPLETE", "REFUSED"]
 
 
+class ProgressAssessment(TerminalAssessment):
+    remaining_requests: list[str]
+
+
+PROGRESS_PROMPT = (
+    TERMINAL_PROMPT
+    + """
+PROGRESS FORMAT
+Also return remaining_requests: an array of short customer requests still unresolved.
+Check every independent request in the scenario, including requests that remain
+applicable if another request is denied. A refusal resolves only the refused
+request after its required alternatives have been tried; it does not resolve
+independent requests. Do not keep an already denied alternative pending when no
+required follow-up remains. Use only the scenario and heard conversation.
+An over-budget offer is addressed once the customer declines it and all
+scenario-required alternatives have been tried or refused. An unavailable desired
+outcome is not still pending merely because it could not be achieved. Do not
+invent additional alternatives. Independent requests still remain pending.
+Return CONTINUE while remaining_requests is nonempty. An empty list does not
+override the evidence rules above. Keep reasoning to one short sentence.
+
+"""
+)
+
+
 PENDING_EVIDENCE = re.compile(
     r"\b(?:i|we)(?:['’]ll\b|\s+(?:will|shall|can)\b(?!\s+(?:not|never)\b|['’]t\b)|\s+(?:am|are)\s+going\s+to\b)",
     re.IGNORECASE,
+)
+
+ONGOING_EVIDENCE = re.compile(
+    r"\b(?:(?:i|we)\s+(?:am|are)|i['’]m|we['’]re)\s+(?:still\s+)?"
+    r"(?:checking|processing|looking|working|reviewing|updating|cancelling|canceling|adding|changing|booking)\b",
+    re.I,
 )
 
 CLOSING_HELP_QUESTION = re.compile(
@@ -143,13 +183,29 @@ QUESTION_ONLY_EVIDENCE = re.compile(
 
 
 class QualifiedCallerBackend:
-    def __init__(self, backend, scenario, *, device_grounding=False):
+    def __init__(
+        self,
+        backend,
+        scenario,
+        *,
+        device_grounding=False,
+        price_grounding=False,
+        goal_progress=False,
+        question_focus=False,
+        routing_focus=False,
+    ):
         self.backend = backend
         self.scenario = scenario
         self.decisions = []
+        self.price_grounding = price_grounding
+        self.goal_progress = goal_progress
+        self.question_focus = question_focus
+        self.routing_focus = routing_focus
         self._waiting_assessment_context = None
         self.device_controller = (
-            CustomerDeviceController(scenario) if device_grounding else None
+            CustomerDeviceController(scenario, routing_focus=routing_focus)
+            if device_grounding
+            else None
         )
 
     def __getattr__(self, name):
@@ -201,6 +257,10 @@ class QualifiedCallerBackend:
         return turns
 
     def assess(self, model, messages, tools=None):
+        progress = self.goal_progress and self.followup_after_refusal(
+            self.conversation(messages)
+        )
+        assessment_type = ProgressAssessment if progress else TerminalAssessment
         payload = {
             "scenario": self.scenario,
             "conversation": self.conversation(messages),
@@ -216,7 +276,10 @@ class QualifiedCallerBackend:
             reply = self.backend.generate(
                 model,
                 [
-                    SystemMessage(role="system", content=TERMINAL_PROMPT),
+                    SystemMessage(
+                        role="system",
+                        content=PROGRESS_PROMPT if progress else TERMINAL_PROMPT,
+                    ),
                     UserMessage(role="user", content=json.dumps(payload)),
                 ],
                 tools=None,
@@ -230,7 +293,7 @@ class QualifiedCallerBackend:
             try:
                 if reply.is_tool_call():
                     raise ValueError("assessment cannot call tools")
-                assessment = TerminalAssessment.model_validate_json(
+                assessment = assessment_type.model_validate_json(
                     extract_json_from_llm_response(reply.content or "")
                 )
             except ValueError as error:
@@ -240,9 +303,7 @@ class QualifiedCallerBackend:
                     )
                     if not attempt:
                         payload["rejected_assessment"] = rejected[-1]
-                        payload["required_schema"] = (
-                            TerminalAssessment.model_json_schema()
-                        )
+                        payload["required_schema"] = assessment_type.model_json_schema()
                         payload["feedback"] = (
                             "Reassess the same heard conversation and return valid JSON "
                             "matching required_schema. The previous response had invalid "
@@ -308,12 +369,22 @@ class QualifiedCallerBackend:
                 }
             )
         decision = assessment.decision
+        if progress and assessment.remaining_requests and decision != "CONTINUE":
+            decision = "CONTINUE"
+            record.update(
+                decision=decision,
+                proposed_decision=assessment.decision,
+                guard="remaining_customer_requests",
+            )
         # A future-tense offer is not evidence that an action has already run.
         # This can only keep the call open; it never manufactures a stop.
         # A final courtesy question is not a promise of unfinished work. Keep
         # checking the preceding evidence, including any actual future action.
         action_evidence = CLOSING_HELP_QUESTION.sub("", assessment.agent_evidence or "")
-        if decision != "CONTINUE" and PENDING_EVIDENCE.search(action_evidence):
+        if decision != "CONTINUE" and (
+            PENDING_EVIDENCE.search(action_evidence)
+            or ONGOING_EVIDENCE.search(action_evidence)
+        ):
             decision = "CONTINUE"
             record.update(
                 decision=decision,
@@ -328,6 +399,28 @@ class QualifiedCallerBackend:
                 decision=decision,
                 proposed_decision=assessment.decision,
                 guard="agent_confirmation_question",
+            )
+        if (
+            decision == "COMPLETE"
+            and self.price_grounding
+            and pending_price_consent(self.scenario, payload["conversation"])
+        ):
+            decision = "CONTINUE"
+            record.update(
+                decision=decision,
+                proposed_decision=assessment.decision,
+                guard="pending_price_consent",
+            )
+        if (
+            decision == "COMPLETE"
+            and self.price_grounding
+            and missing_price_quote(self.scenario, payload["conversation"])
+        ):
+            decision = "CONTINUE"
+            record.update(
+                decision=decision,
+                proposed_decision=assessment.decision,
+                guard="missing_price_quote",
             )
         if decision != "CONTINUE" and self.device_controller is not None:
             # Use the same history-only device response as generation. This
@@ -356,6 +449,34 @@ class QualifiedCallerBackend:
         self.decisions.append(record)
         return decision, reply
 
+    @staticmethod
+    def followup_after_refusal(conversation):
+        latest = next(
+            (
+                row.get("content") or ""
+                for row in reversed(conversation)
+                if row["speaker"] == "service_agent"
+            ),
+            "",
+        )
+        statement = CLOSING_HELP_QUESTION.sub("", latest)
+        # Questions and requests for identifying details still need a direct answer.
+        if "?" in statement or re.search(
+            r"\b(?:please|provide|verify|confirm|tell me|give me|double.check)\b",
+            statement,
+            re.I,
+        ):
+            return False
+        return bool(
+            re.search(
+                r"\b(?:I|we)\s+(?:cannot|can['’]t|am unable to|are unable to)\s+"
+                r"(?:upgrade|change|cancel|refund|replace|return|add|update|modify|"
+                r"ship|waive|issue|book|remove|transfer|process)\b",
+                statement,
+                re.I,
+            )
+        )
+
     def tool_route(self, model, messages, tools):
         conversation = self.conversation(messages)
         heard = [
@@ -366,11 +487,22 @@ class QualifiedCallerBackend:
         if not tools or not heard:
             return "SPEAK"
         if self.device_controller is not None and agent_action_only(
-            heard[-1]["content"]
+            heard[-1]["content"], routing_focus=self.routing_focus
         ):
             self.decisions[-1]["customer_tool_route"] = {
                 "mode": "SPEAK",
                 "guard": "agent_owns_action",
+                "heard_context": heard[-1]["content"],
+            }
+            return "SPEAK"
+        if (
+            self.device_controller is not None
+            and self.routing_focus
+            and account_question_only(heard[-1]["content"])
+        ):
+            self.decisions[-1]["customer_tool_route"] = {
+                "mode": "SPEAK",
+                "guard": "account_usage_question",
                 "heard_context": heard[-1]["content"],
             }
             return "SPEAK"
@@ -572,6 +704,38 @@ class QualifiedCallerBackend:
         if waiting_context is not None:
             self._waiting_assessment_context = waiting_context
             return self._wait_for_agent_reply(agent_silence, caller_idle, assessment)
+        if self.price_grounding:
+            followup = price_followup(
+                self.scenario,
+                conversation,
+                rejected_completion=self.decisions[-1].get("guard")
+                == "missing_price_quote",
+            )
+            if followup is not None:
+                control = {"guard": "missing_price_quote", "action": "ask_total_cost"}
+                self.decisions[-1]["caller_turn_control"] = control
+                return AssistantMessage(
+                    role="assistant",
+                    content=followup,
+                    cost=assessment.cost,
+                    usage=assessment.usage,
+                    generation_time_seconds=assessment.generation_time_seconds,
+                    raw_data={"caller_turn_control": control},
+                )
+        if self.goal_progress and self.followup_after_refusal(conversation):
+            remaining = self.decisions[-1].get("remaining_requests", [])
+            if remaining and remaining[0].strip():
+                request = remaining[0].strip().rstrip(".?!")
+                control = {"guard": "remaining_customer_requests", "request": request}
+                self.decisions[-1]["caller_turn_control"] = control
+                return AssistantMessage(
+                    role="assistant",
+                    content=f"Then, {request}.",
+                    cost=assessment.cost,
+                    usage=assessment.usage,
+                    generation_time_seconds=assessment.generation_time_seconds,
+                    raw_data={"caller_turn_control": control},
+                )
         tools = kwargs.get("tools") or []
         route = self.tool_route(model, messages, tools)
         systems = [
@@ -603,15 +767,33 @@ class QualifiedCallerBackend:
             "latest_customer_tool_result": pending_result,
             "conversation": conversation,
         }
+        if self.goal_progress and "remaining_requests" in self.decisions[-1]:
+            context["remaining_requests"] = self.decisions[-1].get(
+                "remaining_requests", []
+            )
         mode = (
             "The agent requested a customer tool action. Return a declared customer tool call before speaking. Do not claim or promise the action instead of executing it. Tool observations are knowledge in addition to the scenario. Unknown device settings must be inspected using a declared tool when the agent asks. For an available device action, execute the tool instead of saying you do not know how. Respond with a function call only, no customer speech."
             if route == "TOOL"
             else "Answer the latest service_agent turn directly. The latest_customer_tool_result field contains only an unspoken pending result; report it first if present. Other tool observations in conversation are historical and must not replace an answer to a new question. Reply only with the next customer utterance. Do not repeat the original complaint or claim a device action without a result."
         )
+        if self.question_focus and route == "SPEAK":
+            context["customer_scenario"] = self.scenario
+            mode += (
+                "\nRead customer_scenario again before answering the specific question "
+                "in latest_service_agent_statement. Give the requested fact or reason "
+                "from that scenario. If it is missing, say you do not know it. "
+                "Repeating what you want done does not answer a question asking why, "
+                "when, where, or which details. Do not invent a motive, identifier, "
+                "permission, or service-agent action."
+            )
+        if "remaining_requests" in context and route == "SPEAK":
+            mode += " Answer a direct question first. After a policy refusal, acknowledge it and move to an unresolved independent request in remaining_requests. Do not repeat an exhausted denied alternative. Do not invent a new request or any service-agent fact."
         latest_statement = (context["latest_service_agent_statement"] or {}).get(
             "content"
         ) or ""
-        if self.device_controller is not None and agent_action_only(latest_statement):
+        if self.device_controller is not None and agent_action_only(
+            latest_statement, routing_focus=self.routing_focus
+        ):
             mode += " This turn concerns the AGENT's own action. Answer their consent question or acknowledge their promised work using your scenario and persona. Ask for clarification if needed. Do not act on your device or restate your original complaint."
         for attempt in range(2 if route == "TOOL" else 1):
             reply = self.backend.generate(

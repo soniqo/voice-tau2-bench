@@ -10,6 +10,13 @@ Some tasks also require the agent to communicate specific facts. The semantic co
 
 Only reward components selected by the task's reward basis contribute to its final reward. They combine multiplicatively: failing one required component makes the task reward zero. A timeout, tick limit, or premature termination gets zero before successful-completion grading. An infrastructure or inference exception is unscored and stops the batch; it is not converted into a zero-quality trial.
 
+Before grading, the local runner also checks settled inference records. A failed
+background request cannot become a scored timeout merely because a later caller
+turn superseded it. A cancel request alone does not prove cancellation: the
+matching native capture or speech-stream record must confirm it. Ambiguous
+failures remain unscored. Enable native failure capture to distinguish cancelled
+chat requests from parser failures.
+
 Natural-language annotations affect the score only when `NL_ASSERTION` appears
 in `reward_basis`. An absent criterion is neutral. This differs from a judge
 omitting results for assertions that were requested: missing, extra, duplicate,
@@ -36,6 +43,13 @@ Batch summaries exclude incomplete tasks until all requested trials finish. Resu
 ## Speech diagnostics
 
 Saved WAV files, recognition output, interruptions, inference timings, and estimated delivered-text alignment help explain task failures. They are separate diagnostics; audio quality or speed is not itself the task reward. Successful database changes do not override a conversation timeout.
+
+`reply_supersessions` records when new caller speech supersedes pending agent
+work, including whether any response was audible and how many backend cancel
+calls were made. Those calls can cancel queued work before native execution.
+`discarded_events` counts stale audio, speech and tool events
+by kind. These are separate from audible `interruptions`: work can finish
+physically and still be superseded before its scheduled delivery.
 
 These results use custom local caller, voice, and judge models. They must be reported separately from upstream leaderboard results, with the recorded source and model provenance.
 

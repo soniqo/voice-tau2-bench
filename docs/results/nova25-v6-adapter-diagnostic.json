@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "model": "amazon.nova-2-5-sonic",
+  "source_sha256": "fa1d80822ba6054d510d4404767bcfc4f961ac04987806829066cd8cc6246fcd",
+  "runtime_profile": "soniqo-local-gemma12b-v6",
+  "clock_mode": "realtime-v1",
+  "max_seconds": 240,
+  "seed": 70,
+  "complexity": "control",
+  "standard_leaderboard": false,
+  "valid_capability_estimate": false,
+  "status": "Adapter diagnostic; superseded for capability claims",
+  "issue": "FINAL TEXT stopReason was incorrectly used as the spoken turn boundary. Captured live AUDIO markers put all four Telecom turn endings on different segments. The caller could wait after a completed request.",
+  "planned_trials": 3,
+  "scored_trials": 3,
+  "raw_frozen_pass_1": {
+    "passed": 0,
+    "total": 3
+  },
+  "normal_completions": 0,
+  "inference_errors": 0,
+  "metered_usd": 0.06018461,
+  "trials": [
+    {
+      "domain": "airline",
+      "task_id": "8",
+      "reward": 0.0,
+      "scored": true,
+      "termination": "timeout",
+      "wall_seconds": 240.70857587491628,
+      "audio_seconds": 217.05,
+      "agent_cost_usd": 0.01350099,
+      "agent_tools": 2,
+      "agent_tool_errors": 2,
+      "customer_tools": 0,
+      "usage_finalized": true,
+      "simulation_sha256": "334e482c91e44b2f4dbeee669ce5df02f70b2f1b26edd64d6d7ef07ed8d3bb49"
+    },
+    {
+      "domain": "retail",
+      "task_id": "0",
+      "reward": 0.0,
+      "scored": true,
+      "termination": "timeout",
+      "wall_seconds": 240.60679954197258,
+      "audio_seconds": 217.95000000000002,
+      "agent_cost_usd": 0.03048165,
+      "agent_tools": 4,
+      "agent_tool_errors": 0,
+      "customer_tools": 0,
+      "usage_finalized": true,
+      "simulation_sha256": "bd5bd0cdb109d1ecef47d838018e95134af7e0ad9b5644cf97060e9482db14ba"
+    },
+    {
+      "domain": "telecom",
+      "task_id": "[mobile_data_issue]airplane_mode_on|data_mode_off[PERSONA:None]",
+      "reward": 0.0,
+      "scored": true,
+      "termination": "timeout",
+      "wall_seconds": 241.02163924998604,
+      "audio_seconds": 217.9,
+      "agent_cost_usd": 0.01620197,
+      "agent_tools": 1,
+      "agent_tool_errors": 0,
+      "customer_tools": 2,
+      "usage_finalized": true,
+      "simulation_sha256": "d4eb5ef5e302a3a447ea61ff6d672e72ad6cb85b26bbd94c9fbf6cd3446cdbf3"
+    }
+  ],
+  "audit_notes": {
+    "airline": "Two user-ID lookups missed the underscore before the numeric suffix; raw caller response retained written punctuation despite pronunciation guidance. The same adapter boundary issue also affected later replies.",
+    "retail": "Identity, order and two product lookups succeeded; requested replacements were selected. No exchange write before the cap.",
+    "telecom": "Account lookup and customer speed/status checks succeeded. Agent requested turning off airplane mode, but the last speech segment lacked the correct final marker."
+  }
+}

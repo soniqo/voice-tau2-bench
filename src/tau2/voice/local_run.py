@@ -42,8 +42,8 @@ from tau2.voice.caller_policy import (
     CallerPolicyError,
     QualifiedCallerBackend,
 )
-from tau2.voice.diagnostics import inference_diagnostics
-from tau2.voice.execution import InferenceLane, SimulationClock
+from tau2.voice.diagnostics import inference_diagnostics, require_successful_inference
+from tau2.voice.execution import InferenceLane, SimulationClock, WallClock
 from tau2.voice.local_orchestrator import LocalV2Orchestrator
 from tau2.voice.provenance import run_provenance, stable_provenance
 from tau2.voice.qualification import require_qualification
@@ -101,17 +101,37 @@ def run_local_task(
     expected_provenance: dict | None = None,
     profile_path: Path | None = None,
     qualification_path: Path | None = None,
+    agent_factory=None,
+    external_agent: dict | None = None,
 ) -> dict:
     if (output / "simulation.json").exists():
         raise ValueError("Task output already contains a completed simulation")
     verify_baseline()
     task, loaded, language = task_context(domain, task_id, seed)
     profile = load_profile(profile_path)
+    if (agent_factory is None) != (external_agent is None):
+        raise ValueError(
+            "An external agent requires both a factory and recorded configuration"
+        )
+    if agent_factory is not None and (
+        profile.execution.mode != "realtime-v1" or not profile.execution.tool_guard
+    ):
+        raise ValueError(
+            "External audio agents require the qualified real-time profile"
+        )
     max_seconds, wall_timeout = profile.budgets(max_seconds, wall_timeout)
     backend = SpeechSwiftBackend(base_url)
+    agent = None
     try:
         capabilities = backend.capabilities()
-        profile.check_runtime(capabilities)
+        profile.check_runtime(
+            capabilities,
+            **(
+                {"roles": {"caller", "listener", "judge", "caller_tts"}}
+                if external_agent is not None
+                else {}
+            ),
+        )
         provenance = run_provenance(backend)
         qualification = require_qualification(qualification_path, profile, provenance)
         if (
@@ -155,7 +175,8 @@ def run_local_task(
         if language is not None:
             policy += "\n\n" + agent_language_guidance(language)
         clock = SimulationClock() if profile.execution.mode == "simulation-v2" else None
-        lane = InferenceLane(backend, clock) if clock else None
+        guarded = profile.execution.tool_guard
+        lane = InferenceLane(backend, clock or WallClock()) if guarded else None
         caller_backend = lane.for_role("caller") if lane else backend
         if profile.execution.caller_policy == "terminal-v2":
             caller_backend = QualifiedCallerBackend(
@@ -163,15 +184,28 @@ def run_local_task(
                 str(task.user_scenario),
                 device_grounding=profile.execution.device_grounding
                 and domain == "telecom",
+                price_grounding=profile.execution.price_grounding,
+                goal_progress=profile.execution.goal_progress,
+                question_focus=profile.execution.question_focus,
+                routing_focus=profile.execution.routing_focus,
             )
-        agent = SpeechSwiftAgent(
-            environment.get_tools(),
-            policy,
-            backend=lane.for_role("agent") if lane else backend,
-            model_id=profile.roles["agent"].model_id,
-            seed=seed,
-            clock=clock,
-            tool_guidance=profile.execution.tool_guard,
+        agent = (
+            agent_factory(
+                environment.get_tools(),
+                policy,
+                opener_backend=lane.for_role("opener") if lane else backend,
+                seed=seed,
+            )
+            if agent_factory is not None
+            else SpeechSwiftAgent(
+                environment.get_tools(),
+                policy,
+                backend=lane.for_role("agent") if lane else backend,
+                model_id=profile.roles["agent"].model_id,
+                seed=seed,
+                clock=clock,
+                tool_guidance=profile.execution.tool_guard,
+            )
         )
         user = VoiceStreamingUserSimulator(
             tools=environment.get_user_tools(include=task.user_tools)
@@ -192,7 +226,9 @@ def run_local_task(
             else sampled.persona_config,
             backchannel=default_backchannel_settings("en"),
             realtime_generation=clock is None,
-            global_guidelines_override=LOCAL_CALLER_GUIDELINES if clock else None,
+            global_guidelines_override=LOCAL_CALLER_GUIDELINES
+            if profile.execution.caller_policy == "terminal-v2"
+            else None,
             chunk_size=round(PCM_SAMPLE_RATE * 0.05),
             tick_duration_seconds=0.05,
             wait_to_respond_threshold_other=round(
@@ -206,11 +242,12 @@ def run_local_task(
             if sampled.backchannel_min_threshold
             else None,
             interruption_check_interval=40,
-            wait_for_complete_agent_turns=clock is not None,
+            wait_for_complete_agent_turns=profile.execution.caller_policy
+            == "terminal-v2",
         )
-        orchestrator_type = LocalV2Orchestrator if clock else FullDuplexOrchestrator
+        orchestrator_type = LocalV2Orchestrator if guarded else FullDuplexOrchestrator
         orchestrator = orchestrator_type(
-            **({"clock": clock} if clock else {}),
+            **({"clock": clock} if guarded else {}),
             domain=domain,
             agent=agent,
             user=user,
@@ -228,28 +265,44 @@ def run_local_task(
         (output / "runtime.json").write_text(
             capabilities.model_dump_json(indent=2) + "\n"
         )
-        (output / "profile.json").write_text(profile.model_dump_json(indent=2) + "\n")
+        recorded_profile = profile.model_dump(mode="json")
+        if external_agent is not None:
+            recorded_profile = {
+                "caller_runtime_profile": recorded_profile,
+                "external_agent": external_agent,
+            }
+        (output / "profile.json").write_text(
+            json.dumps(recorded_profile, indent=2) + "\n"
+        )
         (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
         (output / "settings.json").write_text(
             json.dumps(
                 {
                     "domain": domain,
                     "profile": profile.profile,
-                    "agent_model": profile.roles["agent"].model_id,
+                    "agent_model": agent.model_id,
+                    **(
+                        {"external_agent": external_agent}
+                        if external_agent is not None
+                        else {}
+                    ),
                     "task_id": task.id,
                     "seed": seed,
                     "max_seconds": max_seconds,
                     "wall_timeout_seconds": wall_timeout,
                     "clock_mode": profile.execution.mode,
                     "caller_idle_seconds": profile.execution.caller_idle_seconds,
-                    "wait_for_complete_agent_turns": clock is not None,
+                    "wait_for_complete_agent_turns": profile.execution.caller_policy
+                    == "terminal-v2",
                     "device_grounding": profile.execution.device_grounding,
                     "qualification": qualification,
                     "complexity": complexity,
                     "tick_seconds": 0.05,
                     "agent_system_prompt": agent.get_init_state().messages[0].content,
-                    "agent_model_args": {"temperature": 0, "max_tokens": 1024},
-                    "agent_tts_seed": seed,
+                    "agent_model_args": external_agent.get("model_args")
+                    if external_agent is not None
+                    else {"temperature": 0, "max_tokens": 1024},
+                    "agent_tts_seed": None if external_agent is not None else seed,
                     "caller_model_args": {"temperature": 0, "max_tokens": 1024},
                     "decision_model_args": {"temperature": 0, "max_tokens": 16},
                     "semantic_judge_model_args": {"temperature": 0, "max_tokens": 1024},
@@ -268,7 +321,16 @@ def run_local_task(
         ):
             try:
                 simulation = orchestrator.run()
-                if clock and any(
+                if hasattr(agent, "raise_if_failed"):
+                    agent.raise_if_failed()
+                require_successful_inference(
+                    backend.events,
+                    agent.metrics["cancellations"],
+                    provenance["native"]["configuration"].get(
+                        "failureCaptureDirectory"
+                    ),
+                )
+                if guarded and any(
                     event["execution_status"] == "rejected"
                     for event in orchestrator.tool_guards["user"].events
                 ):
@@ -322,6 +384,9 @@ def run_local_task(
         simulation.info = {
             **(simulation.info or {}),
             "local_profile": profile.profile,
+            **(
+                {"external_agent": external_agent} if external_agent is not None else {}
+            ),
             "complexity": complexity,
             "local_metrics": agent.metrics,
             "caller_stale_generations": user.stale_generation_count,
@@ -332,7 +397,7 @@ def run_local_task(
             "tool_metrics": {
                 role: guard.events for role, guard in orchestrator.tool_guards.items()
             }
-            if clock
+            if guarded
             else {},
             "qualification": qualification,
             "diagnostics": inference_diagnostics(
@@ -348,6 +413,10 @@ def run_local_task(
         (output / "inference.json").write_text(
             json.dumps(backend.events, indent=2) + "\n"
         )
+        if external_agent is not None:
+            (output / "agent-events.json").write_text(
+                json.dumps(agent.metrics, indent=2) + "\n"
+            )
         for role in ("agent", "user"):
             with wave.open(str(output / f"{role}.wav"), "wb") as wav:
                 wav.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
@@ -370,6 +439,21 @@ def run_local_task(
             "scored": True,
             "artifacts": str(output.resolve()),
             "standard_leaderboard": False,
+            **(
+                {
+                    "external_agent": external_agent,
+                    "agent_usage": simulation.agent_usage.model_dump(mode="json")
+                    if simulation.agent_usage
+                    else None,
+                    "agent_cost_usd": simulation.agent_cost,
+                }
+                if external_agent is not None
+                else {}
+            ),
         }
     finally:
-        backend.close()
+        try:
+            if agent is not None and external_agent is not None:
+                agent.stop()
+        finally:
+            backend.close()

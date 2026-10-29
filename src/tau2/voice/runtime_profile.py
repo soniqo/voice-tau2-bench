@@ -16,6 +16,10 @@ class ExecutionSettings(BaseModel):
     require_qualification: bool = False
     tool_guard: bool = False
     device_grounding: bool = False
+    price_grounding: bool = False
+    goal_progress: bool = False
+    question_focus: bool = False
+    routing_focus: bool = False
     caller_idle_seconds: float = Field(default=5, ge=1, allow_inf_nan=False)
 
 
@@ -47,7 +51,13 @@ class LocalVoiceProfile(BaseModel):
 
     schema_version: Literal[1] = 1
     profile: Literal[
-        "soniqo-local-v1", "soniqo-local-gemma12b-v1", "soniqo-local-gemma12b-v2"
+        "soniqo-local-v1",
+        "soniqo-local-gemma12b-v1",
+        "soniqo-local-gemma12b-v2",
+        "soniqo-local-gemma12b-v3",
+        "soniqo-local-gemma12b-v4",
+        "soniqo-local-gemma12b-v5",
+        "soniqo-local-gemma12b-v6",
     ] = "soniqo-local-v1"
     language: Literal["en"] = "en"
     execution: ExecutionSettings = Field(default_factory=ExecutionSettings)
@@ -67,16 +77,33 @@ class LocalVoiceProfile(BaseModel):
 
     @model_validator(mode="after")
     def validate_execution_version(self):
-        if self.profile.endswith("-v2"):
+        if self.profile.endswith(("-v2", "-v3", "-v4", "-v5", "-v6")):
             if (
-                self.execution.mode != "simulation-v2"
+                self.execution.mode
+                != ("realtime-v1" if self.profile.endswith("-v6") else "simulation-v2")
                 or self.execution.caller_policy != "terminal-v2"
                 or not self.execution.require_qualification
                 or not self.execution.tool_guard
             ):
                 raise ValueError(
-                    "The v2 profile requires simulation time, qualified terminal-v2 caller, and tool guard"
+                    "The v2/v3 profiles require simulation time, qualified terminal-v2 caller, and tool guard"
                 )
+            if self.profile.endswith(("-v3", "-v4", "-v5", "-v6")):
+                agent = self.roles.get("agent")
+                if agent is None or "reasoning_history" not in agent.features:
+                    raise ValueError(
+                        "The v3 profile requires agent reasoning_history support"
+                    )
+            if self.execution.question_focus and not self.profile.endswith(
+                ("-v4", "-v5", "-v6")
+            ):
+                raise ValueError(
+                    "question_focus requires the separate v4 or v5 profile"
+                )
+            if self.execution.routing_focus and not self.profile.endswith(
+                ("-v5", "-v6")
+            ):
+                raise ValueError("routing_focus requires the separate v5 profile")
         elif self.execution != ExecutionSettings():
             raise ValueError(
                 "Historical v1 profiles retain their original execution settings"
@@ -102,7 +129,9 @@ class LocalVoiceProfile(BaseModel):
             wall = call
         return call, wall
 
-    def check_runtime(self, capabilities: RuntimeCapabilities) -> None:
+    def check_runtime(
+        self, capabilities: RuntimeCapabilities, *, roles: set[str] | None = None
+    ) -> None:
         """Fail before a run if a role, model, precision, or feature is missing."""
         required_roles = {
             "agent",
@@ -114,11 +143,17 @@ class LocalVoiceProfile(BaseModel):
             "asr",
             "vad",
         }
+        if roles is not None:
+            if not roles or roles - required_roles:
+                raise ValueError("Unknown or empty native role selection")
+            required_roles = roles
         errors = [
             f"missing role: {role}"
             for role in sorted(required_roles - self.roles.keys())
         ]
         for role, required in self.roles.items():
+            if roles is not None and role not in roles:
+                continue
             actual = capabilities.models.get(required.model_id)
             if actual is None:
                 errors.append(f"{role}: model {required.model_id!r} unavailable")

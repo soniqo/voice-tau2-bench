@@ -156,6 +156,8 @@ def run_batch(
     profile_path: Path | None = None,
     qualification_path: Path | None = None,
     task_plan_path: Path | None = None,
+    agent_factory=None,
+    external_agent: dict | None = None,
 ) -> dict:
     """Run one task at a time; infrastructure errors stop without receiving a score."""
     verify_baseline()
@@ -166,7 +168,14 @@ def run_batch(
     backend = SpeechSwiftBackend(base_url)
     try:
         capabilities = backend.capabilities()
-        profile.check_runtime(capabilities)
+        profile.check_runtime(
+            capabilities,
+            **(
+                {"roles": {"caller", "listener", "judge", "caller_tts"}}
+                if external_agent is not None
+                else {}
+            ),
+        )
         provenance = run_provenance(backend)
         qualification = require_qualification(qualification_path, profile, provenance)
     finally:
@@ -182,6 +191,7 @@ def run_batch(
         "task_plan": task_plan,
         "complexity": complexity,
         "jobs": jobs,
+        **({"external_agent": external_agent} if external_agent is not None else {}),
     }
     manifest_path = output / "batch.json"
     if manifest_path.exists():
@@ -229,6 +239,14 @@ def run_batch(
                     expected_provenance=manifest["provenance"],
                     profile_path=profile_path,
                     qualification_path=qualification_path,
+                    **(
+                        {
+                            "agent_factory": agent_factory,
+                            "external_agent": external_agent,
+                        }
+                        if agent_factory is not None
+                        else {}
+                    ),
                 )
             except Exception as error:
                 summary = summarize(jobs, results, trials)

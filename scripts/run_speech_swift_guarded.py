@@ -3,11 +3,75 @@
 
 import argparse
 import ctypes
+import hashlib
 import json
+import re
 import shutil
 import subprocess
 import time
 from pathlib import Path
+
+
+def validate_assets(manifest_path):
+    """Check pinned local files before allocating native model memory."""
+    manifest = json.loads(manifest_path.read_text())
+    assets = manifest.get("assets")
+    if not isinstance(assets, dict) or not assets:
+        raise ValueError("Model manifest has no pinned assets; stage models first")
+    errors = []
+    required = {"gemma", "vox", "whisper", "vad", "tokenizer"}
+    if manifest.get("agentDirectory"):
+        required.add("agent")
+    errors.extend(
+        f"{role}: missing asset pins" for role in sorted(required - assets.keys())
+    )
+    for role, pin in assets.items():
+        directory = manifest.get(f"{role}Directory")
+        files = pin.get("files") if isinstance(pin, dict) else None
+        if (
+            not isinstance(directory, str)
+            or not directory
+            or not isinstance(files, list)
+            or not files
+        ):
+            errors.append(f"{role}: missing directory or file pins")
+            continue
+        for record in files:
+            if not isinstance(record, dict):
+                errors.append(f"{role}: invalid file pin")
+                continue
+            name = record.get("path", "")
+            expected = record.get("sha256", "")
+            if (
+                not isinstance(name, str)
+                or not name
+                or Path(name).is_absolute()
+                or ".." in Path(name).parts
+                or not isinstance(expected, str)
+                or not re.fullmatch(r"[0-9a-f]{64}", expected)
+            ):
+                errors.append(f"{role}: invalid file pin")
+                continue
+            path = Path(directory) / name
+            label = f"{role}/{name}"
+            if not path.is_file():
+                errors.append(f"{label}: missing")
+                continue
+            if "size" in record and path.stat().st_size != record["size"]:
+                errors.append(f"{label}: size mismatch")
+                continue
+            value = hashlib.sha256()
+            with path.open("rb") as stream:
+                for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+                    value.update(block)
+            if value.hexdigest() != expected:
+                errors.append(f"{label}: checksum mismatch")
+    if errors:
+        raise ValueError(
+            "Local model assets are not ready:\n"
+            + "\n".join(errors)
+            + "\nRestage with scripts/prepare_speech_swift_models.py before starting."
+        )
 
 
 class RUsage(ctypes.Structure):
@@ -46,6 +110,10 @@ def main():
     parser.add_argument("--memory-gb", type=float, default=24)
     parser.add_argument("--min-free-gb", type=float, default=2)
     args = parser.parse_args()
+    try:
+        validate_assets(args.manifest)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     libproc = ctypes.CDLL("/usr/lib/libproc.dylib", use_errno=True)
     libproc.proc_pid_rusage.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
     libproc.proc_pid_rusage.restype = ctypes.c_int

@@ -1,0 +1,2330 @@
+{
+  "schema_version": 1,
+  "suite": "local-caller-judge-v4",
+  "caller": [
+    {
+      "id": "completed-action",
+      "scenario": "Cancel my monthly magazine subscription. No follow-up questions.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "Your subscription has been cancelled."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "promised-action",
+      "scenario": "Cancel my monthly magazine subscription.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "I will cancel your subscription now."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "resolved-refusal",
+      "scenario": "Ask to refund a non-refundable event ticket. If refused, ask if store credit is possible. Accept the final policy answer.",
+      "history": [
+        [
+          "assistant",
+          "Can you refund my ticket?"
+        ],
+        [
+          "user",
+          "Your ticket is non-refundable."
+        ],
+        [
+          "assistant",
+          "Could I get store credit instead?"
+        ],
+        [
+          "user",
+          "Store credit is also unavailable for this ticket."
+        ]
+      ],
+      "decision": "REFUSED"
+    },
+    {
+      "id": "refusal-before-follow-up",
+      "scenario": "Ask to refund a non-refundable event ticket. If refused, ask if store credit is possible. Accept the final policy answer.",
+      "history": [
+        [
+          "assistant",
+          "Can you refund my ticket?"
+        ],
+        [
+          "user",
+          "Your ticket is non-refundable."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "agent-goodbye-with-pending-work",
+      "scenario": "Change my delivery address to 25 River Street.",
+      "history": [
+        [
+          "assistant",
+          "Change my delivery address to 25 River Street."
+        ],
+        [
+          "user",
+          "I will update it later. Goodbye."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "partially-answered",
+      "scenario": "Find out my new monthly bill and when it takes effect.",
+      "history": [
+        [
+          "assistant",
+          "What is my new monthly bill and when does it take effect?"
+        ],
+        [
+          "user",
+          "Your new monthly bill is $42."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "all-questions-answered",
+      "scenario": "Find out my new monthly bill and when it takes effect.",
+      "history": [
+        [
+          "assistant",
+          "What is my new monthly bill and when does it take effect?"
+        ],
+        [
+          "user",
+          "Your bill is $42 per month, effective November 1."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "caller-device-action",
+      "scenario": "Fix mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working. Can you help me fix it?"
+        ],
+        [
+          "user",
+          "Please enable mobile data on your phone now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_mobile_data",
+        "arguments": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "caller-speed-test",
+      "scenario": "Fix mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working. Can you help me fix it?"
+        ],
+        [
+          "user",
+          "Please run a speed test and tell me the result."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "unknown-account",
+      "scenario": "Find out my current monthly bill. I do not know my account number. Do not invent an account number.",
+      "history": [
+        [
+          "user",
+          "What is your account number?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "customer-claim-is-not-agent-confirmation",
+      "scenario": "Cancel my monthly magazine subscription.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my subscription."
+        ],
+        [
+          "user",
+          "I am checking your subscription now."
+        ],
+        [
+          "assistant",
+          "It has been cancelled."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "disclose-actual-goal",
+      "scenario": "Book a cabin tour for May 12.",
+      "history": [
+        [
+          "user",
+          "Hello! How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "cabin"
+        ]
+      }
+    },
+    {
+      "id": "customer-must-not-do-agent-work",
+      "scenario": "Ask the agent to create an appointment named Annual Checkup.",
+      "history": [
+        [
+          "assistant",
+          "I need you to create an appointment."
+        ],
+        [
+          "user",
+          "What should the appointment be named?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "notification_tools": true,
+        "must_contain": [
+          "annual",
+          "checkup"
+        ]
+      }
+    },
+    {
+      "id": "device-setting-is-not-connectivity",
+      "scenario": "Restore my mobile internet. Follow the agent instructions using customer tools.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please turn off airplane mode and then check your connection."
+        ],
+        [
+          "tool",
+          "{\"airplane_mode\": false, \"signal\": \"Excellent\", \"mobile_internet\": \"not tested\"}"
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "partially-completed-actions",
+      "scenario": "Change the delivery addresses for both my desk order and my lamp order to 25 River Street.",
+      "history": [
+        [
+          "assistant",
+          "Please change both orders to 25 River Street."
+        ],
+        [
+          "user",
+          "The desk order delivery address has been changed to 25 River Street. I am checking the lamp order."
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "verified-connectivity-completion",
+      "scenario": "Restore my mobile internet. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please run a speed test now."
+        ],
+        [
+          "tool",
+          "{\"download_mbps\": 20, \"internet_access\": true}"
+        ],
+        [
+          "assistant",
+          "The speed test works now, at 20 megabits per second."
+        ],
+        [
+          "user",
+          "Your mobile internet connection has been restored and verified by the successful speed test."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "full-tools-airplane-action",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "tool",
+          "Airplane Mode: ON; Cellular Connection: no_service."
+        ],
+        [
+          "user",
+          "Please turn off Airplane Mode now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-roaming-action",
+      "scenario": "Restore my mobile internet while travelling abroad. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "assistant",
+          "My internet does not work abroad."
+        ],
+        [
+          "tool",
+          "Data Roaming Enabled: No"
+        ],
+        [
+          "user",
+          "Please enable data roaming on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        }
+      }
+    },
+    {
+      "id": "full-tools-claimed-action-without-execution",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode."
+        ],
+        [
+          "assistant",
+          "I turned it off."
+        ],
+        [
+          "tool",
+          "Airplane Mode: ON; Cellular Connection: no_service."
+        ],
+        [
+          "user",
+          "It is still on. Please turn Airplane Mode off now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-no-repeat-after-device-action",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using my customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode."
+        ],
+        [
+          "tool",
+          "Airplane Mode is now OFF."
+        ],
+        [
+          "user",
+          "Is Airplane Mode off now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "off"
+        ],
+        "permitted_read": "check_network_status"
+      }
+    },
+    {
+      "id": "full-tools-no-unsolicited-action",
+      "scenario": "My mobile internet does not work. Ask the agent to help restore it.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hello! How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "internet"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-already-off",
+      "scenario": "Restore mobile internet. Follow the agent instructions with customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "tool",
+          "Airplane Mode: OFF"
+        ],
+        [
+          "user",
+          "Please turn off airplane mode."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "device_unchanged": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-persona-needs-reassurance",
+      "scenario": "Persona: You are worried that rebooting will delete your photos. You must ask whether your photos will be safe before you reboot. Instructions: Ask the agent to restore mobile internet.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "assistant",
+          "My mobile internet does not work."
+        ],
+        [
+          "user",
+          "Please reboot your phone now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "photos"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-later-troubleshooting-read",
+      "scenario": "Restore my mobile internet while travelling. Follow the agent instructions with customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "data_saver_mode": false
+      },
+      "history": [
+        [
+          "assistant",
+          "My mobile internet is not working while I travel."
+        ],
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "No internet connection; download speed 0 Mbps."
+        ],
+        [
+          "user",
+          "Check your mobile data and network mode."
+        ],
+        [
+          "tool",
+          "Mobile Data Enabled: Yes; Preferred Network Mode: 4G/5G preferred."
+        ],
+        [
+          "assistant",
+          "Mobile data is enabled and the preferred mode is 4G/5G."
+        ],
+        [
+          "user",
+          "Could you check whether Data Saver mode is enabled?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_data_restriction_status",
+        "arguments": {},
+        "device_after": {
+          "data_saver_mode": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-streaming-vpn-question",
+      "scenario": "Restore my mobile internet. Follow the service agent instructions using customer tools.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I am "
+        ],
+        [
+          "user",
+          "not using "
+        ],
+        [
+          "user",
+          "a VPN. I "
+        ],
+        [
+          "user",
+          "am asking "
+        ],
+        [
+          "user",
+          "if you "
+        ],
+        [
+          "user",
+          "have a VPN "
+        ],
+        [
+          "user",
+          "active on "
+        ],
+        [
+          "user",
+          "your phone, "
+        ],
+        [
+          "user",
+          "as that "
+        ],
+        [
+          "user",
+          "can "
+        ],
+        [
+          "user",
+          "sometimes "
+        ],
+        [
+          "user",
+          "affect "
+        ],
+        [
+          "user",
+          "your connection speed."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-unknown-plan-usage",
+      "scenario": "Restore my mobile internet. I do not know my current plan data usage or whether I reached the limit. Do not invent account information.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I'll check your data usage. Could you please tell me if you have reached your plan's data limit?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "full-tools-vpn-after-account-and-speed-test",
+      "scenario": "Instructions:\n\tDomain: telecom\n\tReason for call:\n\t\tYou mobile data is not working properly. It either stops working or is very slow. You want to fix it and absolutely want to get excellent internet speed on your phone. You are not willing to accept any other internet speed (poor, fair or good). You do not have access to wifi.\n\tKnown info:\n\t\tYou are John Smith with phone number 555-123-2002. You are currently abroad in France.\n\tTask instructions:\n\t\tIf the agent suggests actions that don't immediately fix the issue, follow their guidance but express mild frustration after the first unsuccessful attempt. You will consider the issue resolved only when speed test returns excellent internet speed and nothing else. If it returns poor, fair or good, you will not consider the issue resolved. You are willing to refuel 2.0 GB of data if necessary, but you do not want to change your mobile data plan. If the tool call does not return updated status information, you might need to perform another tool call to get the updated status. \n\t\tWhenever the agent asks you about your device, always ground your responses on the results of tool calls. \n\t\tFor example: If the agent asks what the status bar shows, always ground your response on the results of the `get_status_bar` tool call. If the agent asks if you are able to send an MMS message, always ground your response on the results of the `can_send_mms` tool call.\n\t\tNever make up the results of tool calls, always ground your responses on the results of tool calls.\n\t\tIf you are unsure about whether an action is necessary, always ask the agent for clarification.\n",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hi, thanks for calling. How can I help you today?"
+        ],
+        [
+          "assistant",
+          "Yeah, hi, I'm contacting you about my mobile data not working properly while I'm here in France."
+        ],
+        [
+          "user",
+          "I'm sorry to hear your data isn't working in France. Can you please provide your phone number so I can look up your account?"
+        ],
+        [
+          "assistant",
+          "My number is 555-123-2002."
+        ],
+        [
+          "assistant",
+          "Okay, so my mobile data is either stopping or it's really slow."
+        ],
+        [
+          "user",
+          "I'm sorry to hear that. To help you, could you please tell me which of your lines is experiencing this issue?"
+        ],
+        [
+          "assistant",
+          "It's just this one line, 555-123-2002."
+        ],
+        [
+          "user",
+          "I see that your line is currently using 8.7 GB of your 15 GB limit. Could you please perform a speed test for me?"
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "assistant",
+          "Yeah, the speed test failed, it said No Connection."
+        ],
+        [
+          "user",
+          "I'm sorry, I'm having trouble running that test. Since you're in France, I'll check your roaming settings. Could you please tell me if you're currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        }
+      }
+    },
+    {
+      "id": "grounded-vpn-enabled-false-connected-false",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": false,
+        "vpn_connected": false,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is disabled."
+      }
+    },
+    {
+      "id": "grounded-vpn-enabled-true-connected-false",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": false,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is enabled in settings, but it is not connected."
+      }
+    },
+    {
+      "id": "grounded-vpn-enabled-true-connected-true",
+      "scenario": "Follow the agent instructions. Ground all phone status answers in tool results.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": true,
+        "vpn_details": null
+      },
+      "history": [
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": true
+        },
+        "spoken_result": "My VPN is connected."
+      }
+    },
+    {
+      "id": "grounded-write-and-report-airplane_mode",
+      "scenario": "Follow the agent instructions using actual customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "tool",
+          "Airplane Mode: ON"
+        ],
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        },
+        "spoken_result": "Airplane Mode is now OFF"
+      }
+    },
+    {
+      "id": "grounded-write-and-report-roaming_enabled",
+      "scenario": "Follow the agent instructions using actual customer tools.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "tool",
+          "Data Roaming Enabled: No"
+        ],
+        [
+          "user",
+          "Please turn data roaming on."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        },
+        "spoken_result": "Data Roaming is now ON"
+      }
+    },
+    {
+      "id": "grounded-observe-before-toggle",
+      "scenario": "Follow the agent instructions; device state is unknown before checking.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false
+        },
+        "spoken_result": "Airplane Mode is now OFF"
+      }
+    },
+    {
+      "id": "grounded-observe-already-correct",
+      "scenario": "Follow the agent instructions; device state is unknown before checking.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": false
+      },
+      "history": [
+        [
+          "user",
+          "Please turn airplane mode off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "device_unchanged": {
+          "airplane_mode": false
+        }
+      }
+    },
+    {
+      "id": "grounded-vpn-stale-after-airplane-write",
+      "scenario": "Answer device questions only using current actual tool observations.",
+      "toolset": "telecom",
+      "device": {
+        "vpn_enabled_setting": true,
+        "vpn_connected": false
+      },
+      "history": [
+        [
+          "tool",
+          "VPN is ON and connected (no specific details available).",
+          {
+            "name": "check_vpn_status"
+          }
+        ],
+        [
+          "tool",
+          "Airplane Mode is now ON.",
+          {
+            "name": "toggle_airplane_mode"
+          }
+        ],
+        [
+          "user",
+          "Are you currently using a VPN?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_vpn_status",
+        "arguments": {},
+        "device_after": {
+          "vpn_connected": false
+        },
+        "spoken_result": "My VPN is enabled in settings, but it is not connected."
+      }
+    },
+    {
+      "id": "grounded-agent-promise-not-customer-request",
+      "scenario": "Wait while the agent does its own account lookup. Do not perform unrequested device actions.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "user",
+          "I'll check your data roaming status now. One moment."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "device_unchanged": {
+          "roaming_enabled": false
+        }
+      }
+    },
+    {
+      "id": "grounded-unknown-mode-needs-clarification",
+      "scenario": "Ask for the exact setting when the requested device change is ambiguous.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Please change your network mode."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "clarify"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-incomplete-phone-turn",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you please tell me which phone ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "full-tools-incomplete-greeting",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Hello, thank you for calling. Could you ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "full-tools-known-phone-plural",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which of your phone numbers is experiencing this issue?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-known-affected-line",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which of your lines is experiencing the data issues?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-unknown-phone",
+      "scenario": "Known info:\nYou do not know your phone number.\nTask instructions:\nRestore your internet.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Which phone number is affected?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "full-tools-complete-question-during-speech",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002.\nTask instructions:\nRestore your internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Is airplane mode on? While you check,",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_network_status",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-describe-reported-symptoms",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I'm here. I've located your account. I see that your line is active and roaming is enabled. Could you please describe what happens when you try to use your data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "slow"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-check-before-describing",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Please check whether mobile data is enabled and describe what happens."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_network_status",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-working-is-not-enabled",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Is your mobile data working now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-speed-test-over-mobile-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you run a speed test on your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-mms-over-mobile-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Can you send MMS over mobile data now?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "can_send_mms",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "full-tools-which-line-using-data",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I am still here. I see your account is active. Which line are you using for your data in France?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "555-123-2002"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-more-about-reported-symptoms",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "I see that your line is roaming enabled. Could you please tell me more about the issue you are experiencing with your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "slow"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-location-is-not-a-setting",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "user",
+          "Could you please tell me where you are using your mobile data?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "France"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-agent-offer-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "I apologize for the confusion. Since the speed test shows no connection, I can check if your data is being restricted. Would you like me to check that?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
+    },
+    {
+      "id": "full-tools-agent-can-i-check-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "The speed test failed. Can I check that for you?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
+    },
+    {
+      "id": "full-tools-agent-promise-after-speed-test",
+      "scenario": "Known info:\nYour phone number is 555-123-2002. Your mobile internet is not working in France.\nTask instructions:\nAsk the agent to restore your mobile internet.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true
+      },
+      "history": [
+        [
+          "user",
+          "Please run a speed test."
+        ],
+        [
+          "tool",
+          "Speed test failed: No Connection.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Speed test failed: No Connection."
+        ],
+        [
+          "user",
+          "I will check that now."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_speak": true
+      }
+    },
+    {
+      "id": "non-phone-incomplete-identity-question",
+      "scenario": "Known info:\nYou are John Smith.\nTask instructions:\nAsk to change your flight.",
+      "history": [
+        [
+          "user",
+          "Could you please tell me your ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "non-phone-incomplete-product-question",
+      "scenario": "Known info:\nYou have a black shirt.\nTask instructions:\nAsk to return your shirt.",
+      "history": [
+        [
+          "user",
+          "Could you please tell me which item you ",
+          {
+            "is_final_chunk": false
+          }
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "full-tools-data-speed-is-not-enabled",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Could you please check if your data speed is still slow?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-slow-data-is-not-enabled",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Is your mobile data still slow?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-report-restored-connection",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please let me know if your connection is restored now that Airplane Mode is off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-report-working-connection",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "I am still here. Please let me know if your connection is working now that Airplane Mode is off."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-current-phone-network-technology",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true,
+        "network_mode_preference": "2g_only",
+        "network_connection_status": "no_service",
+        "network_technology_connected": "none",
+        "network_signal_strength": "none"
+      },
+      "history": [
+        [
+          "user",
+          "I see. Since your data is enabled and your plan limit has not been reached, could you please check if your phone is currently using a 2G or 3G network?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "must_contain": [
+          "Airplane Mode: ON",
+          "Cellular Network Type: none"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-current-phone-network-settings",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true,
+        "network_mode_preference": "2g_only",
+        "network_connection_status": "no_service",
+        "network_technology_connected": "none",
+        "network_signal_strength": "none"
+      },
+      "history": [
+        [
+          "user",
+          "Please check your network settings to see if your phone is connected to a 2G or 3G network."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "must_contain": [
+          "Airplane Mode: ON",
+          "Cellular Network Type: none"
+        ]
+      }
+    },
+    {
+      "id": "full-tools-try-connecting-tests-service",
+      "scenario": "Known info:\nYou are John Smith with phone number 555-123-2002. Your mobile data either does not work or is very slow in France.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please try to connect to your mobile data now. Is it working correctly?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-unverified-speed-blocks-closure",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nYou will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+      "toolset": "telecom",
+      "device": {
+        "data_enabled": false,
+        "airplane_mode": false,
+        "network_signal_strength": "excellent"
+      },
+      "history": [
+        [
+          "user",
+          "Your connection is restored. Is there anything else I can help you with?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "run_speed_test",
+        "arguments": {},
+        "spoken_result": "Speed test failed: No Connection."
+      }
+    },
+    {
+      "id": "full-tools-verified-excellent-speed-completes",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nYou will consider the issue resolved only when speed test returns excellent internet speed and nothing else.",
+      "toolset": "telecom",
+      "history": [
+        [
+          "tool",
+          "Speed Test Result: 200.00 Mbps (Excellent). Connection is very fast.",
+          {
+            "name": "run_speed_test",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "My speed test returned excellent internet speed."
+        ],
+        [
+          "user",
+          "Your mobile internet is restored."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "full-tools-airplane-off-on-device",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn off Airplane Mode on your device. This will restore your cellular and data connections. Would you like me to check anything else?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_airplane_mode",
+        "arguments": {},
+        "device_after": {
+          "airplane_mode": false,
+          "data_enabled": true
+        }
+      }
+    },
+    {
+      "id": "full-tools-wifi-off-on-phone",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "wifi_enabled": true
+      },
+      "history": [
+        [
+          "user",
+          "Please turn Wi-Fi off on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_wifi_status",
+        "tool": "toggle_wifi",
+        "arguments": {},
+        "device_after": {
+          "wifi_enabled": false
+        }
+      }
+    },
+    {
+      "id": "full-tools-roaming-on-on-phone",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "roaming_enabled": false
+      },
+      "history": [
+        [
+          "user",
+          "Please set data roaming to on on your phone."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "permitted_read": "check_network_status",
+        "tool": "toggle_roaming",
+        "arguments": {},
+        "device_after": {
+          "roaming_enabled": true
+        }
+      }
+    },
+    {
+      "id": "full-tools-status-icons-not-setting-labels",
+      "scenario": "Known info:\nYour mobile internet is not working.\nTask instructions:\nRestore your mobile internet and follow the agent instructions.",
+      "toolset": "telecom",
+      "device": {
+        "airplane_mode": true,
+        "data_enabled": true
+      },
+      "history": [
+        [
+          "tool",
+          "Mobile Data Enabled: Yes",
+          {
+            "name": "check_network_status",
+            "arguments": {}
+          }
+        ],
+        [
+          "assistant",
+          "Mobile Data Enabled: Yes"
+        ],
+        [
+          "user",
+          "Since your data is enabled and you haven't reached your limit, I can check your network status. Could you please tell me if you are seeing any specific icons like \"No Signal\" or \"Data Disabled\" in your status bar?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "tool": "check_status_bar",
+        "arguments": {},
+        "spoken_result": "My status bar shows Airplane Mode, battery 80 percent."
+      }
+    },
+    {
+      "id": "non-phone-answered-identity-wait",
+      "scenario": "Known info:\nYour user ID is sam_taylor_1234.\nTask instructions:\nAsk to add a checked bag to your next flight.",
+      "history": [
+        [
+          "user",
+          "Could you please provide your user ID?"
+        ],
+        [
+          "assistant",
+          "My user ID is sam_taylor_1234."
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 0,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "no_speech": true
+      }
+    },
+    {
+      "id": "non-phone-answered-identity-check-in",
+      "scenario": "Known info:\nYour user ID is sam_taylor_1234.\nTask instructions:\nAsk to add a checked bag to your next flight.",
+      "history": [
+        [
+          "user",
+          "Could you please provide your user ID?"
+        ],
+        [
+          "assistant",
+          "My user ID is sam_taylor_1234."
+        ]
+      ],
+      "caller_timing": {
+        "agent_silence_seconds": 15,
+        "caller_idle_seconds": 15
+      },
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Are you still there?"
+        ]
+      }
+    },
+    {
+      "id": "completed-action-before-closing-help-question",
+      "scenario": "Upgrade my reservation to business class and add two checked bags. No further requests remain.",
+      "history": [
+        [
+          "user",
+          "I have successfully updated your reservation to business class and added two checked bags. Is there anything else I can help you with?"
+        ],
+        [
+          "assistant",
+          "No, thank you."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "pending-action-before-closing-help-question",
+      "scenario": "Upgrade my reservation to business class and add two checked bags.",
+      "history": [
+        [
+          "user",
+          "I have upgraded the reservation to business class. I will add the two checked bags next. Is there anything else I can help you with?"
+        ]
+      ],
+      "decision": "CONTINUE"
+    },
+    {
+      "id": "spending-cap-in-opening",
+      "scenario": "Instructions:\n\tDomain: airline\n\tReason for call:\n\t\tYou have an upcoming flight from Boston to Minneapolis under reservation ID YAX4DR.\n\n\t\tYou want to change your class for all passengers to business.\n\n\t\tYou also want to add 2 checked bags under your name using your Gold membership even if the upgrade is not possible.\n\tKnown info:\n\t\tYour name is Chen Lee.\n\n\t\tYour user id is chen_lee_6825.\n\tTask instructions:\n\t\tYou are willing to pay a fee for the business class changes, up to $650.\n\n\t\tIf the costs are greater than that for the upgrade, then try to upgrade your companion Noah to business under the constraints.",
+      "history": [
+        [
+          "user",
+          "Hi, thanks for calling. How can I help you today?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "650"
+        ]
+      }
+    },
+    {
+      "id": "spending-cap-rejects-over-budget-consent",
+      "scenario": "Instructions:\n\tDomain: airline\n\tReason for call:\n\t\tYou have an upcoming flight from Boston to Minneapolis under reservation ID YAX4DR.\n\n\t\tYou want to change your class for all passengers to business.\n\n\t\tYou also want to add 2 checked bags under your name using your Gold membership even if the upgrade is not possible.\n\tKnown info:\n\t\tYour name is Chen Lee.\n\n\t\tYour user id is chen_lee_6825.\n\tTask instructions:\n\t\tYou are willing to pay a fee for the business class changes, up to $650.\n\n\t\tIf the costs are greater than that for the upgrade, then try to upgrade your companion Noah to business under the constraints.",
+      "history": [
+        [
+          "assistant",
+          "Please upgrade both passengers, but my limit is $650. If that is too expensive, try upgrading Noah only."
+        ],
+        [
+          "user",
+          "The total upgrade fee for both passengers is $1200. Shall I proceed?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Noah"
+        ]
+      }
+    },
+    {
+      "id": "spending-cap-unquoted-consent-after-lookup",
+      "scenario": "Upgrade both passengers to business class for at most $425 in total. Add two checked bags using my Gold membership even if the upgrade is not possible. If upgrading both costs too much, ask about upgrading my companion Maya alone within the same limit. My customer ID is alex_7301.",
+      "history": [
+        [
+          "assistant",
+          "Upgrade both passengers for at most $425 and add two bags using my Gold membership."
+        ],
+        [
+          "user",
+          "What is your customer ID?"
+        ],
+        [
+          "assistant",
+          "My customer ID is alex underscore 7301."
+        ],
+        [
+          "user",
+          "I found your reservation. You want business class and two checked bags. May I proceed with these changes?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_ask_price": true
+      }
+    },
+    {
+      "id": "spending-cap-unquoted-completion",
+      "scenario": "Upgrade both passengers to business class for at most $425 in total. Add two checked bags using my Gold membership even if the upgrade is not possible. If upgrading both costs too much, ask about upgrading my companion Maya alone within the same limit. My customer ID is alex_7301.",
+      "history": [
+        [
+          "assistant",
+          "Upgrade both passengers for at most $425 and add two bags using my Gold membership."
+        ],
+        [
+          "user",
+          "I found your reservation. You want business class and two checked bags. May I proceed with these changes?"
+        ],
+        [
+          "assistant",
+          "Yes, I would like to proceed."
+        ],
+        [
+          "user",
+          "I have successfully upgraded your reservation and added two checked bags. Is there anything else I can help you with?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_ask_price": true
+      }
+    },
+    {
+      "id": "spending-cap-completed-with-quoted-total",
+      "scenario": "Cancel my subscription and refund the remaining balance. I will pay at most $20 as a cancellation fee. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel and refund my subscription. The fee must be no more than $20."
+        ],
+        [
+          "user",
+          "The total cancellation fee is $10. May I proceed?"
+        ],
+        [
+          "assistant",
+          "Yes, please proceed."
+        ],
+        [
+          "user",
+          "Your subscription has been cancelled. I have refunded the remaining balance and charged only the agreed total fee of $10."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "spending-cap-long-quoted-total",
+      "scenario": "Upgrade both passengers to business class for at most $650 in total. If the total is within this limit, approve the upgrade. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "Please upgrade both passengers. My total limit is $650."
+        ],
+        [
+          "user",
+          "The total cost for the business class upgrade for both passengers on the two connecting flights would be $598.00, within your $650 budget. Would you like me to proceed?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_approve": true
+      }
+    },
+    {
+      "id": "partial-refusal-keeps-independent-bags-request",
+      "scenario": "Upgrade both passengers to business for at most $425. If that costs more, ask about upgrading my companion Maya alone. Also add two checked bags, even if the upgrade is impossible.",
+      "history": [
+        [
+          "assistant",
+          "Upgrade both of us and add two bags; my upgrade limit is $425."
+        ],
+        [
+          "user",
+          "The upgrade costs $1200."
+        ],
+        [
+          "assistant",
+          "Can you upgrade Maya alone instead?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only one passenger. Policy requires everyone in the reservation to use the same cabin class."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "bags"
+        ]
+      }
+    },
+    {
+      "id": "partial-refusal-keeps-independent-subscription-request",
+      "scenario": "Change my delivery address and cancel my recurring subscription. Cancel the subscription even if the address cannot be changed. No other requests.",
+      "history": [
+        [
+          "assistant",
+          "Please change my delivery address and cancel my subscription."
+        ],
+        [
+          "user",
+          "I cannot change the delivery address because the order has shipped."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "subscription"
+        ]
+      }
+    },
+    {
+      "id": "partial-refusal-and-independent-completion-can-stop",
+      "scenario": "Upgrade both passengers to business for at most $425. If that costs more, ask about upgrading my companion Maya alone. Also add two checked bags, even if the upgrade is impossible.",
+      "history": [
+        [
+          "assistant",
+          "Upgrade both of us and add two bags; my upgrade limit is $425."
+        ],
+        [
+          "user",
+          "The upgrade costs $1200."
+        ],
+        [
+          "assistant",
+          "Can you upgrade Maya alone instead?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only one passenger. Policy requires everyone in the reservation to use the same cabin class."
+        ],
+        [
+          "assistant",
+          "Then please add the two bags."
+        ],
+        [
+          "user",
+          "I have added your two checked bags at no charge. I cannot upgrade only Maya because all passengers must share the cabin class."
+        ]
+      ],
+      "decision": "COMPLETE"
+    },
+    {
+      "id": "over-budget-refusal-loop-keeps-independent-request",
+      "scenario": "Upgrade both passengers to business for at most $425. If that costs more, ask about upgrading my companion Maya alone. Also add two checked bags, even if the upgrade is impossible.",
+      "history": [
+        [
+          "assistant",
+          "Upgrade both of us and add two bags; my upgrade limit is $425."
+        ],
+        [
+          "user",
+          "The upgrade costs $1200."
+        ],
+        [
+          "assistant",
+          "Can you upgrade Maya alone instead?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only one passenger. Policy requires everyone in the reservation to use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ],
+        [
+          "assistant",
+          "The upgrade is above my $425 limit. Could Maya be upgraded alone?"
+        ],
+        [
+          "user",
+          "I cannot upgrade only Maya. All passengers must use the same cabin class."
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "bags"
+        ]
+      }
+    },
+    {
+      "id": "reason-after-long-request-loop",
+      "scenario": "Cancel your club membership because you are moving to another city. You still want to cancel.",
+      "history": [
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ],
+        [
+          "assistant",
+          "I want to cancel my membership."
+        ],
+        [
+          "user",
+          "Could you tell me why you want to cancel?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain_any": [
+          "moving",
+          "move",
+          "relocat"
+        ]
+      }
+    },
+    {
+      "id": "reason-releases-slot",
+      "scenario": "Cancel your class booking so that someone else can use your place. You do not know the booking ID.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my class booking."
+        ],
+        [
+          "user",
+          "What is the reason for cancellation?"
+        ],
+        [
+          "assistant",
+          "Please cancel my class booking."
+        ],
+        [
+          "user",
+          "What is the reason for cancellation?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain_any": [
+          "someone",
+          "others",
+          "else",
+          "free",
+          "give"
+        ]
+      }
+    },
+    {
+      "id": "reason-colour-mismatch",
+      "scenario": "Return the sweater because you ordered blue but received red.",
+      "history": [
+        [
+          "assistant",
+          "I want to return the sweater."
+        ],
+        [
+          "user",
+          "Why are you returning it?"
+        ],
+        [
+          "assistant",
+          "I want to return the sweater."
+        ],
+        [
+          "user",
+          "Why are you returning it?"
+        ],
+        [
+          "assistant",
+          "I want to return the sweater."
+        ],
+        [
+          "user",
+          "Why are you returning it?"
+        ],
+        [
+          "assistant",
+          "I want to return the sweater."
+        ],
+        [
+          "user",
+          "Why are you returning it?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain_any": [
+          "colour",
+          "color",
+          "blue",
+          "red",
+          "wrong"
+        ]
+      }
+    },
+    {
+      "id": "requested-date-friday",
+      "scenario": "Move your appointment to Friday.",
+      "history": [
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ],
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ],
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Friday"
+        ]
+      }
+    },
+    {
+      "id": "requested-date-monday",
+      "scenario": "Move your appointment to Monday.",
+      "history": [
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ],
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ],
+        [
+          "assistant",
+          "I need to move my appointment."
+        ],
+        [
+          "user",
+          "Which day would you like?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "must_contain": [
+          "Monday"
+        ]
+      }
+    },
+    {
+      "id": "unknown-identifier-after-loop",
+      "scenario": "Cancel your campsite booking. You do not know your booking ID.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel my booking."
+        ],
+        [
+          "user",
+          "What is your booking ID?"
+        ],
+        [
+          "assistant",
+          "Please cancel my booking."
+        ],
+        [
+          "user",
+          "What is your booking ID?"
+        ],
+        [
+          "assistant",
+          "Please cancel my booking."
+        ],
+        [
+          "user",
+          "What is your booking ID?"
+        ],
+        [
+          "assistant",
+          "Please cancel my booking."
+        ],
+        [
+          "user",
+          "What is your booking ID?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    },
+    {
+      "id": "unknown-motive-no-invention",
+      "scenario": "Your sibling asked you to cancel their class booking. You do not know why they want to cancel.",
+      "history": [
+        [
+          "assistant",
+          "Please cancel the class booking."
+        ],
+        [
+          "user",
+          "Why does your sibling want to cancel?"
+        ],
+        [
+          "assistant",
+          "Please cancel the class booking."
+        ],
+        [
+          "user",
+          "Why does your sibling want to cancel?"
+        ],
+        [
+          "assistant",
+          "Please cancel the class booking."
+        ],
+        [
+          "user",
+          "Why does your sibling want to cancel?"
+        ]
+      ],
+      "decision": "CONTINUE",
+      "reply": {
+        "unknown_information": true
+      }
+    }
+  ],
+  "judge": [
+    {
+      "id": "fact-paraphrase",
+      "expected": "The refund is $42.50.",
+      "said": "We will return forty-two dollars and fifty cents to you.",
+      "met": true
+    },
+    {
+      "id": "fact-wrong-amount",
+      "expected": "The refund is $42.50.",
+      "said": "Your refund is $24.50.",
+      "met": false
+    },
+    {
+      "id": "fact-negation",
+      "expected": "Your booking was cancelled.",
+      "said": "I have not cancelled your booking.",
+      "met": false
+    },
+    {
+      "id": "fact-promise",
+      "expected": "Your booking was cancelled.",
+      "said": "I can cancel your booking after you confirm.",
+      "met": false
+    },
+    {
+      "id": "fact-partial",
+      "expected": "The plan costs $30 monthly and includes 10 GB of data.",
+      "said": "The plan costs $30 per month.",
+      "met": false
+    },
+    {
+      "id": "fact-caller-only",
+      "expected": "The refund is $42.50.",
+      "said": null,
+      "caller_said": "I expect a refund of $42.50.",
+      "met": false
+    },
+    {
+      "id": "nl-assertion-correct-amount",
+      "kind": "nl_assertion",
+      "expected": "The agent told the customer that the refund is $42.50.",
+      "said": "I have issued a refund of forty-two dollars and fifty cents.",
+      "met": true
+    },
+    {
+      "id": "nl-assertion-wrong-amount",
+      "kind": "nl_assertion",
+      "expected": "The agent told the customer that the refund is $42.50.",
+      "said": "I have issued a refund of twenty-four dollars and fifty cents.",
+      "met": false
+    }
+  ]
+}

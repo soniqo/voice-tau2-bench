@@ -13,6 +13,7 @@ def benchmark_sources() -> dict:
     paths = [*root.glob("src/**/*.py"), *root.glob("scripts/*.py")]
     paths += [root / name for name in ("pyproject.toml", "uv.lock")]
     paths += list(root.glob("configs/voice/*.json"))
+    paths += [path for path in (root / "runtime").glob("*") if path.is_file()]
     inputs = {
         str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(paths)

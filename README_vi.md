@@ -12,12 +12,13 @@
 | --- | --- |
 | Gemma 4 12B IT, INT4 | Hồ sơ v2 cục bộ đã kiểm thử |
 | Gemma 4 E4B IT, INT4 | Runtime cục bộ hỗ trợ; chưa so sánh v2 trong điều kiện tương đương |
+| Amazon Nova 2.5 Sonic | Đã xác thực xử lý âm thanh trực tiếp; Retail pass^1 **1/1** (một lượt thử phát triển v6, giới hạn 420 giây; [kết quả](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + tác nhân backend được chỉ định | Cần bộ điều hợp |
 | OpenAI Realtime | Cần bộ điều hợp |
 | Gemini Live | Cần bộ điều hợp |
 | ElevenLabs Agents | Cần bộ điều hợp |
 
-Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 đầy đủ FP16, trọng số chính VoxCPM2 FP16 / AudioVAE FP32, Silero VAD và Gemma E4B cho người gọi, trợ lý nghe và bộ chấm. Các hệ thống đám mây chưa được tích hợp hay đo trong benchmark này.
+Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 đầy đủ FP16, trọng số chính VoxCPM2 FP16 / AudioVAE FP32, Silero VAD và Gemma E4B cho người gọi, trợ lý nghe và bộ chấm. Nova 2.5 Sonic có [trình chạy âm thanh gốc](docs/nova.md) tùy chọn; người gọi và bộ chấm vẫn chạy cục bộ.
 
 ## Chỉ số so sánh
 
@@ -34,24 +35,33 @@ Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-sw
 
 So sánh cùng tác vụ, seed, giới hạn, điều kiện âm thanh và cấu hình người gọi/bộ chấm. Giữ nguyên hệ thống giọng nói khi so sánh LLM cục bộ. Tác nhân âm thanh native và dịch vụ được quản lý phải nêu đầy đủ hệ thống. Thời gian từng thành phần khác với độ trễ trả lời bằng giọng nói từ đầu đến cuối.
 
-## Chẩn đoán cục bộ đã ghi nhận
+## Kết quả thử nghiệm phát triển đã ghi nhận
 
-| Tác nhân | Đã chấm / dự kiến | Pass^1 | Lỗi công cụ | LLM p50 / p95 | Âm thanh TTS đầu p50 / p95 | Chi phí API / lượt |
+Mỗi hàng là một lượt thử phát triển. Tác vụ và thiết lập thời gian khác nhau; chưa có xếp hạng mô hình trong điều kiện tương đương. Chi phí áp dụng cho cuộc gọi đã hoàn tất.
+
+| Tác nhân | Điều kiện / tác vụ | Đã chấm / dự kiến | Pass^1 | Lỗi công cụ | Thời gian thực | Chi phí API của cuộc gọi |
 | --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | 1/1 | 0/1 | 1/6 | 7.00 / 11.13 s | 1.22 / 1.70 s | $0 |
+| Gemma 4 12B IT, INT4 | v2 · Hàng không 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
+| Amazon Nova 2.5 Sonic | v6 · Bán lẻ 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
 
 Tác vụ hàng không 12, một lượt, seed 70, v2; tối đa **600 giây mô phỏng / 1.200 giây thực**. Cuộc gọi kết thúc bình thường sau **312,9 giây mô phỏng / 554,4 giây thực đo được**. Phần cứng: Apple M5 Pro, 48 GB, máy dùng chung. Đây là một lượt phát triển; chưa có xếp hạng nhiều mô hình trong điều kiện tương đương. [Dữ liệu và định nghĩa phép đo](docs/results/gemma4-12b-local-v2-airline.json).
+
+Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
+
+Nova: một lượt, seed 70, âm học control, **giới hạn thời gian thực 420 giây**. Cả hai mặt hàng yêu cầu đã được đổi; **5/5** hành động tham chiếu và trạng thái cơ sở dữ liệu cuối cùng đều khớp. Cuộc gọi kết thúc bình thường sau **259,0 giây âm thanh / 296,3 giây thực**. Tổng chi phí chiến dịch cần tính cả các lượt bị gián đoạn. [Kết quả và giới hạn](docs/results/nova25-v6-retail-development.json).
 
 ## Chạy cục bộ
 
 Python **3.12/3.13**, Apple Silicon, **macOS 15+**. Theo [thiết lập](docs/runtime-setup.md) và [chạy v2](docs/local-v2.md) để khởi động dịch vụ cục bộ, xác nhận người gọi/bộ chấm rồi chạy tác vụ.
 
 ```bash
-uv sync --frozen --extra dev
-uv run --frozen tau-voice verify
+uv run --frozen --extra dev python scripts/run_local_voice.py \
+  --output data/simulations/first-local-run
 ```
 
-Giới hạn thực thi bằng `--num-tasks`, `--trials`, `--max-seconds` và `--wall-timeout`. Bộ điều hợp đám mây và trần chi phí USD **chưa được triển khai**. Suy luận hiện chạy cục bộ, không cần khóa API đám mây.
+Lệnh này biên dịch runtime gốc đã ghim, tải mô hình, hiệu chuẩn người gọi và bộ đánh giá, rồi chạy kiểm tra giọng nói có kiểm soát. Lệnh không tạo điểm benchmark theo miền. Hãy dùng thư mục đầu ra mới. [Thiết lập và chạy tác vụ](docs/runtime-setup.md#one-command-local-run).
+
+Giới hạn thực thi bằng `--num-tasks`, `--trials`, `--max-seconds` và `--wall-timeout`. Mặc định vẫn chạy cục bộ. [Lượt chạy Nova](docs/nova.md) tùy chọn cần hồ sơ AWS rõ ràng, có sổ ngân sách bền vững và ngưỡng sử dụng, không phải trần tiền do nhà cung cấp cưỡng chế.
 
 Kiểm tra: `make test` · `make lint` · `make verify`.
 

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/soniqo/speech-swift.git",
+  "revision": "9ce78eaec038b4dc8b519a8b01ecb4059549cfec",
+  "patch": "speech-swift.patch",
+  "patch_sha256": "80b8710cb48f02ae90f82a90ac54371e948540e07d4e98062208b240adae02ac",
+  "source_sha256": "1986c2739d7246f857c45bb8467622d705a65bc22e44862d31c93db56a6af6ab",
+  "profile": "configs/voice/soniqo-local-gemma12b-v4.json",
+  "dependencies": "speech-swift.resolved.json",
+  "dependencies_sha256": "c4a0fb2db41abbc1f4fb90919adf27c0e9110809544580eb5ce065c1b4897900"
+}
