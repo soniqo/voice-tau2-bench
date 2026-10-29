@@ -31,24 +31,23 @@ Yerel yapı [speech-swift](https://github.com/soniqo/speech-swift) kullanır: ta
 | Araç hata oranı | Başarısız veya reddedilmiş ajan çağrıları / denenen çağrılar |
 | Tamamlanma süresi | Simülasyon çağrı süresi ve ölçülen gerçek süre ayrı ayrı |
 | Tepe bellek | Ölçüm kapsamıyla birlikte yerel sürecin fiziksel bellek kullanımı |
-| API maliyeti | Deneme ve başarılı deneme başına USD; başarısız denemeler dahil |
 
 Aynı görevleri, seed değerlerini, süre sınırlarını, akustik koşulları ve arayan/değerlendirici ayarlarını karşılaştırın. Yerel LLM karşılaştırmalarında konuşma yapısını sabit tutun. Yerel ses işleyen ve yönetilen ajanlar bütün yapıyı belirtmelidir. Bileşen süreleri, uçtan uca sesli yanıt gecikmesinden ayrıdır.
 
 ## Kaydedilmiş geliştirme sonuçları
 
-Her satır bir geliştirme denemesidir. Görevler ve zaman ayarları farklıdır; eş koşullu model sıralaması henüz yoktur. Maliyetler tamamlanan çağrılara aittir.
+Her satır bir geliştirme denemesidir. Görevler ve zaman ayarları farklıdır; eş koşullu model sıralaması henüz yoktur.
 
-| Ajan | Koşul / görev | Puanlanan / planlanan | Pass^1 | Araç hataları | Gerçek süre | Çağrının API maliyeti |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | v2 · Havayolu 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
-| Amazon Nova 2.5 Sonic | v6 · Perakende 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
+| Ajan | Koşul / görev | Puanlanan / planlanan | Pass^1 | Araç hataları | Gerçek süre |
+| --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | v2 · Havayolu 12 | 1/1 | 0/1 | 1/6 | 554.4 s |
+| Amazon Nova 2.5 Sonic | v6 · Perakende 0 | 1/1 | **1/1** | **0/5** | **296.3 s** |
 
 Havayolu görevi 12, bir deneme, seed 70, v2; en fazla **600 simülasyon saniyesi / 1.200 gerçek saniye**. Çağrı **312,9 simülasyon saniyesi / 554,4 ölçülen gerçek saniye** sonra normal bitti. Donanım: Apple M5 Pro, 48 GB, paylaşılan iş istasyonu. Bu tek bir geliştirme denemesidir; eş koşullu çok modelli sıralama henüz yoktur. [Veriler ve ölçüm tanımları](docs/results/gemma4-12b-local-v2-airline.json).
 
 Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
 
-Nova: bir deneme, seed 70, control akustiği, **420 sn gerçek zaman sınırı**. İstenen iki ürün değiştirildi; **5/5** referans eylem ve son veritabanı durumu eşleşti. Çağrı **259,0 sn ses / 296,3 sn gerçek süre** sonra normal sona erdi. Toplam kampanya hesabına kesintiye uğrayan denemeler de eklenmelidir. [Kayıt ve sınırlar](docs/results/nova25-v6-retail-development.json).
+Nova: bir deneme, seed 70, control akustiği, **420 sn gerçek zaman sınırı**. İstenen iki ürün değiştirildi; **5/5** referans eylem ve son veritabanı durumu eşleşti. Çağrı **259,0 sn ses / 296,3 sn gerçek süre** sonra normal sona erdi. [Kayıt ve sınırlar](docs/results/nova25-v6-retail-development.json).
 
 ## Yerel çalıştırma
 

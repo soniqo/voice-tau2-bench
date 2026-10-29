@@ -31,24 +31,23 @@ Die lokale Pipeline nutzt [speech-swift](https://github.com/soniqo/speech-swift)
 | Werkzeugfehlerrate | Fehlgeschlagene oder abgelehnte Agentenaufrufe / versuchte Aufrufe |
 | Abschlusszeit | Simulierte Gesprächszeit und gemessene reale Zeit getrennt |
 | Maximaler Speicherbedarf | Physischer Speicherbedarf des nativen Prozesses mit Messumfang |
-| API-Kosten | USD pro Versuch und erfolgreichem Versuch; Fehlversuche einbeziehen |
 
 Vergleichen Sie dieselben Aufgaben, Startwerte, Gesprächsgrenzen, Akustikbedingungen und Anrufer-/Bewertungseinstellungen. Halten Sie die Sprachpipeline beim Vergleich lokaler LLMs konstant. Audionative und verwaltete Agenten müssen ihre gesamte Pipeline angeben. Komponentenlaufzeiten sind von der gesamten Sprachantwortverzögerung zu unterscheiden.
 
 ## Aufgezeichnete Entwicklungsergebnisse
 
-Ein Entwicklungsversuch pro Zeile. Aufgaben und Zeitmodelle unterscheiden sich; eine Modellrangfolge unter gleichen Bedingungen steht aus. Die Kosten gelten für abgeschlossene Gespräche.
+Ein Entwicklungsversuch pro Zeile. Aufgaben und Zeitmodelle unterscheiden sich; eine Modellrangfolge unter gleichen Bedingungen steht aus.
 
-| Agent | Bedingung / Aufgabe | Bewertet / geplant | Pass^1 | Werkzeugfehler | Reale Dauer | API-Kosten des Gesprächs |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | v2 · Flug 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
-| Amazon Nova 2.5 Sonic | v6 · Handel 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
+| Agent | Bedingung / Aufgabe | Bewertet / geplant | Pass^1 | Werkzeugfehler | Reale Dauer |
+| --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | v2 · Flug 12 | 1/1 | 0/1 | 1/6 | 554.4 s |
+| Amazon Nova 2.5 Sonic | v6 · Handel 0 | 1/1 | **1/1** | **0/5** | **296.3 s** |
 
 Flugaufgabe 12, ein Versuch, Startwert 70, v2; höchstens **600 simulierte Sekunden / 1.200 reale Sekunden**. Das Gespräch endete normal nach **312,9 simulierten Sekunden / 554,4 gemessenen realen Sekunden**. Hardware: Apple M5 Pro, 48 GB, gemeinsam genutzter Rechner. Dies ist ein Entwicklungsversuch; eine Rangfolge mehrerer Modelle unter gleichen Bedingungen steht aus. [Daten und Messdefinitionen](docs/results/gemma4-12b-local-v2-airline.json).
 
 Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
 
-Nova: ein Versuch, Startwert 70, control-Akustik, **420 s Echtzeitlimit**. Beide gewünschten Artikel wurden umgetauscht; alle **5/5** Referenzaktionen und der endgültige Datenbankzustand stimmten überein. Das Gespräch endete normal nach **259,0 s Audio / 296,3 s realer Zeit**. Die Gesamtabrechnung muss auch unterbrochene Versuche berücksichtigen. [Ergebnis und Grenzen](docs/results/nova25-v6-retail-development.json).
+Nova: ein Versuch, Startwert 70, control-Akustik, **420 s Echtzeitlimit**. Beide gewünschten Artikel wurden umgetauscht; alle **5/5** Referenzaktionen und der endgültige Datenbankzustand stimmten überein. Das Gespräch endete normal nach **259,0 s Audio / 296,3 s realer Zeit**. [Ergebnis und Grenzen](docs/results/nova25-v6-retail-development.json).
 
 ## Lokal ausführen
 

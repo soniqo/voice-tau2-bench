@@ -31,24 +31,23 @@ A pilha local usa [speech-swift](https://github.com/soniqo/speech-swift): Whispe
 | Taxa de erro das ferramentas | Chamadas do agente com falha ou rejeitadas / chamadas tentadas |
 | Tempo de conclusão | Tempo simulado da chamada e tempo real medido, separadamente |
 | Pico de memória | Memória física do processo nativo, com escopo de medição |
-| Custo de API | USD por tentativa e por tentativa bem-sucedida; incluir falhas |
 
 Compare as mesmas tarefas, sementes, limites, condições acústicas e configuração do interlocutor/avaliador. Mantenha a pilha de voz fixa ao comparar LLMs locais. Agentes de áudio nativo e gerenciados devem identificar a pilha completa. Os tempos dos componentes são separados da latência de resposta de voz de ponta a ponta.
 
 ## Resultados de desenvolvimento registrados
 
-Uma tentativa de desenvolvimento por linha. As tarefas e os relógios diferem; a classificação em condições equivalentes segue pendente. Os custos cobrem as chamadas concluídas.
+Uma tentativa de desenvolvimento por linha. As tarefas e os relógios diferem; a classificação em condições equivalentes segue pendente.
 
-| Agente | Condição / tarefa | Avaliadas / planejadas | Pass^1 | Erros de ferramentas | Tempo real | Custo API da chamada |
-| --- | --- | --- | --- | --- | --- | --- |
-| Gemma 4 12B IT, INT4 | v2 · Aviação 12 | 1/1 | 0/1 | 1/6 | 554.4 s | $0 |
-| Amazon Nova 2.5 Sonic | v6 · Varejo 0 | 1/1 | **1/1** | **0/5** | **296.3 s** | **$0.0315** |
+| Agente | Condição / tarefa | Avaliadas / planejadas | Pass^1 | Erros de ferramentas | Tempo real |
+| --- | --- | --- | --- | --- | --- |
+| Gemma 4 12B IT, INT4 | v2 · Aviação 12 | 1/1 | 0/1 | 1/6 | 554.4 s |
+| Amazon Nova 2.5 Sonic | v6 · Varejo 0 | 1/1 | **1/1** | **0/5** | **296.3 s** |
 
 Tarefa de aviação 12, uma tentativa, semente 70, v2; máximo de **600 segundos simulados / 1.200 segundos reais**. A chamada terminou normalmente após **312,9 segundos simulados / 554,4 segundos reais medidos**. Hardware: Apple M5 Pro, 48 GB, estação compartilhada. É uma tentativa de desenvolvimento; a classificação de vários modelos em condições equivalentes ainda está pendente. [Dados e definições de medição](docs/results/gemma4-12b-local-v2-airline.json).
 
 Gemma LLM p50 / p95: **7.00 / 11.13 s**; TTS p50 / p95: **1.22 / 1.70 s**.
 
-Nova: uma tentativa, semente 70, acústica control, **limite de 420 s em tempo real**. Os dois itens solicitados foram trocados; as **5/5** ações de referência e o estado final do banco de dados coincidiram. A chamada terminou normalmente após **259,0 s de áudio / 296,3 s reais**. A contabilidade da campanha também deve incluir tentativas interrompidas. [Registro e limites](docs/results/nova25-v6-retail-development.json).
+Nova: uma tentativa, semente 70, acústica control, **limite de 420 s em tempo real**. Os dois itens solicitados foram trocados; as **5/5** ações de referência e o estado final do banco de dados coincidiram. A chamada terminou normalmente após **259,0 s de áudio / 296,3 s reais**. [Registro e limites](docs/results/nova25-v6-retail-development.json).
 
 ## Execução local
 
