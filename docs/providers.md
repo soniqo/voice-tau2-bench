@@ -149,6 +149,11 @@ benchmark orchestrator, with matching IDs. See ElevenLabs'
 [WebSocket guide](https://elevenlabs.io/docs/eleven-agents/libraries/web-sockets)
 and [client events](https://elevenlabs.io/docs/eleven-agents/customization/events/client-events).
 
+The verified preset requires response-bearing client tools. Tool-call events
+may omit `expects_response`; an explicit `false` remains unsupported. Audio
+whose event ID is at or before the last interruption is discarded, matching
+the provider SDK's playback behavior.
+
 ## Limits, results and accounting
 
 Calls are bounded to 1–420 seconds, with one connection attempt per trial.

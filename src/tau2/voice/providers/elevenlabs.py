@@ -16,6 +16,7 @@ from tau2.voice.providers.base import (
     ProviderError,
     ProviderEvent,
     ProviderSession,
+    count,
     decoded_pcm,
 )
 
@@ -146,6 +147,7 @@ class ElevenSession(ProviderSession):
         self.credits = None
         self.configuration_sha256 = None
         self._last_response_id = None
+        self._last_interrupt_id = -1
 
     async def get(self, path):
         response = await self.http.get("https://api.elevenlabs.io/v1/convai/" + path)
@@ -262,11 +264,17 @@ class ElevenSession(ProviderSession):
                     "ElevenLabs agent unavailable; hold audio cannot be scored"
                 )
         elif kind == "interruption":
+            self._last_interrupt_id = count(
+                message["interruption_event"]["event_id"], "interruption event ID"
+            )
             self.pcm.clear()
             self.text.clear()
             self.events.append(ProviderEvent("interrupt"))
         elif kind == "audio":
-            self.pcm.extend(decoded_pcm(message["audio_event"]["audio_base_64"]))
+            item = message["audio_event"]
+            if count(item["event_id"], "audio event ID") <= self._last_interrupt_id:
+                return
+            self.pcm.extend(decoded_pcm(item["audio_base_64"]))
             if len(self.pcm) > 24000 * 2 * 90:
                 raise ProviderError("ElevenLabs buffered speech exceeded its bound")
         elif kind == "agent_response":
@@ -296,7 +304,12 @@ class ElevenSession(ProviderSession):
             )
         elif kind == "client_tool_call":
             item = message["client_tool_call"]
-            if not item.get("expects_response") or item["tool_call_id"] in self.pending:
+            # Some documented events omit this flag; the verified preset already
+            # requires response-bearing client tools. Reject explicit conflicts.
+            if (
+                item.get("expects_response", True) is not True
+                or item["tool_call_id"] in self.pending
+            ):
                 raise ProviderError("Invalid ElevenLabs client tool call")
             self.pending.add(item["tool_call_id"])
             self.events.append(

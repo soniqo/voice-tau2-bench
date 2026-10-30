@@ -151,7 +151,6 @@ class Peer:
                             "user_id": "user_1",
                             "title": "Important Meeting",
                         },
-                        "expects_response": True,
                     },
                 }
             )
