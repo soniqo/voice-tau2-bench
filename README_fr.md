@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | Audio natif validé ; Retail pass^1 **1/1** (un essai de développement v6, limite de 420 s ; [résultat](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + un agent backend identifié | [Adaptateur expérimental testé hors ligne ; validation réelle en attente](docs/providers.md) |
 | OpenAI Realtime | [Adaptateur expérimental testé hors ligne ; validation réelle en attente](docs/providers.md) |
-| Gemini Live | [Adaptateur expérimental testé hors ligne ; validation réelle en attente](docs/providers.md) |
-| ElevenLabs Agents | [Adaptateur expérimental testé hors ligne ; validation réelle en attente](docs/providers.md) |
+| Gemini Live | [Audio et outils testés en conditions réelles ; scores par domaine en attente](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Audio et outils testés en conditions réelles ; scores par domaine en attente](docs/results/gemini-eleven-live-controls.json) |
 
 La chaîne locale utilise [speech-swift](https://github.com/soniqo/speech-swift) : Whisper Large-v3 complet FP16, poids principaux VoxCPM2 FP16 / AudioVAE FP32, Silero VAD et Gemma E4B pour l’appelant, les aides d’écoute et le juge. Nova 2.5 Sonic dispose d’un [exécuteur audio natif](docs/nova.md) optionnel ; l’appelant et le juge restent locaux.
 

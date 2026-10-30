@@ -96,6 +96,8 @@ PRICING: Dict[Tuple[str, str], Rates] = {
         output_audio=64.00,
     ),
     # --- Gemini Live API (verified: ai.google.dev/gemini-api/docs/pricing).
+    # Gemini 3.8 Live non-global Vertex rates also match the official Cloud table:
+    # cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing
     # No cached-token discount published for Live models: cached tokens are
     # charged at the full input rate (conservative). ---
     ("gemini", "gemini-3.8-live"): Rates(

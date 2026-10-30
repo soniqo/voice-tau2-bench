@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | 原生音频已验证；Retail pass^1 **1/1**（v6 开发试验 1 次，上限 420 秒；[记录](docs/results/nova25-v6-retail-development.json)） |
 | OpenAI GPT-Live + 明确指定的后端智能体 | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
 | OpenAI Realtime | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
-| Gemini Live | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
-| ElevenLabs Agents | [实验适配器已通过离线测试；在线验证尚待完成](docs/providers.md) |
+| Gemini Live | [已测试在线音频和工具调用；领域评分尚待完成](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [已测试在线音频和工具调用；领域评分尚待完成](docs/results/gemini-eleven-live-controls.json) |
 
 本地技术栈使用 [speech-swift](https://github.com/soniqo/speech-swift)：完整版 Whisper Large-v3 FP16、VoxCPM2 主权重 FP16 / AudioVAE FP32、Silero VAD，以及作为调用者、听取辅助和评判的 Gemma E4B。Nova 2.5 Sonic 提供可选的[原生音频运行器](docs/nova.md)；调用者和评判仍在本地运行。
 

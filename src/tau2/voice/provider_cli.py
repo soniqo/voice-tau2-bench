@@ -51,18 +51,9 @@ async def inspect_eleven(agent_id, key_env):
         preset = await get("agents/" + agent_id)
         config = preset["conversation_config"]
         prompt = config.get("agent", {}).get("prompt", {})
-        if prompt.get("tool_ids"):
-            if prompt.get("tools"):
-                raise ValueError("Ambiguous tool definitions")
-            tools = []
-            for ident in prompt["tool_ids"]:
-                if not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", ident):
-                    raise ValueError("Invalid tool reference")
-                tool = await get("tools/" + ident)
-                tools.append(tool.get("tool_config", tool))
-            prompt["tools"] = tools
-        from tau2.voice.providers.elevenlabs import preset_fingerprint
+        from tau2.voice.providers.elevenlabs import preset_fingerprint, resolve_tools
 
+        await resolve_tools(preset, get)
         return {
             "preset_sha256": preset_fingerprint(preset),
             "model": prompt.get("llm"),
@@ -78,6 +69,14 @@ def main(argv=None):
     parser.add_argument("--model")
     parser.add_argument("--voice")
     parser.add_argument("--backend-model", help="Named Responses model for GPT-Live")
+    parser.add_argument(
+        "--vertex-project",
+        help="Gemini Vertex project; use an OAuth token instead of an API key",
+    )
+    parser.add_argument(
+        "--vertex-location",
+        help="Gemini Vertex location (default us-central1 with --vertex-project)",
+    )
     parser.add_argument(
         "--api-key-env",
         help="Credential variable name; never put the key on the command line",
@@ -235,7 +234,9 @@ def main(argv=None):
 
         voice = args.voice or ("Kore" if args.provider == "gemini-live" else "marin")
         key_env = args.api_key_env or (
-            "GEMINI_API_KEY"
+            "GOOGLE_OAUTH_ACCESS_TOKEN"
+            if args.vertex_project
+            else "GEMINI_API_KEY"
             if args.provider == "gemini-live"
             else "ELEVENLABS_API_KEY"
             if args.provider == "elevenlabs"
@@ -253,6 +254,10 @@ def main(argv=None):
             usd_per_credit=args.usd_per_credit,
             max_usd_per_minute=args.max_usd_per_minute,
             preset_sha256=args.preset_sha256,
+            vertex_project=args.vertex_project,
+            vertex_location=(args.vertex_location or "us-central1")
+            if args.vertex_project
+            else args.vertex_location,
         )
         ledger = args.budget_ledger or args.output.with_name(
             args.output.name + "-budget.json"

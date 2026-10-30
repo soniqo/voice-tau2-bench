@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | ネイティブ音声を検証済み。Retail pass^1 **1/1**（v6 の開発試行 1 件、上限 420 秒。[記録](docs/results/nova25-v6-retail-development.json)） |
 | OpenAI GPT-Live + 明示したバックエンドエージェント | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
 | OpenAI Realtime | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
-| Gemini Live | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
-| ElevenLabs Agents | [実験的アダプターのオフラインテスト済み。実サービスでの検証は未実施](docs/providers.md) |
+| Gemini Live | [実サービスで音声とツールをテスト済み。ドメイン評価は未実施](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [実サービスで音声とツールをテスト済み。ドメイン評価は未実施](docs/results/gemini-eleven-live-controls.json) |
 
 ローカル構成は [speech-swift](https://github.com/soniqo/speech-swift) を使用します：完全版 Whisper Large-v3 FP16、VoxCPM2 主重み FP16 / AudioVAE FP32、Silero VAD、呼び出し側・聞き取り補助・判定役の Gemma E4B。Nova 2.5 Sonic は任意の[ネイティブ音声ランナー](docs/nova.md)で利用でき、呼び出し側と判定役はローカルで動作します。
 

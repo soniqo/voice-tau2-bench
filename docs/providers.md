@@ -105,6 +105,23 @@ turn at `turnComplete`, preserves tool IDs and handles tool cancellation.
 the attempt as an error; there is no automatic reconnection or hidden retry.
 See the [Live API reference](https://ai.google.dev/api/live).
 
+For Google Cloud/Vertex access, also set `--vertex-project YOUR_PROJECT
+--vertex-location us-central1`. The credential variable then defaults to
+`GOOGLE_OAUTH_ACCESS_TOKEN`, carrying a short-lived bearer token rather than
+an AI Studio key. Obtain it locally after Google Cloud sign-in:
+
+```bash
+gcloud auth login --update-adc
+export GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth application-default print-access-token)"
+```
+
+The adapter uses the regional Vertex WebSocket and fully qualified model
+resource. The project is hashed in result settings. A non-global region with
+verified pricing is required. Vertex Gemini 3.8 receives the already delivered
+greeting through `contextUpdate`; it is added to public system context without
+injecting a synthetic caller message. See Google's
+[Live session guidance](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/live-api/start-manage-session).
+
 ## ElevenLabs Agents
 
 This adapter requires an existing agent with the exact domain policy and
@@ -153,10 +170,15 @@ The verified preset requires response-bearing client tools. Tool-call events
 may omit `expects_response`; an explicit `false` remains unsupported. Audio
 whose event ID is at or before the last interruption is discarded, matching
 the provider SDK's playback behavior.
+The API's neutral schema defaults and inert start node are accepted. Nonempty
+argument overrides, active workflows, knowledge bases, MCP and server tools
+remain unsupported. Resolved tools must agree with inline definitions.
 
 ## Limits, results and accounting
 
 Calls are bounded to 1–420 seconds, with one connection attempt per trial.
+ElevenLabs requires a session window of at least 60 seconds; setup rejects
+shorter presets before inference.
 Limits and qualification are checked before inference. Transport, provider,
 invalid-caller and shutdown failures propagate and remain unscored. An ordinary
 task failure or timeout receives the original frozen reward. The agent sees
@@ -177,7 +199,9 @@ keeps the reservation. Keep the same ledger between resumed attempts.
 
 Realtime records response token splits. Live records cumulative session seconds
 and each backend response once. Gemini retains every response usage observation
-(including re-billed context), but has no authoritative session-final meter;
+(including re-billed context), accepts Vertex's candidate-token counter names,
+and preserves partial tool-response meters without inventing zeros. It has no
+authoritative session-final meter;
 its final USD total stays unknown and its reservation remains. ElevenLabs
 records final conversation credits and raw charging metadata. Credits can
 exclude voice surcharges and are not a final USD invoice; USD stays unknown and
@@ -197,7 +221,9 @@ real mock-domain tools and frozen evaluator. The correct write scores 1;
 replaying a deliberately wrong write scores 0. They cover protocol integration,
 not model quality or real account access. Offline tests also cover audio
 conversion, interruptions, tool IDs, final usage, malformed meters, preflight
-checks and shutdown failures. No paid provider calls were made for this work.
+checks and shutdown failures. Live Gemini and ElevenLabs pilots are described
+in the [validation record](results/gemini-eleven-live-controls.json). The
+OpenAI adapters still have offline validation only.
 
 `tests/test_voice_local/test_provider_e2e.py` is an opt-in real-provider test.
 It requires `TAU_PROVIDER_E2E=1`, `SPEECH_SWIFT_INFERENCE_URL`, a current
@@ -208,3 +234,27 @@ Live additionally needs `TAU_PROVIDER_BACKEND_MODEL`. ElevenLabs needs the
 `TAU_PROVIDER_USD_PER_CREDIT` and `TAU_PROVIDER_MAX_USD_PER_MINUTE` variables.
 Run one provider test at a time with `pytest -m local_models
 tests/test_voice_local/test_provider_e2e.py`; it starts a paid 90-second trial.
+
+For an isolated mock-task protocol control, set `TAU_PROVIDER_RECORDED_CONTROL=1`
+and `TAU_PROVIDER_REQUEST_WAV` to an actual spoken request. This explicit test
+mode uses the production audio/tool runner and frozen state grader with a
+recorded caller; it does not claim to qualify a caller model or produce a
+domain score. Its provenance marks `functional_check_only` and
+`standard_leaderboard: false`. `TAU_PROVIDER_OPENER_WAV` can reuse the same
+previously synthesized VoxCPM2 greeting, recording its hash and cache mode.
+
+`TAU_PROVIDER_MAX_SECONDS` controls the trial clock;
+`TAU_PROVIDER_SESSION_SECONDS` can provide a separately recorded session window
+for orderly closure. ElevenLabs' window must be at least 60 seconds. Set
+`TAU_PROVIDER_BUDGET_LEDGER`, `TAU_PROVIDER_BUDGET_USD` and
+`TAU_PROVIDER_STOP_USD` explicitly when running more than one paid control.
+
+The first live pilots on 2026-10-30 found and fixed ElevenLabs schema/default
+serialization incompatibilities and Vertex usage-counter aliases. Gemini then
+completed the recorded call normally but scored 0 because it created
+`important meeting` instead of the requested `Important Meeting`. ElevenLabs
+made the exact correct write in both initial calls, which timed out under the
+short clock. A separate frozen state check confirms those writes and rejects a
+deliberately wrong title; it does not replace their original timeout rewards.
+The live VoxCPM2 opening took 8–10 seconds before its first audio frame. These
+controls are diagnostics and do not establish a matched domain ranking.

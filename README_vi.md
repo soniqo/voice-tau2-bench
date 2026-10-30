@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | Đã xác thực xử lý âm thanh trực tiếp; Retail pass^1 **1/1** (một lượt thử phát triển v6, giới hạn 420 giây; [kết quả](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + tác nhân backend được chỉ định | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
 | OpenAI Realtime | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
-| Gemini Live | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
-| ElevenLabs Agents | [Bộ điều hợp thử nghiệm đã kiểm thử ngoại tuyến; chưa xác thực với dịch vụ thật](docs/providers.md) |
+| Gemini Live | [Đã thử âm thanh và công cụ với dịch vụ thật; chưa có điểm theo miền](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Đã thử âm thanh và công cụ với dịch vụ thật; chưa có điểm theo miền](docs/results/gemini-eleven-live-controls.json) |
 
 Hệ thống cục bộ dùng [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 đầy đủ FP16, trọng số chính VoxCPM2 FP16 / AudioVAE FP32, Silero VAD và Gemma E4B cho người gọi, trợ lý nghe và bộ chấm. Nova 2.5 Sonic có [trình chạy âm thanh gốc](docs/nova.md) tùy chọn; người gọi và bộ chấm vẫn chạy cục bộ.
 

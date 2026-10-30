@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | Native Audioverarbeitung validiert; Retail pass^1 **1/1** (ein v6-Entwicklungslauf, Limit 420 s; [Ergebnis](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + ein benannter Backend-Agent | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
 | OpenAI Realtime | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
-| Gemini Live | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
-| ElevenLabs Agents | [Experimenteller Adapter offline getestet; Live-Validierung steht aus](docs/providers.md) |
+| Gemini Live | [Audio und Tools live getestet; Domänenbewertungen stehen aus](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Audio und Tools live getestet; Domänenbewertungen stehen aus](docs/results/gemini-eleven-live-controls.json) |
 
 Die lokale Pipeline nutzt [speech-swift](https://github.com/soniqo/speech-swift): vollständiges Whisper Large-v3 FP16, VoxCPM2-Hauptgewichte FP16 / AudioVAE FP32, Silero VAD und Gemma E4B für Anrufer, Zuhörhilfen und Bewertung. Nova 2.5 Sonic hat einen optionalen [Runner für natives Audio](docs/nova.md); Anrufer und Bewertung bleiben lokal.
 

@@ -26,18 +26,36 @@ class GeminiSession(ProviderSession):
         self.pending = {}
         self.cancelled = set()
         self.dropping = False
+        self.partial_usage = False
+
+    @property
+    def metered_usd(self):
+        return None if self.partial_usage else super().metered_usd
 
     async def connect(self, system, tools):
         key = self.credential()
-        self.socket = await self.connector(
+        self.system = system
+        model = "models/" + self.settings.model
+        url = (
             "wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?"
-            + urlencode({"key": key}),
-            {},
+            + urlencode({"key": key})
         )
+        headers = {}
+        if self.settings.vertex_project:
+            location = self.settings.vertex_location
+            host = (
+                "aiplatform.googleapis.com"
+                if location == "global"
+                else location + "-aiplatform.googleapis.com"
+            )
+            url = f"wss://{host}/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent"
+            headers = {"Authorization": "Bearer " + key}
+            model = f"projects/{self.settings.vertex_project}/locations/{location}/publishers/google/models/{self.settings.model}"
+        self.socket = await self.connector(url, headers)
         await self.socket.send(
             {
                 "setup": {
-                    "model": "models/" + self.settings.model,
+                    "model": model,
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
                         "maxOutputTokens": 1024,
@@ -92,6 +110,25 @@ class GeminiSession(ProviderSession):
         )
 
     async def assistant_history(self, text):
+        if self.settings.vertex_project and self.settings.model.startswith(
+            "gemini-3.8-live"
+        ):
+            await self.socket.send(
+                {
+                    "contextUpdate": {
+                        "systemInstruction": {
+                            "parts": [
+                                {
+                                    "text": self.system
+                                    + "\n\nThe assistant already delivered this greeting: "
+                                    + text
+                                }
+                            ]
+                        }
+                    }
+                }
+            )
+            return
         await self.socket.send(
             {
                 "clientContent": {
@@ -126,8 +163,19 @@ class GeminiSession(ProviderSession):
             )
         if "usageMetadata" in message:
             raw = message["usageMetadata"]
-            for key in ("promptTokenCount", "responseTokenCount"):
-                count(raw.get(key), key)
+            response_key = (
+                "responseTokenCount"
+                if "responseTokenCount" in raw
+                else "candidatesTokenCount"
+            )
+            response_details = (
+                "responseTokensDetails"
+                if "responseTokensDetails" in raw
+                else "candidatesTokensDetails"
+            )
+            for key in ("promptTokenCount", response_key):
+                if raw.get(key) is not None:
+                    count(raw[key], key)
 
             def details(name):
                 return [
@@ -135,26 +183,30 @@ class GeminiSession(ProviderSession):
                         "modality": d["modality"],
                         "token_count": count(d["tokenCount"], name),
                     }
-                    for d in raw.get(name, [])
+                    for d in (raw.get(name) or [])
                 ]
 
             for name in ("thoughtsTokenCount", "cachedContentTokenCount"):
-                if name in raw:
+                if raw.get(name) is not None:
                     count(raw[name], name)
-            if not raw.get("promptTokensDetails") or not raw.get(
-                "responseTokensDetails"
+            # Tool-only responses can omit counters/modality fields. Preserve
+            # the observation and unknown billing without failing inference.
+            if (
+                any(raw.get(key) is None for key in ("promptTokenCount", response_key))
+                or not raw.get("promptTokensDetails")
+                or not raw.get(response_details)
             ):
-                raise ProviderError("Gemini usage lacks modality details")
+                self.partial_usage = True
             # These are response observations, not one last-value session bill.
             self.usage(
                 UsageRecord.from_gemini_usage_metadata(
                     model=self.settings.model,
-                    prompt_token_count=raw["promptTokenCount"],
-                    response_token_count=raw["responseTokenCount"],
+                    prompt_token_count=raw.get("promptTokenCount"),
+                    response_token_count=raw.get(response_key),
                     cached_content_token_count=raw.get("cachedContentTokenCount"),
                     thoughts_token_count=raw.get("thoughtsTokenCount"),
                     prompt_tokens_details=details("promptTokensDetails"),
-                    response_tokens_details=details("responseTokensDetails"),
+                    response_tokens_details=details(response_details),
                     raw=raw,
                     scope_id=f"{self.id}-usage-{len(self.records)}",
                 )

@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | تم التحقق من المعالجة الصوتية المباشرة؛ Retail pass^1 **1/1** (تجربة تطوير واحدة v6، بحد 420 ثانية؛ [السجل](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + وكيل خلفي محدد بالاسم | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
 | OpenAI Realtime | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
-| Gemini Live | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
-| ElevenLabs Agents | [تم اختبار المحول التجريبي دون اتصال؛ التحقق مع الخدمة الفعلية لم يُنفذ بعد](docs/providers.md) |
+| Gemini Live | [تم اختبار الصوت والأدوات مع الخدمات الفعلية؛ تقييم المجالات لم يُنفذ بعد](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [تم اختبار الصوت والأدوات مع الخدمات الفعلية؛ تقييم المجالات لم يُنفذ بعد](docs/results/gemini-eleven-live-controls.json) |
 
 تستخدم المنظومة المحلية [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 الكامل بدقة FP16، أوزان VoxCPM2 الرئيسية FP16 وAudioVAE بدقة FP32، وSilero VAD، وGemma E4B للمتصل ومساعدات الاستماع والمقيّم. يتوفر لـ Nova 2.5 Sonic [مشغّل صوت أصلي](docs/nova.md) اختياري؛ ويبقى المتصل والمقيّم محليين.
 

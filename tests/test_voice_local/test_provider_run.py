@@ -32,6 +32,13 @@ def settings(**kw):
         {"stop_usd": float("nan")},
         {"provider": "openai-live", "model": "gpt-live-1"},
         {"provider": "elevenlabs", "model": "configured-llm"},
+        {"vertex_project": "benchmark-project", "vertex_location": "us-central1"},
+        {
+            "provider": "gemini-live",
+            "model": "gemini-3.8-live",
+            "vertex_project": "bad/project",
+            "vertex_location": "us-central1",
+        },
     ],
 )
 def test_provider_settings_reject_unsupported_or_unbounded_conditions(kw):

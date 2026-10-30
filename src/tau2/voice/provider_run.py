@@ -45,6 +45,10 @@ class ProviderFactory:
         session_factory=None,
     ):
         self.settings, self.budget = settings, budget
+        if settings.vertex_project and settings.vertex_location == "global":
+            raise ValueError(
+                "Vertex Live requires a non-global location with verified pricing"
+            )
         self.session_factory = session_factory or session_class(settings.provider)
         provider = "gemini" if settings.provider == "gemini-live" else "openai"
         if (
@@ -70,6 +74,18 @@ class ProviderFactory:
             "model_id": s.model,
             "voice": s.voice,
             "backend_model": s.backend_model,
+            "gemini_endpoint": ("vertex" if s.vertex_project else "developer")
+            if s.provider == "gemini-live"
+            else None,
+            "vertex_project_sha256": hashlib.sha256(
+                s.vertex_project.encode()
+            ).hexdigest()
+            if s.vertex_project
+            else None,
+            "vertex_location": s.vertex_location,
+            "opener_context": "system context update"
+            if s.vertex_project and s.model.startswith("gemini-3.8-live")
+            else "delivered assistant history",
             "model_args": {"delegation": "responses"}
             if s.provider == "openai-live"
             else {"preset_sha256": s.preset_sha256}
