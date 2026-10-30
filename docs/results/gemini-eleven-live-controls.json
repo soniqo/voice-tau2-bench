@@ -142,12 +142,108 @@
         "wrong_write_reward": 0.0,
         "replaces_trial_reward": false
       }
+    },
+    {
+      "provider": "elevenlabs",
+      "configured_model": "gpt-4.1",
+      "voice": "Sarah",
+      "condition": "recorded_caller_prepared_opener_45s",
+      "setup_mode": "prepared-opener-v1",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 45,
+      "session_window_seconds": 60,
+      "opener": "live_voxcpm2",
+      "opener_audio_sha256": "4dbb48eb81798c569a0c0443f4a53aacd80e425f8006ec1365ef08032232442b",
+      "source_sha256": "cab39da3154639f12f438fc2064eaa9c0f22bec931d963fe3040259d58768a36",
+      "source_revision": "bb3fa3f5d97bfdf831bd93b8e98e76d02c472bee",
+      "functional_check_only": true,
+      "standard_leaderboard": false,
+      "scored": true,
+      "trial_reward": 1.0,
+      "termination": "user_stop",
+      "wall_seconds": 55.16458866605535,
+      "setup_seconds": 7.883633916033432,
+      "call_wall_seconds": 47.26155016710982,
+      "audio_seconds": 37.6,
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "error": false
+        }
+      ],
+      "tool_errors": 0,
+      "tool_attempts": 1,
+      "state_check_only": {
+        "db_match": true,
+        "reward": 1.0,
+        "wrong_write_reward": 0.0,
+        "replaces_trial_reward": false
+      }
+    },
+    {
+      "provider": "gemini-live",
+      "configured_model": "gemini-3.8-live",
+      "voice": "Kore",
+      "condition": "recorded_caller_prepared_opener_45s",
+      "setup_mode": "prepared-opener-v1",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 45,
+      "session_window_seconds": 60,
+      "opener": "live_voxcpm2",
+      "opener_audio_sha256": "4dbb48eb81798c569a0c0443f4a53aacd80e425f8006ec1365ef08032232442b",
+      "source_sha256": "cab39da3154639f12f438fc2064eaa9c0f22bec931d963fe3040259d58768a36",
+      "source_revision": "bb3fa3f5d97bfdf831bd93b8e98e76d02c472bee",
+      "functional_check_only": true,
+      "standard_leaderboard": false,
+      "scored": true,
+      "trial_reward": 1.0,
+      "termination": "user_stop",
+      "wall_seconds": 39.537978791981004,
+      "setup_seconds": 6.972493167035282,
+      "call_wall_seconds": 32.54977308399975,
+      "audio_seconds": 29.450000000000003,
+      "tool_calls": [
+        {
+          "name": "get_users",
+          "arguments": {},
+          "error": false
+        },
+        {
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "error": false
+        }
+      ],
+      "tool_errors": 0,
+      "tool_attempts": 2,
+      "state_check_only": {
+        "db_match": true,
+        "reward": 1.0,
+        "wrong_write_reward": 0.0,
+        "replaces_trial_reward": false
+      }
     }
   ],
   "limitations": [
     "Different caller and opener conditions are diagnostics, not a matched model ranking.",
     "Timeout trial rewards are retained. State-only replays do not replace them.",
-    "Gemini completed the recorded call but changed the explicitly requested title capitalization.",
-    "Airline, retail and telecom coverage for these providers remains pending."
-  ]
+    "An earlier Gemini call changed the explicitly requested title capitalization. The prepared-opener rerun preserved the exact title; both attempts remain recorded.",
+    "Airline, retail and telecom coverage for these providers remains pending.",
+    "The two prepared-opener successes use a recorded caller on one mock task. They do not qualify a caller model or measure domain pass rates."
+  ],
+  "timing_notes": {
+    "wall_seconds": "Greeting preparation, orchestrator run, grading and artifact creation; native-service startup is excluded.",
+    "setup_seconds": "Local greeting synthesis before the conversation watchdog and provider connection.",
+    "call_wall_seconds": "Orchestrator execution including connection and shutdown. Cleanup may finish after the conversation watchdog.",
+    "trial_clock_seconds": "Conversation watchdog; greeting playback counts, while pre-call greeting synthesis and final shutdown are separate."
+  }
 }
