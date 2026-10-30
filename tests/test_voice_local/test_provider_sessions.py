@@ -563,7 +563,8 @@ def test_shutdown_waits_for_requested_response_before_its_created_event(provider
     asyncio.run(run())
 
 
-def test_eleven_completion_event_waits_for_audio_text_and_tool_results():
+@pytest.mark.parametrize("response_flag", [{}, {"expects_response": True}])
+def test_eleven_completion_event_waits_for_audio_text_and_tool_results(response_flag):
     async def run():
         s = ElevenSession(settings("elevenlabs"))
         s.socket = Socket()
@@ -571,7 +572,7 @@ def test_eleven_completion_event_waits_for_audio_text_and_tool_results():
             {
                 "type": "client_tool_call",
                 "client_tool_call": {
-                    "expects_response": True,
+                    **response_flag,
                     "tool_call_id": "client",
                     "tool_name": "lookup",
                     "parameters": {"id": "exact"},
@@ -619,6 +620,67 @@ def test_eleven_completion_event_waits_for_audio_text_and_tool_results():
                     "agent_tool_response": {"tool_type": "webhook"},
                 }
             )
+
+    asyncio.run(run())
+
+
+def test_eleven_interrupted_audio_ids_are_discarded_before_next_response():
+    async def run():
+        s = ElevenSession(settings("elevenlabs"))
+        old = b"\x00\x10" * 2400
+        fresh = b"\x00\x20" * 2400
+
+        async def audio(ident, pcm):
+            await s.parse(
+                {
+                    "type": "audio",
+                    "audio_event": {
+                        "event_id": ident,
+                        "audio_base_64": base64.b64encode(pcm).decode(),
+                    },
+                }
+            )
+
+        await audio(1, old)
+        await s.parse({"type": "interruption", "interruption_event": {"event_id": 2}})
+        await audio(1, old)
+        await audio(2, old)
+        assert not s.pcm and s.events[-1].kind == "interrupt"
+        await audio(3, fresh)
+        await s.parse(
+            {
+                "type": "agent_response",
+                "agent_response_event": {"agent_response": "New response."},
+            }
+        )
+        await s.parse(
+            {
+                "type": "agent_response_complete",
+                "agent_response_complete_event": {"event_id": 3},
+            }
+        )
+        assert s.events[-1].audio == fresh
+        assert s.events[-1].text == "New response."
+
+    asyncio.run(run())
+
+
+def test_eleven_rejects_explicit_nonresponse_tools_even_with_legacy_event_support():
+    async def run():
+        s = ElevenSession(settings("elevenlabs"))
+        with pytest.raises(ProviderError, match="Invalid ElevenLabs client tool call"):
+            await s.parse(
+                {
+                    "type": "client_tool_call",
+                    "client_tool_call": {
+                        "expects_response": False,
+                        "tool_call_id": "invalid",
+                        "tool_name": "lookup",
+                        "parameters": {},
+                    },
+                }
+            )
+        assert not s.pending and not s.events
 
     asyncio.run(run())
 
