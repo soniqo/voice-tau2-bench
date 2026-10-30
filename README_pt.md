@@ -15,8 +15,8 @@ A [Soniqo](https://github.com/soniqo) mantém este benchmark para medir se agent
 | Amazon Nova 2.5 Sonic | Áudio nativo validado; Retail pass^1 **1/1** (um teste de desenvolvimento v6, limite de 420 s; [registro](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + um agente backend identificado | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
 | OpenAI Realtime | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
-| Gemini Live | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
-| ElevenLabs Agents | [Adaptador experimental testado offline; validação ao vivo pendente](docs/providers.md) |
+| Gemini Live | [Áudio e ferramentas testados ao vivo; pontuações por domínio pendentes](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Áudio e ferramentas testados ao vivo; pontuações por domínio pendentes](docs/results/gemini-eleven-live-controls.json) |
 
 A pilha local usa [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 completo FP16, pesos principais do VoxCPM2 FP16 / AudioVAE FP32, Silero VAD e Gemma E4B como interlocutor, auxiliares de escuta e avaliador. Nova 2.5 Sonic tem um [executor de áudio nativo](docs/nova.md) opcional; o interlocutor e o avaliador continuam locais.
 

@@ -11,9 +11,12 @@ from tau2.voice.pricing import build_session_usage
 from tau2.voice.providers.base import ProviderError, ProviderSettings
 from tau2.voice.providers.elevenlabs import (
     ElevenSession,
+    canonical_schema,
     eleven_config,
     preset_fingerprint,
+    resolve_tools,
     verify_preset,
+    verify_workflow,
 )
 from tau2.voice.providers.gemini import GeminiSession
 from tau2.voice.providers.live import LiveSession, TimedSpeech
@@ -299,6 +302,96 @@ def test_gemini_audio_transcript_order_and_actual_turn_end():
     asyncio.run(run())
 
 
+def test_gemini_partial_tool_response_meter_stays_unknown_without_breaking_tools():
+    async def run():
+        s = GeminiSession(settings("gemini-live"))
+        raw = {
+            "promptTokenCount": 12,
+            "promptTokensDetails": [{"modality": "TEXT", "tokenCount": 12}],
+        }
+        await s.parse(
+            {
+                "usageMetadata": raw,
+                "toolCall": {
+                    "functionCalls": [
+                        {"id": "tool", "name": "lookup", "args": {"id": "exact"}}
+                    ]
+                },
+            }
+        )
+        assert s.events[-1].calls[0].id == "tool"
+        assert s.records[0].output_tokens is None and s.records[0].raw == raw
+        assert (
+            s.metered_usd is None
+            and build_session_usage(s.usage_records()).cost is None
+        )
+        raw = gemini_usage()["usageMetadata"]
+        raw["candidatesTokenCount"] = raw.pop("responseTokenCount")
+        raw["candidatesTokensDetails"] = raw.pop("responseTokensDetails")
+        await s.parse({"usageMetadata": raw})
+        assert s.records[-1].output_tokens == 5
+        assert s.metered_usd is None
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize(
+    "location,host",
+    [
+        ("us-central1", "us-central1-aiplatform.googleapis.com"),
+        ("global", "aiplatform.googleapis.com"),
+    ],
+)
+def test_gemini_vertex_uses_scoped_model_bearer_auth_and_delivered_greeting(
+    location, host, monkeypatch
+):
+    async def run():
+        monkeypatch.setenv("VOICE_TEST_KEY", "private-test-oauth-token")
+        socket = Socket([{"setupComplete": {}}])
+        connected = []
+
+        async def connect(url, headers):
+            connected.append((url, headers))
+            return socket
+
+        s = GeminiSession(
+            settings(
+                "gemini-live",
+                vertex_project="benchmark-project",
+                vertex_location=location,
+            ),
+            connector=connect,
+        )
+        await s.connect("PUBLIC POLICY", tools())
+        url, headers = connected[0]
+        assert (
+            url
+            == f"wss://{host}/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent"
+        )
+        assert headers == {"Authorization": "Bearer private-test-oauth-token"}
+        assert "private-test-oauth-token" not in url
+        setup = socket.sent[0]["setup"]
+        assert (
+            setup["model"]
+            == f"projects/benchmark-project/locations/{location}/publishers/google/models/gemini-3.8-live"
+        )
+        await s.assistant_history("Delivered opener.")
+        assert socket.sent[-1] == {
+            "contextUpdate": {
+                "systemInstruction": {
+                    "parts": [
+                        {
+                            "text": "PUBLIC POLICY\n\nThe assistant already delivered this greeting: Delivered opener."
+                        }
+                    ]
+                }
+            }
+        }
+        assert "private-test-oauth-token" not in json.dumps(socket.sent)
+
+    asyncio.run(run())
+
+
 def test_gemini_interrupt_discards_late_old_generation_and_tools():
     async def run():
         s = GeminiSession(settings("gemini-live"))
@@ -450,6 +543,118 @@ def test_eleven_preset_must_have_exact_client_tools_and_completion_events():
         mutate(broken)
         with pytest.raises(ProviderError):
             verify_preset(broken, wanted)
+
+
+def test_eleven_export_removes_object_title_annotation_without_removing_title_argument():
+    tool = SimpleNamespace(
+        name="create",
+        openai_schema={
+            "function": {
+                "name": "create",
+                "description": "Create record",
+                "parameters": {
+                    "title": "CreateArguments",
+                    "type": "object",
+                    "properties": {
+                        "title": {"type": "string", "description": "Record title"},
+                    },
+                    "required": ["title"],
+                },
+            }
+        },
+    )
+    config = eleven_config("PUBLIC", [tool], "gpt-4.1", "voice", 90)
+    schema = config["agent"]["prompt"]["tools"][0]["parameters"]
+    assert "title" not in schema
+    assert schema["properties"]["title"] == {
+        "type": "string",
+        "description": "Record title",
+    }
+    assert schema["required"] == ["title"]
+    assert tool.openai_schema["function"]["parameters"]["title"] == "CreateArguments"
+
+
+def test_eleven_accepts_neutral_api_defaults_without_relaxing_argument_constraints():
+    wanted = eleven_config("PUBLIC", tools(), "gpt-4.1", "voice", 90)
+    actual = copy.deepcopy(wanted)
+    actual["agent"]["prompt"]["built_in_tools"] = {"end_call": None, "skip_turn": None}
+    schema = actual["agent"]["prompt"]["tools"][0]["parameters"]
+    schema.update(description="", dynamic_variable="", is_omitted=False)
+    schema["properties"]["id"].update(
+        enum=None,
+        is_system_provided=False,
+        dynamic_variable="",
+        allowed_values=None,
+        allowed_values_dynamic_variable="",
+        constant_value="",
+        is_omitted=False,
+    )
+    verify_preset(actual, wanted)
+    for key, value in [
+        ("constant_value", "fixed"),
+        ("is_omitted", True),
+        ("dynamic_variable", "hidden"),
+    ]:
+        broken = copy.deepcopy(actual)
+        broken["agent"]["prompt"]["tools"][0]["parameters"]["properties"]["id"][key] = (
+            value
+        )
+        with pytest.raises(ProviderError, match="undeclared argument override"):
+            verify_preset(broken, wanted)
+    actual["agent"]["prompt"]["tools"][0]["parameters"]["required"] = []
+    with pytest.raises(ProviderError, match="schema differs"):
+        verify_preset(actual, wanted)
+
+
+def test_eleven_empty_required_list_matches_an_omitted_required_annotation():
+    expected = {"type": "object", "properties": {}}
+    assert canonical_schema(expected | {"required": []}) == canonical_schema(expected)
+
+
+def test_eleven_export_rejects_a_session_window_below_the_service_minimum():
+    with pytest.raises(ValueError, match="60–420"):
+        eleven_config("PUBLIC", tools(), "gpt-4.1", "voice", 45)
+
+
+def test_eleven_allows_only_inert_start_workflow_and_rejects_active_builtins():
+    workflow = {
+        "nodes": {"start": {"type": "start", "position": {"x": 0, "y": 0}}},
+        "edges": {},
+        "subgraphs": {},
+    }
+    verify_workflow({"workflow": workflow, "procedures": {}})
+    for change in [
+        {"edges": {"edge": {"to": "agent"}}},
+        {"nodes": {"agent": {"type": "override_agent"}}},
+    ]:
+        with pytest.raises(ProviderError, match="workflows"):
+            verify_workflow({"workflow": workflow | change})
+    config = eleven_config("PUBLIC", tools(), "gpt-4.1", "voice", 90)
+    changed = copy.deepcopy(config)
+    changed["agent"]["prompt"]["built_in_tools"] = {"end_call": {}}
+    with pytest.raises(ProviderError, match="undeclared backend"):
+        verify_preset(changed, config)
+
+
+def test_eleven_resolves_equivalent_inline_tools_and_references_but_rejects_conflicts():
+    async def run():
+        config = eleven_config("PUBLIC", tools(), "gpt-4.1", "voice", 90)
+        config["agent"]["prompt"]["tool_ids"] = ["tool_one"]
+        preset = {"conversation_config": copy.deepcopy(config)}
+
+        async def get(path):
+            assert path == "tools/tool_one"
+            return {"tool_config": copy.deepcopy(config["agent"]["prompt"]["tools"][0])}
+
+        await resolve_tools(preset, get)
+        verify_preset(preset["conversation_config"], config)
+        preset["conversation_config"]["agent"]["prompt"]["tools"][0]["description"] = (
+            "Wrong schema"
+        )
+        with pytest.raises(ProviderError, match="Conflicting inline"):
+            await resolve_tools(preset, get)
+
+    asyncio.run(run())
 
 
 def test_eleven_fingerprint_covers_platform_workflow_and_resolved_tools():

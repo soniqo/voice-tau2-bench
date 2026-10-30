@@ -30,6 +30,86 @@ REQUIRED_EVENTS = {
 }
 
 
+def canonical_schema(schema):
+    """Compare JSON constraints while accepting neutral API serialization defaults."""
+    neutral = {
+        "dynamic_variable": "",
+        "is_omitted": False,
+        "is_system_provided": False,
+        "allowed_values": None,
+        "allowed_values_dynamic_variable": "",
+        "constant_value": "",
+    }
+    result = {}
+    for key, value in schema.items():
+        if key in neutral:
+            if value != neutral[key]:
+                raise ProviderError(
+                    "ElevenLabs tool has an undeclared argument override"
+                )
+            continue
+        if (
+            key in {"title", "default"}
+            or (key == "enum" and value is None)
+            or (key == "description" and value == "")
+        ):
+            continue
+        if key == "properties":
+            value = {name: canonical_schema(prop) for name, prop in value.items()}
+        elif key == "items" and isinstance(value, dict):
+            value = canonical_schema(value)
+        elif key == "required":
+            if not value:
+                continue
+            value = sorted(value)
+        result[key] = value
+    return result
+
+
+async def resolve_tools(preset, get):
+    prompt = preset["conversation_config"].get("agent", {}).get("prompt", {})
+    ids = prompt.get("tool_ids", [])
+    if not ids:
+        return
+    resolved = []
+    for ident in ids:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", ident):
+            raise ProviderError("Invalid ElevenLabs tool reference")
+        item = await get("tools/" + ident)
+        resolved.append(item.get("tool_config", item))
+
+    def signatures(items):
+        return sorted(
+            (
+                item["name"],
+                item["type"],
+                item.get("description"),
+                item.get("expects_response"),
+                canonical_schema(item["parameters"]),
+            )
+            for item in items
+        )
+
+    if prompt.get("tools") and signatures(prompt["tools"]) != signatures(resolved):
+        raise ProviderError("Conflicting inline and referenced ElevenLabs tools")
+    prompt["tools"] = resolved
+
+
+def verify_workflow(preset):
+    workflow = preset.get("workflow") or {}
+    nodes = list(workflow.get("nodes", {}).values())
+    if (
+        preset.get("procedures")
+        or workflow.get("edges")
+        or workflow.get("subgraphs")
+        or len(nodes) > 1
+        or any(node.get("type") != "start" for node in nodes)
+    ):
+        raise ProviderError(
+            "ElevenLabs multi-agent workflows/procedures are unsupported"
+        )
+
+
 def preset_fingerprint(preset):
     relevant = {
         name: preset.get(name)
@@ -39,6 +119,8 @@ def preset_fingerprint(preset):
 
 
 def eleven_config(system, tools, model, voice, max_seconds):
+    if not 60 <= max_seconds <= 420:
+        raise ValueError("ElevenLabs presets require a 60–420 second session window")
     return {
         "agent": {
             "first_message": "",
@@ -51,7 +133,15 @@ def eleven_config(system, tools, model, voice, max_seconds):
                         "type": "client",
                         "name": t.name,
                         "description": t.openai_schema["function"]["description"],
-                        "parameters": t.openai_schema["function"]["parameters"],
+                        # Object-level titles are Pydantic annotations, rejected
+                        # by ElevenLabs. A property named "title" is preserved.
+                        "parameters": {
+                            k: v
+                            for k, v in t.openai_schema["function"][
+                                "parameters"
+                            ].items()
+                            if k != "title"
+                        },
                         "expects_response": True,
                     }
                     for t in tools
@@ -81,8 +171,14 @@ def verify_preset(config, expected):
         )
     if (
         prompt.get("knowledge_base")
-        or prompt.get("built_in_tools")
+        or any(
+            value is not None for value in (prompt.get("built_in_tools") or {}).values()
+        )
         or prompt.get("custom_llm")
+        or prompt.get("bedrock_llm")
+        or prompt.get("mcp_server_ids")
+        or prompt.get("native_mcp_server_ids")
+        or prompt.get("rag", {}).get("enabled")
     ):
         raise ProviderError(
             "ElevenLabs preset contains undeclared backend capabilities"
@@ -108,7 +204,8 @@ def verify_preset(config, expected):
     for tool in desired["tools"]:
         actual = by_name.get(tool["name"], {})
         if (
-            actual.get("parameters") != tool["parameters"]
+            canonical_schema(actual.get("parameters", {}))
+            != canonical_schema(tool["parameters"])
             or actual.get("description") != tool["description"]
         ):
             raise ProviderError(
@@ -120,7 +217,7 @@ def verify_preset(config, expected):
             "Enable the required ElevenLabs completion/audio/tool events"
         )
     if (
-        not 1
+        not 60
         <= conversation.get("max_duration_seconds", 0)
         <= expected["conversation"]["max_duration_seconds"]
     ):
@@ -162,24 +259,10 @@ class ElevenSession(ProviderSession):
             headers={"xi-api-key": key}, timeout=15, trust_env=False
         )
         preset = await self.get("agents/" + quote(self.settings.agent_id))
-        if preset.get("workflow"):
-            raise ProviderError(
-                "ElevenLabs multi-agent workflows are not supported by this adapter"
-            )
+        verify_workflow(preset)
         config = preset["conversation_config"]
-        prompt = config.get("agent", {}).get("prompt", {})
         # Tool references are resolved read-only; no remote agent is created or edited.
-        ids = prompt.get("tool_ids", [])
-        if ids:
-            if prompt.get("tools"):
-                raise ProviderError("Ambiguous ElevenLabs tool definitions")
-            resolved = []
-            for ident in ids:
-                if not re.fullmatch(r"[A-Za-z0-9_-]{1,200}", ident):
-                    raise ProviderError("Invalid ElevenLabs tool reference")
-                item = await self.get("tools/" + ident)
-                resolved.append(item.get("tool_config", item))
-            prompt["tools"] = resolved
+        await resolve_tools(preset, self.get)
         expected = eleven_config(
             system,
             tools,

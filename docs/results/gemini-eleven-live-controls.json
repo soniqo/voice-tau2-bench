@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-30",
+  "scope": "real audio/tool functional controls; not domain pass rates",
+  "task_frame": {
+    "tasks": 278,
+    "verified_inputs": 64,
+    "modified": false
+  },
+  "recorded_request_sha256": "07e43d43fa657c4190c585058e6de98eb2ea164e31130de5f24adb7ad135725f",
+  "attempts": [
+    {
+      "provider": "elevenlabs",
+      "configured_model": "gpt-4.1",
+      "voice": "Sarah",
+      "condition": "native_caller_90s",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 90,
+      "session_window_seconds": 90,
+      "opener": "live_voxcpm2",
+      "source_sha256": "772b149e552328008ccf43407d49c75c7f04c417eb6b620497157b498d0d06ff",
+      "standard_leaderboard": false,
+      "scored": true,
+      "trial_reward": 0.0,
+      "termination": "timeout",
+      "wall_seconds": 93.70704062504228,
+      "audio_seconds": 74.0,
+      "tool_calls": [
+        {
+          "name": "get_users",
+          "arguments": {},
+          "error": false
+        },
+        {
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "error": false
+        }
+      ],
+      "tool_errors": 0,
+      "tool_attempts": 2,
+      "state_check_only": {
+        "db_match": true,
+        "reward": 1.0,
+        "wrong_write_reward": 0.0,
+        "replaces_trial_reward": false
+      }
+    },
+    {
+      "provider": "gemini-live",
+      "configured_model": "gemini-3.8-live",
+      "voice": "Kore",
+      "condition": "native_caller_90s",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 90,
+      "session_window_seconds": 90,
+      "opener": "live_voxcpm2",
+      "source_sha256": "772b149e552328008ccf43407d49c75c7f04c417eb6b620497157b498d0d06ff",
+      "standard_leaderboard": false,
+      "scored": false,
+      "trial_reward": null,
+      "error": "Vertex usage parsing rejected a missing responseTokenCount; candidate-token alias support was added afterward."
+    },
+    {
+      "provider": "elevenlabs",
+      "configured_model": "gpt-4.1",
+      "voice": "Sarah",
+      "condition": "recorded_caller_45s",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 45,
+      "session_window_seconds": 60,
+      "opener": "live_voxcpm2",
+      "source_sha256": "93b0f61b99227bdca7dfc8f9ad43e76492c3b0f75956e6d1e4088901761ff2e1",
+      "standard_leaderboard": false,
+      "scored": true,
+      "trial_reward": 0.0,
+      "termination": "timeout",
+      "wall_seconds": 48.319223417085595,
+      "audio_seconds": 31.6,
+      "tool_calls": [
+        {
+          "name": "get_users",
+          "arguments": {},
+          "error": false
+        },
+        {
+          "name": "create_task",
+          "arguments": {
+            "user_id": "user_1",
+            "title": "Important Meeting"
+          },
+          "error": false
+        }
+      ],
+      "tool_errors": 0,
+      "tool_attempts": 2,
+      "state_check_only": {
+        "db_match": true,
+        "reward": 1.0,
+        "wrong_write_reward": 0.0,
+        "replaces_trial_reward": false
+      }
+    },
+    {
+      "provider": "gemini-live",
+      "configured_model": "gemini-3.8-live",
+      "voice": "Kore",
+      "condition": "recorded_caller_45s",
+      "task": "mock/create_task_1",
+      "seed": 70,
+      "trial_clock_seconds": 45,
+      "session_window_seconds": 45,
+      "opener": "live_voxcpm2",
+      "source_sha256": "93b0f61b99227bdca7dfc8f9ad43e76492c3b0f75956e6d1e4088901761ff2e1",
+      "standard_leaderboard": false,
+      "scored": true,
+      "trial_reward": 0.0,
+      "termination": "user_stop",
+      "wall_seconds": 38.8061196670169,
+      "audio_seconds": 27.85,
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "arguments": {
+            "title": "important meeting",
+            "user_id": "user_1"
+          },
+          "error": false
+        }
+      ],
+      "tool_errors": 0,
+      "tool_attempts": 1,
+      "state_check_only": {
+        "db_match": false,
+        "reward": 0.0,
+        "wrong_write_reward": 0.0,
+        "replaces_trial_reward": false
+      }
+    }
+  ],
+  "limitations": [
+    "Different caller and opener conditions are diagnostics, not a matched model ranking.",
+    "Timeout trial rewards are retained. State-only replays do not replace them.",
+    "Gemini completed the recorded call but changed the explicitly requested title capitalization.",
+    "Airline, retail and telecom coverage for these providers remains pending."
+  ]
+}

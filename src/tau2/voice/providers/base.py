@@ -34,6 +34,8 @@ class ProviderSettings:
     usd_per_credit: float | None = None
     max_usd_per_minute: float | None = None
     preset_sha256: str | None = None
+    vertex_project: str | None = None
+    vertex_location: str | None = None
 
     def __post_init__(self):
         if self.provider not in PROVIDERS or not self.model or not self.voice:
@@ -50,7 +52,24 @@ class ProviderSettings:
             raise ValueError("Spending threshold must be positive and at most 5")
         if self.provider == "openai-live" and not self.backend_model:
             raise ValueError("GPT-Live requires an explicitly named Responses backend")
+        if self.vertex_project or self.vertex_location:
+            if (
+                self.provider != "gemini-live"
+                or not self.vertex_project
+                or not self.vertex_location
+            ):
+                raise ValueError("Vertex requires Gemini Live, a project and location")
+            if not re.fullmatch(
+                r"(?:[a-z][a-z0-9-]{4,61}[a-z0-9]|[0-9]{1,24})", self.vertex_project
+            ) or not re.fullmatch(
+                r"[a-z][a-z0-9-]{0,49}[a-z0-9]", self.vertex_location
+            ):
+                raise ValueError("Invalid Vertex project or location")
         if self.provider == "elevenlabs":
+            if self.max_seconds < 60:
+                raise ValueError(
+                    "ElevenLabs requires at least a 60-second session window"
+                )
             if not self.agent_id:
                 raise ValueError("ElevenLabs requires a configured agent ID")
             if (

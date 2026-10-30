@@ -437,7 +437,7 @@ def test_offline_provider_wire_through_production_runner_and_frozen_grader(
         environment.get_tools(),
         model,
         "voice",
-        10,
+        60,
     )
     digest = preset_fingerprint({"conversation_config": preset})
 
@@ -467,7 +467,7 @@ def test_offline_provider_wire_through_production_runner_and_frozen_grader(
         model,
         "voice",
         "VOICE_TEST_KEY",
-        max_seconds=10,
+        max_seconds=60 if provider == "elevenlabs" else 10,
         backend_model="gpt-6-luna" if provider == "openai-live" else None,
         agent_id="agent_fixture" if provider == "elevenlabs" else None,
         preset_sha256=digest if provider == "elevenlabs" else None,

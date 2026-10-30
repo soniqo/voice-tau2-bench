@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | ตรวจสอบเสียงแบบเนทีฟแล้ว; Retail pass^1 **1/1** (การทดสอบระหว่างพัฒนา v6 หนึ่งครั้ง จำกัด 420 วินาที; [ผล](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + เอเจนต์เบื้องหลังที่ระบุชื่อ | [ทดสอบตัวเชื่อมต่อรุ่นทดลองแบบออฟไลน์แล้ว; ยังไม่ได้ตรวจสอบกับบริการจริง](docs/providers.md) |
 | OpenAI Realtime | [ทดสอบตัวเชื่อมต่อรุ่นทดลองแบบออฟไลน์แล้ว; ยังไม่ได้ตรวจสอบกับบริการจริง](docs/providers.md) |
-| Gemini Live | [ทดสอบตัวเชื่อมต่อรุ่นทดลองแบบออฟไลน์แล้ว; ยังไม่ได้ตรวจสอบกับบริการจริง](docs/providers.md) |
-| ElevenLabs Agents | [ทดสอบตัวเชื่อมต่อรุ่นทดลองแบบออฟไลน์แล้ว; ยังไม่ได้ตรวจสอบกับบริการจริง](docs/providers.md) |
+| Gemini Live | [ทดสอบเสียงและเครื่องมือกับบริการจริงแล้ว; ยังไม่มีคะแนนรายโดเมน](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [ทดสอบเสียงและเครื่องมือกับบริการจริงแล้ว; ยังไม่มีคะแนนรายโดเมน](docs/results/gemini-eleven-live-controls.json) |
 
 ชุดระบบในเครื่องใช้ [speech-swift](https://github.com/soniqo/speech-swift): Whisper Large-v3 รุ่นเต็ม FP16, น้ำหนักหลัก VoxCPM2 FP16 / AudioVAE FP32, Silero VAD และ Gemma E4B สำหรับผู้โทร ตัวช่วยฟัง และผู้ประเมิน Nova 2.5 Sonic มี[ตัวรันเสียงเนทีฟ](docs/nova.md)แบบเลือกใช้ โดยผู้โทรและผู้ประเมินยังทำงานในเครื่อง
 

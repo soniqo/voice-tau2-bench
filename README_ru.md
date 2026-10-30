@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | Нативное аудио проверено; Retail pass^1 **1/1** (один тест разработки v6, лимит 420 с; [результат](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + указанный серверный агент | [Экспериментальный адаптер проверен офлайн; проверка с реальным сервисом ещё не выполнена](docs/providers.md) |
 | OpenAI Realtime | [Экспериментальный адаптер проверен офлайн; проверка с реальным сервисом ещё не выполнена](docs/providers.md) |
-| Gemini Live | [Экспериментальный адаптер проверен офлайн; проверка с реальным сервисом ещё не выполнена](docs/providers.md) |
-| ElevenLabs Agents | [Экспериментальный адаптер проверен офлайн; проверка с реальным сервисом ещё не выполнена](docs/providers.md) |
+| Gemini Live | [Аудио и инструменты проверены с реальными сервисами; оценки по доменам ещё не получены](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Аудио и инструменты проверены с реальными сервисами; оценки по доменам ещё не получены](docs/results/gemini-eleven-live-controls.json) |
 
 Локальный стек использует [speech-swift](https://github.com/soniqo/speech-swift): полный Whisper Large-v3 FP16, основные веса VoxCPM2 FP16 / AudioVAE FP32, Silero VAD и Gemma E4B для звонящего, помощников прослушивания и оценщика. Для Nova 2.5 Sonic доступен необязательный [нативный аудиозапуск](docs/nova.md); звонящий и оценщик остаются локальными.
 

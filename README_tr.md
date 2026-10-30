@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | Doğrudan ses işleme doğrulandı; Retail pass^1 **1/1** (bir v6 geliştirme denemesi, 420 sn sınırı; [kayıt](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + adı belirtilmiş bir arka uç ajanı | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
 | OpenAI Realtime | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
-| Gemini Live | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
-| ElevenLabs Agents | [Deneysel adaptör çevrimdışı test edildi; canlı doğrulama bekliyor](docs/providers.md) |
+| Gemini Live | [Ses ve araçlar canlı hizmette test edildi; alan puanları bekliyor](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [Ses ve araçlar canlı hizmette test edildi; alan puanları bekliyor](docs/results/gemini-eleven-live-controls.json) |
 
 Yerel yapı [speech-swift](https://github.com/soniqo/speech-swift) kullanır: tam Whisper Large-v3 FP16, VoxCPM2 ana ağırlıkları FP16 / AudioVAE FP32, Silero VAD ve arayan/dinleme yardımcıları/değerlendirici için Gemma E4B. Nova 2.5 Sonic için isteğe bağlı bir [doğal ses çalıştırıcısı](docs/nova.md) vardır; arayan ve değerlendirici yerel kalır.
 

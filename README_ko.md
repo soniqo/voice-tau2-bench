@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | 네이티브 오디오 검증 완료; Retail pass^1 **1/1** (v6 개발 시험 1회, 제한 420초; [기록](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + 명시한 백엔드 에이전트 | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
 | OpenAI Realtime | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
-| Gemini Live | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
-| ElevenLabs Agents | [실험용 어댑터 오프라인 테스트 완료; 실제 서비스 검증 대기 중](docs/providers.md) |
+| Gemini Live | [실제 서비스에서 오디오·도구 호출 테스트 완료; 도메인 점수 대기 중](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [실제 서비스에서 오디오·도구 호출 테스트 완료; 도메인 점수 대기 중](docs/results/gemini-eleven-live-controls.json) |
 
 로컬 구성은 [speech-swift](https://github.com/soniqo/speech-swift)를 사용합니다: 전체 Whisper Large-v3 FP16, VoxCPM2 주 가중치 FP16 / AudioVAE FP32, Silero VAD 및 발신자·청취 보조·평가자용 Gemma E4B. Nova 2.5 Sonic은 선택적 [네이티브 오디오 실행기](docs/nova.md)를 지원하며 발신자와 평가자는 로컬에서 실행됩니다.
 

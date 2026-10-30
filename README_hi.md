@@ -15,8 +15,8 @@
 | Amazon Nova 2.5 Sonic | नेटिव ऑडियो सत्यापित; Retail pass^1 **1/1** (v6 का एक विकास परीक्षण, 420 सेकंड की सीमा; [रिकॉर्ड](docs/results/nova25-v6-retail-development.json)) |
 | OpenAI GPT-Live + निर्दिष्ट बैकएंड एजेंट | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
 | OpenAI Realtime | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
-| Gemini Live | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
-| ElevenLabs Agents | [प्रयोगात्मक एडाप्टर का ऑफ़लाइन परीक्षण पूरा; लाइव सत्यापन शेष](docs/providers.md) |
+| Gemini Live | [लाइव ऑडियो और टूल परीक्षण पूरे; डोमेन स्कोर शेष](docs/results/gemini-eleven-live-controls.json) |
+| ElevenLabs Agents | [लाइव ऑडियो और टूल परीक्षण पूरे; डोमेन स्कोर शेष](docs/results/gemini-eleven-live-controls.json) |
 
 स्थानीय स्टैक [speech-swift](https://github.com/soniqo/speech-swift) का उपयोग करता है: पूर्ण Whisper Large-v3 FP16, VoxCPM2 मुख्य वेट FP16 / AudioVAE FP32, Silero VAD तथा कॉलर, सुनने वाले सहायक और जज के लिए Gemma E4B। Nova 2.5 Sonic के लिए वैकल्पिक [नेटिव ऑडियो रनर](docs/nova.md) है; कॉलर और जज स्थानीय रहते हैं।
 
