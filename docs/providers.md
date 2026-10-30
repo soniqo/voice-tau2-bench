@@ -299,3 +299,22 @@ historical calls used inline greeting synthesis. Current calls record
 their setup condition must be distinguished in comparisons. The earlier
 timeout rewards remain unchanged. These controls are diagnostics and do not
 establish a matched domain ranking.
+
+The next two live controls on 2026-10-30 used `prepared-opener-v1`, fresh local
+VoxCPM2 synthesis, the same recorded request, a 45-second conversation limit
+and a 60-second provider window. Both ended with a normal caller stop and
+created the exact requested `Important Meeting` title. Their frozen trial
+rewards are 1; deliberately wrong writes score 0. The
+[validation record](results/gemini-eleven-live-controls.json) retains all six
+attempts, including the earlier failures.
+
+| Provider | Mock-task reward | Tool errors / attempts | Greeting preparation | Total wall time |
+| --- | --- | --- | --- | --- |
+| ElevenLabs, GPT-4.1 / Sarah | 1 | 0/1 | 7.88 s | 55.16 s |
+| Gemini Live, Gemini 3.8 / Kore | 1 | 0/2 | 6.97 s | 39.54 s |
+
+Total wall time includes preparation and shutdown. ElevenLabs' orchestrator
+duration was 47.26 seconds including shutdown, with a normal caller stop.
+Gemini's orchestrator duration was 32.55 seconds. These are one mock-task
+control per provider with a recorded caller. Caller-model qualification and
+airline, retail and telecom scores remain separate work.
