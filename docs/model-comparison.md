@@ -115,3 +115,10 @@ sessions and persistent reservations. It closes the voice connections and
 accounts for delegated work. Gemini session-final billing and ElevenLabs USD
 totals remain unknown; their reservations are retained. Offline controls are
 separate from real model scores and do not establish provider latency or quality.
+
+The provider runner records `prepared-opener-v1`: local greeting synthesis
+finishes before its conversation watchdog and provider connection start.
+`wall_seconds` still includes that work; `setup_seconds` and
+`call_wall_seconds` separate preparation from the conversation. Match this
+setup condition when comparing runs. Earlier inline-greeting results and
+their rewards remain unchanged.

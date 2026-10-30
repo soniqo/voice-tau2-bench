@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tau2.voice.provider_cli import main
+from tau2.voice.provider_cli import main, session_window
 from tau2.voice.provider_run import ProviderBudget, ProviderFactory
 from tau2.voice.providers.base import ProviderSettings
 
@@ -20,6 +20,38 @@ def settings(**kw):
             | kw
         )
     )
+
+
+@pytest.mark.parametrize(
+    "call,requested,eleven,expected",
+    [
+        (45, None, True, 60),
+        (90, None, False, 105),
+        (240, None, False, 255),
+        (405, None, True, 420),
+        (45, 75, True, 75),
+    ],
+)
+def test_session_window_separates_conversation_from_provider_lifetime(
+    call, requested, eleven, expected
+):
+    assert session_window(call, requested, eleven=eleven) == expected
+
+
+@pytest.mark.parametrize(
+    "call,requested",
+    [
+        (0, None),
+        (float("nan"), None),
+        (406, None),
+        (90, 90),
+        (45, 59),
+        (45, float("inf")),
+    ],
+)
+def test_session_window_rejects_unsupported_limits_before_inference(call, requested):
+    with pytest.raises(ValueError):
+        session_window(call, requested, eleven=True)
 
 
 @pytest.mark.parametrize(
@@ -169,6 +201,8 @@ def test_provider_cli_dispatches_named_stack_without_credentials_or_reservation(
     assert descriptor["endpointing"]["mode"] == "reflected_audio_noise_gate"
     assert observed["wall_timeout"] == observed["max_seconds"] == 240
     assert descriptor["native_roles"] == ["caller", "listener", "judge", "caller_tts"]
+    assert descriptor["session_seconds"] == 255
+    assert descriptor["setup_mode"] == "prepared-opener-v1"
     assert not (tmp_path / "run-budget.json").exists()
 
 

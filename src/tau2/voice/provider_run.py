@@ -105,6 +105,7 @@ class ProviderFactory:
             "max_usd_per_minute": s.max_usd_per_minute,
             "native_roles": ["caller", "listener", "judge", "caller_tts"],
             "fixed_opener": "speech-swift/voxcpm2",
+            "setup_mode": "prepared-opener-v1",
             "endpointing": {
                 "mode": "reflected_audio_noise_gate",
                 "rms_threshold": 180,

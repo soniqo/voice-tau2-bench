@@ -1,5 +1,6 @@
 import asyncio
 import audioop
+import hashlib
 from types import SimpleNamespace
 
 import pytest
@@ -13,6 +14,72 @@ from tau2.data_model.audio import (
 )
 from tau2.data_model.message import MultiToolMessage, ToolCall, ToolMessage, UserMessage
 from tau2.voice.providers.base import ProviderError, ProviderEvent, ProviderSettings
+
+
+def test_prepared_greeting_is_synthesized_once_and_preserves_exact_telephony_audio(
+    monkeypatch,
+):
+    monkeypatch.setenv("TEST_KEY", "fixture")
+    calls = []
+    pcm = b"\x00\x10" * 2400
+
+    def synthesize(text, config):
+        calls.append((text, config.seed))
+        return AudioData(
+            data=pcm,
+            format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=24000),
+        )
+
+    a = agent(opener_backend=SimpleNamespace(synthesize=synthesize))
+    a.prepare_initial_message("Public greeting.", before_call=True)
+    a.prepare_initial_message("Public greeting.", before_call=True)
+    assert calls == [("Public greeting.", 42)] and a._thread is None
+    converted, _ = audioop.ratecv(pcm, 2, 1, 24000, 8000, None)
+    expected = audioop.lin2ulaw(converted, 2)
+    assert a._prepared_opener.audio == expected
+    assert (
+        a.metrics["setup"]["opener_audio_sha256"]
+        == hashlib.sha256(expected).hexdigest()
+    )
+    assert a.metrics["setup"]["mode"] == "prepared-opener-v1"
+    # Initialization consumes the prepared data without another model request.
+    a._worker = lambda: None
+    a._connected.set()
+    a.create_initial_message("Public greeting.")
+    a._thread.join()
+    assert len(calls) == 1 and a._ready[0].audio == expected
+
+
+@pytest.mark.parametrize("change", ["text", "seed"])
+def test_prepared_greeting_cannot_leak_across_text_or_seed_changes(monkeypatch, change):
+    monkeypatch.setenv("TEST_KEY", "fixture")
+    backend = SimpleNamespace(
+        synthesize=lambda *_: AudioData(
+            data=bytes(4800),
+            format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=24000),
+        )
+    )
+    a = agent(opener_backend=backend)
+    a.prepare_initial_message("Original", before_call=True)
+    if change == "seed":
+        a.set_seed(43)
+    with pytest.raises(ProviderError, match="text or seed"):
+        a.create_initial_message("Changed" if change == "text" else "Original")
+    assert a._thread is None and not a._ready
+
+
+def test_missing_credentials_fail_before_greeting_or_provider_start(monkeypatch):
+    monkeypatch.delenv("TEST_KEY", raising=False)
+    a = agent(
+        opener_backend=SimpleNamespace(
+            synthesize=lambda *_: pytest.fail(
+                "No setup model request without credentials"
+            )
+        )
+    )
+    with pytest.raises(ProviderError, match="Missing credential"):
+        a.prepare_initial_message(before_call=True)
+    assert a._thread is None and a._prepared_opener is None
 
 
 def agent(**kwargs):

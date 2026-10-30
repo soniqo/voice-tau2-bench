@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import math
 import os
 import re
 import sys
@@ -11,6 +12,18 @@ from pathlib import Path
 from loguru import logger
 
 from tau2.voice.baseline import repository_root
+
+
+def session_window(call_seconds, requested=None, *, eleven=False):
+    if not math.isfinite(call_seconds) or call_seconds < 1:
+        raise ValueError("Call limit must be finite and at least 1 second")
+    minimum = max(call_seconds + 15, 60 if eleven else 1)
+    value = minimum if requested is None else requested
+    if not math.isfinite(value) or value < minimum or value > 420:
+        raise ValueError(
+            "Provider window must cover the call plus 15 s, be at most 420 s, and at least 60 s for ElevenLabs"
+        )
+    return value
 
 
 def public_domain(domain, seed):
@@ -99,6 +112,11 @@ def main(argv=None):
     parser.add_argument("--qualification", type=Path)
     parser.add_argument("--qualify-only", action="store_true")
     parser.add_argument("--max-seconds", type=float, default=240)
+    parser.add_argument(
+        "--session-seconds",
+        type=float,
+        help="Provider window; defaults to the call limit plus 15 s (at least 60 s for ElevenLabs)",
+    )
     parser.add_argument("--budget-usd", type=float, default=1)
     parser.add_argument("--stop-usd", type=float, default=0.25)
     parser.add_argument("--budget-ledger", type=Path)
@@ -182,7 +200,7 @@ def main(argv=None):
                 tools,
                 args.model,
                 args.voice,
-                args.max_seconds,
+                session_window(args.max_seconds, args.session_seconds, eleven=True),
             )
             args.export_eleven_config.parent.mkdir(parents=True, exist_ok=True)
             args.export_eleven_config.write_text(
@@ -247,7 +265,11 @@ def main(argv=None):
             args.model,
             voice,
             key_env,
-            max_seconds=args.max_seconds,
+            max_seconds=session_window(
+                args.max_seconds,
+                args.session_seconds,
+                eleven=args.provider == "elevenlabs",
+            ),
             stop_usd=args.stop_usd,
             backend_model=args.backend_model,
             agent_id=args.agent_id,
