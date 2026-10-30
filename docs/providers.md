@@ -2,8 +2,9 @@
 
 `tau-voice-provider` connects OpenAI Realtime, GPT-Live with a named Responses
 backend, Gemini Live, or a configured ElevenLabs Agent to the existing voice
-runner. These experimental adapters have **offline integration tests**. Real
-provider validation and domain scores are pending. The recorded Nova score
+runner. These experimental adapters have **offline integration tests**. Gemini
+and ElevenLabs also have recorded live audio/tool controls; matched domain
+scores are pending. The recorded Nova score
 uses the separate [validated Nova runner](nova.md).
 
 The default `tau-voice` command stays local. Install the optional transport only
@@ -19,7 +20,11 @@ Start the loopback service using [runtime setup](runtime-setup.md). The provider
 supplies the agent's conversational audio and reasoning. Caller, listener,
 judge and caller TTS remain local; the fixed opening greeting uses VoxCPM2.
 The runner checks these four native roles rather than requiring local agent
-ASR/LLM/TTS. All adapters use the real-time v6 condition.
+ASR/LLM/TTS. All adapters use real-time v6 with the separately recorded
+`prepared-opener-v1` setup condition. The runner synthesizes the exact seeded
+greeting once before starting the conversation watchdog or connecting to the
+provider. Playback of that greeting still counts toward the conversation.
+Its audio/text hashes, seed and preparation duration are saved in `setup.json`.
 
 Qualify the caller/judge against the **current working source** and native
 runtime. Source changes invalidate older qualifications. This operation uses
@@ -131,7 +136,8 @@ configuration offline, choosing the actual reasoning model and voice ID:
 ```bash
 uv run --frozen tau-voice-provider \
   --export-eleven-config data/simulations/eleven-mock-config.json \
-  --domain mock --model gpt-4.1 --voice YOUR_VOICE_ID --max-seconds 90
+  --domain mock --model gpt-4.1 --voice YOUR_VOICE_ID \
+  --max-seconds 90 --session-seconds 105
 ```
 
 Configure the agent in ElevenLabs using that JSON. Disable the provider's first
@@ -176,9 +182,15 @@ remain unsupported. Resolved tools must agree with inline definitions.
 
 ## Limits, results and accounting
 
-Calls are bounded to 1–420 seconds, with one connection attempt per trial.
-ElevenLabs requires a session window of at least 60 seconds; setup rejects
-shorter presets before inference.
+`--max-seconds` bounds the conversation, with one connection attempt per trial.
+`--session-seconds` sets the separate provider window. It defaults to the call
+limit plus 15 seconds and must leave at least that much room for closure. The
+provider window is capped at 420 seconds, so this CLI accepts call limits up to
+405 seconds. ElevenLabs also requires a window of at least 60 seconds. For
+example, a short control can use `--max-seconds 45 --session-seconds 60`;
+the 90-second example above uses 105 seconds. Export and run with the same
+limits so the ElevenLabs preset matches. Shorter or mismatched windows fail
+before provider inference.
 Limits and qualification are checked before inference. Transport, provider,
 invalid-caller and shutdown failures propagate and remain unscored. An ordinary
 task failure or timeout receives the original frozen reward. The agent sees
@@ -214,6 +226,14 @@ the existing artifact format. Credentials and signed connection URLs are not
 written to those files. Exact provider/model/backend/preset and endpointing
 settings form part of resume provenance.
 
+`wall_seconds` continues to include greeting preparation, the call and grading.
+`setup_seconds` reports pre-call greeting preparation; `call_wall_seconds`
+reports the orchestrator run, including connection and shutdown work. Only
+greeting synthesis moves outside the conversation watchdog. A preparation
+failure is recorded as an unscored setup error, with no provider connection;
+its unused reservation is released. These timings do not change the frozen
+reward or retroactively change earlier trials.
+
 ## Validation
 
 Offline wire fixtures run all four adapters through the production task runner,
@@ -224,6 +244,22 @@ conversion, interruptions, tool IDs, final usage, malformed meters, preflight
 checks and shutdown failures. Live Gemini and ElevenLabs pilots are described
 in the [validation record](results/gemini-eleven-live-controls.json). The
 OpenAI adapters still have offline validation only.
+
+The wire controls also simulate a 10-second local greeting delay and check that
+the conversation still finishes under its own limit. To use real local VoxCPM2
+for the opening with fixture provider events, start the loopback service and run:
+
+```bash
+TAU_SETUP_NATIVE_E2E=1 SPEECH_SWIFT_INFERENCE_URL=http://127.0.0.1:8787 \
+  uv run --frozen --extra cloud-voice pytest -q -m local_models \
+  tests/test_voice_local/test_provider_pipeline.py::test_real_local_opener_prepares_before_offline_provider_control
+```
+
+This checks native greeting preparation, real tools and the frozen grader;
+it makes no cloud inference calls and does not measure a provider model.
+The 2026-10-30 local check prepared a four-second greeting in 10.08 seconds,
+then completed the conversation in 4.62 seconds under its separate ten-second
+limit. The correct write scored 1 and the deliberately wrong write scored 0.
 
 `tests/test_voice_local/test_provider_e2e.py` is an opt-in real-provider test.
 It requires `TAU_PROVIDER_E2E=1`, `SPEECH_SWIFT_INFERENCE_URL`, a current
@@ -245,7 +281,8 @@ previously synthesized VoxCPM2 greeting, recording its hash and cache mode.
 
 `TAU_PROVIDER_MAX_SECONDS` controls the trial clock;
 `TAU_PROVIDER_SESSION_SECONDS` can provide a separately recorded session window
-for orderly closure. ElevenLabs' window must be at least 60 seconds. Set
+for orderly closure. It uses the same call-plus-15-second default and bounds as
+the CLI; ElevenLabs' window must be at least 60 seconds. Set
 `TAU_PROVIDER_BUDGET_LEDGER`, `TAU_PROVIDER_BUDGET_USD` and
 `TAU_PROVIDER_STOP_USD` explicitly when running more than one paid control.
 
@@ -257,4 +294,8 @@ made the exact correct write in both initial calls, which timed out under the
 short clock. A separate frozen state check confirms those writes and rejects a
 deliberately wrong title; it does not replace their original timeout rewards.
 The live VoxCPM2 opening took 8–10 seconds before its first audio frame. These
-controls are diagnostics and do not establish a matched domain ranking.
+historical calls used inline greeting synthesis. Current calls record
+`prepared-opener-v1` and prepare that audio before starting the watchdog;
+their setup condition must be distinguished in comparisons. The earlier
+timeout rewards remain unchanged. These controls are diagnostics and do not
+establish a matched domain ranking.

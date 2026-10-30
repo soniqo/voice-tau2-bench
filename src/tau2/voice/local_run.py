@@ -312,6 +312,9 @@ def run_local_task(
             + "\n"
         )
         started = time.perf_counter()
+        call_started = None
+        call_wall_seconds = None
+        setup_seconds = 0.0
         with use_inference_backends(
             InferenceBackends(
                 chat=caller_backend,
@@ -320,7 +323,42 @@ def run_local_task(
             )
         ):
             try:
+                if (
+                    external_agent is not None
+                    and external_agent.get("setup_mode") == "prepared-opener-v1"
+                ):
+                    # Local synthesis finishes before any billable connection and
+                    # before BaseOrchestrator starts the conversation watchdog.
+                    initial = orchestrator.initial_agent_message
+                    greeting = (
+                        task.agent_opener
+                        if task.agent_opener is not None
+                        else initial.content
+                        if initial is not None
+                        else None
+                    )
+                    agent.prepare_initial_message(
+                        **({"content": greeting} if greeting is not None else {}),
+                        before_call=True,
+                    )
+                    setup_seconds = time.perf_counter() - started
+                    (output / "setup.json").write_text(
+                        json.dumps(
+                            {
+                                **agent.metrics["setup"],
+                                "setup_seconds": setup_seconds,
+                                "call_limit_seconds": max_seconds,
+                                "provider_session_seconds": external_agent[
+                                    "session_seconds"
+                                ],
+                            },
+                            indent=2,
+                        )
+                        + "\n"
+                    )
+                call_started = time.perf_counter()
                 simulation = orchestrator.run()
+                call_wall_seconds = time.perf_counter() - call_started
                 if hasattr(agent, "raise_if_failed"):
                     agent.raise_if_failed()
                 require_successful_inference(
@@ -353,6 +391,12 @@ def run_local_task(
                         {
                             "error": str(error),
                             "error_type": type(error).__name__,
+                            "phase": "setup"
+                            if call_started is None
+                            else "conversation",
+                            "setup_seconds": time.perf_counter() - started
+                            if call_started is None
+                            else setup_seconds,
                             "domain": domain,
                             "task_id": task.id,
                             "ticks": [
@@ -392,6 +436,8 @@ def run_local_task(
             "caller_stale_generations": user.stale_generation_count,
             "standard_leaderboard": False,
             "clock_mode": profile.execution.mode,
+            "setup_seconds": setup_seconds,
+            "call_wall_seconds": call_wall_seconds,
             "inference_accounting": lane.events if lane else [],
             "caller_decisions": getattr(caller_backend, "decisions", []),
             "tool_metrics": {
@@ -434,6 +480,8 @@ def run_local_task(
             "termination": simulation.termination_reason.value,
             "reward": simulation.reward_info.reward,
             "wall_seconds": time.perf_counter() - started,
+            "setup_seconds": setup_seconds,
+            "call_wall_seconds": call_wall_seconds,
             "audio_seconds": len(simulation.ticks) * 0.05,
             "clock_mode": profile.execution.mode,
             "scored": True,

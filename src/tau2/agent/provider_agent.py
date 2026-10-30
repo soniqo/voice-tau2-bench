@@ -2,6 +2,8 @@
 
 import asyncio
 import audioop
+import hashlib
+import os
 import queue
 import threading
 import time
@@ -35,6 +37,17 @@ class PlayingSpeech:
     opener: bool = False
 
 
+DEFAULT_OPENER = "Hi, thanks for calling. How can I help you today?"
+OPENER_VOICE = "A clear, calm adult female voice speaking American English."
+
+
+@dataclass(frozen=True)
+class PreparedOpener:
+    content: str
+    seed: int
+    audio: bytes
+
+
 class ProviderAgent(FullDuplexAgent[ProviderState]):
     def __init__(
         self,
@@ -62,6 +75,7 @@ class ProviderAgent(FullDuplexAgent[ProviderState]):
         self._input_rate = self._output_rate = None
         self._tick = None
         self._opening_text = ""
+        self._prepared_opener = None
         self.metrics = {
             "provider": settings.provider,
             "events": [],
@@ -98,23 +112,53 @@ class ProviderAgent(FullDuplexAgent[ProviderState]):
             cost=0,
         )
 
-    def create_initial_message(
-        self, content="Hi, thanks for calling. How can I help you today?"
-    ):
+    def prepare_initial_message(self, content=DEFAULT_OPENER, *, before_call=False):
         if self._thread:
             raise ProviderError("Provider agent cannot be reused across trials")
+        if before_call and not os.environ.get(self.settings.key_env):
+            raise ProviderError(
+                f"Missing credential environment variable: {self.settings.key_env}"
+            )
+        if self._prepared_opener is not None:
+            if (self._prepared_opener.content, self._prepared_opener.seed) != (
+                content,
+                self.seed,
+            ):
+                raise ProviderError(
+                    "Prepared greeting differs from the trial text or seed"
+                )
+            return
+        started = time.perf_counter()
         audio = self.opener_backend.synthesize(
             content,
             RuntimeTTSConfig(
                 model_id="voxcpm2",
-                voice_id="A clear, calm adult female voice speaking American English.",
+                voice_id=OPENER_VOICE,
                 seed=self.seed,
             ),
         )
+        data = audioop.lin2ulaw(pcm16(audio, 8000).data, 2)
+        if not data or len(data) > 8000 * 120:
+            raise ProviderError(
+                "Prepared greeting must be nonempty and at most 120 seconds"
+            )
+        self._prepared_opener = PreparedOpener(content, self.seed, data)
+        self.metrics["setup"] = {
+            "mode": "prepared-opener-v1" if before_call else "legacy-inline-opener",
+            "opener_seconds": time.perf_counter() - started,
+            "opener_audio_seconds": len(data) / 8000,
+            "opener_audio_sha256": hashlib.sha256(data).hexdigest(),
+            "opener_text_sha256": hashlib.sha256(content.encode()).hexdigest(),
+            "opener_seed": self.seed,
+            "audio_format": {"encoding": "mu-law", "sample_rate": 8000, "channels": 1},
+        }
+
+    def create_initial_message(self, content=DEFAULT_OPENER):
+        self.prepare_initial_message(content)
         self._ready.append(
             PlayingSpeech(
                 uuid.uuid4().hex,
-                audioop.lin2ulaw(pcm16(audio, 8000).data, 2),
+                self._prepared_opener.audio,
                 content,
                 opener=True,
             )

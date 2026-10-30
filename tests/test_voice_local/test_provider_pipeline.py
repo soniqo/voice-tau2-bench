@@ -6,24 +6,29 @@ Synthetic PCM and provider events validate integration, never model quality.
 import asyncio
 import base64
 import copy
+import hashlib
 import json
+import os
+import time
 from types import SimpleNamespace
 
 import pytest
 
+from tau2.agent import provider_agent
 from tau2.data_model.audio import (
     AudioData,
     AudioEncoding,
     AudioFormat,
     audio_bytes_to_string,
 )
-from tau2.data_model.message import UserMessage
+from tau2.data_model.message import AssistantMessage, UserMessage
 from tau2.data_model.semantic_communication import (
     CommunicateScoring,
     SemanticCommunicateSettings,
 )
 from tau2.data_model.simulation import SimulationRun
 from tau2.evaluator.evaluator import EvaluationType, evaluate_simulation
+from tau2.orchestrator import base as orchestrator_base
 from tau2.orchestrator.modes import CommunicationMode
 from tau2.user.user_simulator_base import FullDuplexUser
 from tau2.voice import local_run
@@ -389,8 +394,16 @@ class RecordedToneCaller(FullDuplexUser):
         ("elevenlabs", "gpt-4.1"),
     ],
 )
+@pytest.mark.parametrize("setup_delay", [0, 10])
 def test_offline_provider_wire_through_production_runner_and_frozen_grader(
-    tmp_path, monkeypatch, provider, model
+    tmp_path,
+    monkeypatch,
+    provider,
+    model,
+    setup_delay,
+    native_opener_url=None,
+    setup_failure=False,
+    greeting_source=None,
 ):
     monkeypatch.setenv("VOICE_TEST_KEY", "private-test-key")
     profile_path = (
@@ -419,9 +432,56 @@ def test_offline_provider_wire_through_production_runner_and_frozen_grader(
             format=AudioFormat(encoding=AudioEncoding.PCM_S16LE, sample_rate=24000),
         ),
     )
+    wall = SimpleNamespace(now=0)
+    if setup_delay:
+        timer = SimpleNamespace(
+            perf_counter=lambda: wall.now, monotonic=time.monotonic, sleep=time.sleep
+        )
+        monkeypatch.setattr(orchestrator_base, "time", timer)
+        monkeypatch.setattr(local_run, "time", timer)
+        monkeypatch.setattr(provider_agent, "time", timer)
+        original_synthesize = backend.synthesize
+
+        def slow_synthesize(*args):
+            wall.now += setup_delay
+            return original_synthesize(*args)
+
+        backend.synthesize = slow_synthesize
+    if setup_failure:
+
+        def failed_synthesize(*args):
+            raise RuntimeError("Local greeting synthesis failed")
+
+        backend.synthesize = failed_synthesize
+    if native_opener_url:
+        from tau2.voice.speech_swift import SpeechSwiftBackend
+
+        backend = SpeechSwiftBackend(native_opener_url)
     monkeypatch.setattr(local_run, "SpeechSwiftBackend", lambda *_: backend)
+    greeting = f"Welcome to the {greeting_source}."
+    if greeting_source == "task":
+        original_context = local_run.task_context
+
+        def custom_context(*args, **kwargs):
+            task, loaded, language = original_context(*args, **kwargs)
+            return task.model_copy(update={"agent_opener": greeting}), loaded, language
+
+        monkeypatch.setattr(local_run, "task_context", custom_context)
+    elif greeting_source == "context":
+        monkeypatch.setattr(
+            orchestrator_base.BaseOrchestrator,
+            "initial_agent_message",
+            property(lambda _: AssistantMessage(role="assistant", content=greeting)),
+        )
+
+    class ClockedToneCaller(RecordedToneCaller):
+        def get_next_chunk(self, *args, **kwargs):
+            if setup_delay:
+                wall.now += 0.05
+            return super().get_next_chunk(*args, **kwargs)
+
     monkeypatch.setattr(
-        local_run, "VoiceStreamingUserSimulator", lambda **_: RecordedToneCaller()
+        local_run, "VoiceStreamingUserSimulator", lambda **_: ClockedToneCaller()
     )
     monkeypatch.setattr(
         local_run,
@@ -502,6 +562,16 @@ def test_offline_provider_wire_through_production_runner_and_frozen_grader(
         external_agent=factory.descriptor,
     )
     assert result["reward"] == 1 and result["termination"] == "user_stop"
+    setup = json.loads((output / "setup.json").read_text())
+    assert setup["mode"] == "prepared-opener-v1"
+    if greeting_source:
+        assert (
+            setup["opener_text_sha256"] == hashlib.sha256(greeting.encode()).hexdigest()
+        )
+    if setup_delay:
+        assert result["setup_seconds"] == setup_delay
+        assert result["call_wall_seconds"] < 10
+        assert result["wall_seconds"] >= setup_delay
     simulation = SimulationRun.model_validate_json(
         (output / "simulation.json").read_text()
     )
@@ -533,3 +603,55 @@ def test_offline_provider_wire_through_production_runner_and_frozen_grader(
         assert (
             simulation.agent_cost is None
         )  # Partial/credit-only billing is never labeled free.
+
+
+@pytest.mark.parametrize("source", ["task", "context"])
+def test_prepared_opener_matches_the_orchestrator_greeting(
+    tmp_path, monkeypatch, source
+):
+    test_offline_provider_wire_through_production_runner_and_frozen_grader(
+        tmp_path,
+        monkeypatch,
+        "openai-realtime",
+        "gpt-realtime-2.1",
+        0,
+        greeting_source=source,
+    )
+
+
+@pytest.mark.local_models
+def test_real_local_opener_prepares_before_offline_provider_control(
+    tmp_path, monkeypatch
+):
+    url = os.environ.get("SPEECH_SWIFT_INFERENCE_URL")
+    if os.environ.get("TAU_SETUP_NATIVE_E2E") != "1" or not url:
+        pytest.skip(
+            "Requires explicit native setup check and the single local runtime; no provider calls"
+        )
+    test_offline_provider_wire_through_production_runner_and_frozen_grader(
+        tmp_path,
+        monkeypatch,
+        "openai-realtime",
+        "gpt-realtime-2.1",
+        0,
+        native_opener_url=url,
+    )
+
+
+def test_greeting_failure_is_unscored_and_releases_unstarted_provider_reservation(
+    tmp_path, monkeypatch
+):
+    with pytest.raises(RuntimeError, match="greeting synthesis"):
+        test_offline_provider_wire_through_production_runner_and_frozen_grader(
+            tmp_path,
+            monkeypatch,
+            "openai-realtime",
+            "gpt-realtime-2.1",
+            0,
+            setup_failure=True,
+        )
+    failure = json.loads((tmp_path / "call/failed-run.json").read_text())
+    assert failure["phase"] == "setup" and failure["scored"] is False
+    assert not (tmp_path / "call/simulation.json").exists()
+    row = json.loads((tmp_path / "budget.json").read_text())["reservations"][0]
+    assert row["status"] == "metered" and row["charged_usd"] == 0

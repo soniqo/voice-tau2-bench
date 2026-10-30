@@ -21,6 +21,7 @@ def test_real_provider_audio_tools_and_frozen_task_grader(tmp_path, monkeypatch)
     from tau2.voice import local_run
     from tau2.voice.baseline import repository_root
     from tau2.voice.local_run import run_local_task
+    from tau2.voice.provider_cli import session_window
     from tau2.voice.provider_run import ProviderBudget, ProviderFactory
     from tau2.voice.providers.base import ProviderSettings
 
@@ -32,8 +33,12 @@ def test_real_provider_audio_tools_and_frozen_task_grader(tmp_path, monkeypatch)
         model=os.environ["TAU_PROVIDER_MODEL"],
         voice=os.environ["TAU_PROVIDER_VOICE"],
         key_env=os.environ["TAU_PROVIDER_KEY_ENV"],
-        max_seconds=float(
-            os.environ.get("TAU_PROVIDER_SESSION_SECONDS", str(max_seconds))
+        max_seconds=session_window(
+            max_seconds,
+            float(os.environ["TAU_PROVIDER_SESSION_SECONDS"])
+            if "TAU_PROVIDER_SESSION_SECONDS" in os.environ
+            else None,
+            eleven=provider == "elevenlabs",
         ),
         stop_usd=float(os.environ.get("TAU_PROVIDER_STOP_USD", "0.25")),
         backend_model=os.environ.get("TAU_PROVIDER_BACKEND_MODEL"),
